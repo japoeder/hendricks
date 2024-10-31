@@ -76,7 +76,9 @@ disable=
     raise-missing-from,
     redefined-outer-name,
     broad-exception-caught,
-    logging-fstring-interpolation
+    logging-fstring-interpolation,
+    too-many-arguments,
+    consider-using-in
 #    len-as-condition,
 #    too-few-public-methods,
 #    anomalous-backslash-in-string,

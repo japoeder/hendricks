@@ -3,10 +3,10 @@ Load historical quote data from Alpaca API into a MongoDB collection.
 """
 
 from datetime import datetime, timezone
+import json
 from alpaca_trade_api import REST
 from _utils.mongo_conn import mango_conn
 from _utils.mongo_coll_verification import confirm_mongo_collect_exists
-import json
 
 
 def load_credentials(file_path):
@@ -26,9 +26,9 @@ def load_credentials(file_path):
 def load_historical_quote_alpacaAPI(
     ticker_symbol,
     collection_name,
-    start_date,
-    end_date,
-    creds_file_path="/Volumes/documents/pydev/quantum_trade/_cred/creds.json",
+    from_date,
+    to_date,
+    creds_file_path="/home/jonathan/pydev/quantum_trade/_cred/creds.json",
     batch_size=7500,
 ):
     """
@@ -42,7 +42,7 @@ def load_historical_quote_alpacaAPI(
     api = REST(API_KEY, API_SECRET, BASE_URL, api_version="v2")
 
     # Fetch the data
-    barset = api.get_bars(ticker_symbol, "1Min", start=start_date, end=end_date).df
+    barset = api.get_bars(ticker_symbol, "1Min", start=from_date, end=to_date).df
 
     # Prepare the DataFrame
     barset.reset_index(inplace=True)
