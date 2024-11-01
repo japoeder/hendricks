@@ -6,6 +6,9 @@ from flask import Flask, request, jsonify
 import pandas as pd
 import pickle
 from alpaca_trade_api import REST
+import websockets
+import json
+import asyncio
 from _utils.load_historical_quote_alpacaAPI import load_historical_quote_alpacaAPI
 from _utils.load_historical_quote_df import load_historical_quote_df
 from _utils.load_historical_quote_csv import load_historical_quote_csv
@@ -64,3 +67,33 @@ class DataLoader:
 
         return None
 
+    async def stream_data(self):
+        uri = "wss://data.alpaca.markets/stream"
+        async with websockets.connect(uri) as websocket:
+            # Authenticate with Alpaca
+            await websocket.send(json.dumps({
+                "action": "authenticate",
+                "data": {
+                    "key_id": "YOUR_API_KEY",
+                    "secret_key": "YOUR_SECRET_KEY"
+                }
+            }))
+            response = await websocket.recv()
+            print(response)  # Handle authentication response
+
+            # Subscribe to the ticker
+            await websocket.send(json.dumps({
+                "action": "subscribe",
+                "trades": [self.ticker_symbol]
+            }))
+            response = await websocket.recv()
+            print(response)  # Handle subscription response
+
+            # Stream data
+            while True:
+                message = await websocket.recv()
+                data = json.loads(message)
+                print(data)  # Process and store data in the database
+
+    def start_streaming(self):
+        asyncio.run(self.stream_data())

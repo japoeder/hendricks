@@ -4,9 +4,12 @@ Load historical quote data from Alpaca API into a MongoDB collection.
 
 from datetime import datetime, timezone
 import json
+from dotenv import load_dotenv
+load_dotenv()
 from alpaca_trade_api import REST
 from _utils.mongo_conn import mango_conn
 from _utils.mongo_coll_verification import confirm_mongo_collect_exists
+
 
 
 def load_credentials(file_path):

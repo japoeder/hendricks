@@ -1,11 +1,10 @@
 from flask import Flask, request, jsonify
-from hendricks.load_ticker_data import DataLoader
+from load_ticker_data import DataLoader
 import logging
 import pandas as pd
 
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
-
 
 @app.route("/load_ticker", methods=["POST"])
 def load_ticker():
@@ -25,7 +24,7 @@ def load_ticker():
     file = data.get("file")
     if file is None:
         file = False
-
+    
     from_date = data.get("from_date")
     if from_date is None:
         from_date = False
@@ -42,25 +41,15 @@ def load_ticker():
     if batch_size is None:
         batch_size = 7500
 
-    load_ticker_data = DataLoader(
-        ticker_symbol=ticker_symbol,
-        file=file,
-        from_date=from_date,
-        to_date=to_date,
-        collection_name=collection_name,
-        batch_size=batch_size,
-    )
-
+    load_ticker_data = DataLoader(ticker_symbol=ticker_symbol,
+                                     file=file,
+                                     from_date=from_date,
+                                     to_date=to_date,
+                                     collection_name=collection_name,
+                                     batch_size=batch_size)
+    
     load_ticker_data.load_data()
-    return (
-        jsonify(
-            {
-                "status": f"{ticker_symbol} dataframe loaded into {collection_name} collection."
-            }
-        ),
-        202,
-    )
-
+    return jsonify({"status": f"{ticker_symbol} dataframe loaded into {collection_name} collection."}), 202
 
 # @app.route("/run_qc", methods=["POST"])
 # def run_quality_control():
@@ -74,17 +63,22 @@ def load_ticker():
 #     run_qc.delay(ticker_symbol)
 #     return jsonify({"status": "QC started"}), 202
 
-# @app.route("/stream_data", methods=["POST"])
-# def stream_data_endpoint():
-#     """Endpoint to start streaming data into the database."""
-#     data = request.json
-#     ticker_symbol = data.get("ticker_symbol")
-#     if not ticker_symbol:
-#         return jsonify({"error": "Ticker symbol is required"}), 400
+@app.route("/stream_load", methods=["POST"])
+def stream_load():
+    """Endpoint to start streaming data for a list of tickers."""
+    data = request.json
+    ticker_symbols = data.get("ticker_symbols")
+    if not ticker_symbols:
+        return jsonify({"error": "Ticker symbols are required"}), 400
 
-#     # Trigger background task to stream data
-#     stream_data.delay(ticker_symbol)
-#     return jsonify({"status": "Data streaming started"}), 202
+    collection_name = data.get("collection_name", "historicalPrices")
+
+    for ticker_symbol in ticker_symbols:
+        logging.info(f"Starting stream for {ticker_symbol}")
+        data_loader = DataLoader(ticker_symbol=ticker_symbol, collection_name=collection_name)
+        data_loader.start_streaming()
+
+    return jsonify({"status": f"Streaming started for tickers {ticker_symbols}."}), 202
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=8001)
