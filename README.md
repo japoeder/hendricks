@@ -1,75 +1,33 @@
-
 # Hendricks
 
 ### Introduction
 
-This is a rule based model for collectability.
+Data loader that performs the following:
 
-1. Read input job file (should be a json object) supplied by the user
-   2. If raw data is in another format, use 'utilities/make_json.py' to convert
-2. Update the tuning parameters if necessary in 'tuning.json'
-3. Comment out open_html method to prevent browser from opening html formatted report.
-4. Dictionary objects from each step contain important data from respective stage.
+1. Simple load that drops existing records in raw collection, and reloads data over the specified window
+   * May need to load year by year if you aren't sure how far back the data goes.
+2. QC checks missing minutes over a specified window, and attempts to reload
+3. Stream load reads live data into the raw price collection
 
-### Running the model
+### Service
 
-1. Download and install Python on your computer
-2. Clone this repo, and navigate to [pid_0001_collectability_model](.) directory (containing the README.md)
-3. Set up environment by running the following in the terminal:
+1. Restart the service if necessary with:
+   * qt_restart_hl
 
-   1. conda create --name pid_0001_collectability_model python=3.10
-   2. conda activate pid_0001_collectability_model
-   3. conda config --add channels conda-forge
-   4. pip install -r requirements.txt
-4. To run the model, run the Flask app and submit a POST request in the proper form
-5. There's a sample POST request in 'collectability_model/templates', as well as samples to illustrate what data is required for base and enhnced models
-
-The result is a response object in JSON with the model results.  Note that the model inputs and results are also output to S3 in the following buckets:
-
-* s3://collectability-mlops/json-requests/
-* s3://collectability-mlops/json-responses/
-* s3://collectability-mlops/html-responses/
-
-### Model Details:
+### Usage Details:
 
 ```commandline
-usage: POST request
+simple load: qt_hendricks_load via the terminal
   
 optional "parameters "arguments:
-  cos_name_val	  		cos similarity score for name validation. 'y' (default) or 'n'
-  tuning_file	  		file with tuning sensitivities. collectability/tuning.json used by default.
-  version            		model version. 'base' (default) or 'enhanced'.
+  -t    Ticker symbol (required)
+  -f    File (optional)
+  -s    From date (default: 2024-10-03T09:30:00-04:00)
+  -e    To date (default: 2024-10-04T00:59:32-04:00)
+  -c    Collection name (default: rawPriceColl)
+  -b    Batch size (default: 50000)
+  -h    Show this help message
 ```
-
-### Request Structure
-
-header:
-
-* key / value -> "X-Amzn-SageMaker-Inference-Component":"Model-1715285187796-20240509-2034510"
-
-body:
-
-{
-
-    "authentication":{
-
-    ...
-
-    },"parameters":{
-
-    ...
-
-    }, "scenario_data":{
-
-    ...
-
-    }, "enhanced_model_elements":{
-
-    ...
-
-    }
-
-}
 
 ## Python Packaging
 

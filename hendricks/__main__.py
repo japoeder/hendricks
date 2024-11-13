@@ -1,5 +1,8 @@
 from flask import Flask, request, jsonify
+from dotenv import load_dotenv
+load_dotenv()
 from load_ticker_data import DataLoader
+from qc_historical_quote_alpacaAPI import run_qc
 import logging
 import pandas as pd
 
@@ -35,7 +38,7 @@ def load_ticker():
 
     collection_name = data.get("collection_name")
     if collection_name is None:
-        collection_name = "historicalPrices"
+        collection_name = "rawPriceColl"
 
     batch_size = data.get("batch_size")
     if batch_size is None:
@@ -51,17 +54,19 @@ def load_ticker():
     load_ticker_data.load_data()
     return jsonify({"status": f"{ticker_symbol} dataframe loaded into {collection_name} collection."}), 202
 
-# @app.route("/run_qc", methods=["POST"])
-# def run_quality_control():
-#     """Endpoint to run QC on the data."""
-#     data = request.json
-#     ticker_symbol = data.get("ticker_symbol")
-#     if not ticker_symbol:
-#         return jsonify({"error": "Ticker symbol is required"}), 400
+@app.route('/run_qc', methods=['POST'])
+def run_quality_control():
+    data = request.json
+    ticker = data.get('ticker')
+    timestamp = data.get('timestamp')
 
-#     # Trigger background task to run QC
-#     run_qc.delay(ticker_symbol)
-#     return jsonify({"status": "QC started"}), 202
+    if not ticker or not timestamp:
+        return jsonify({"error": "Ticker and timestamp are required"}), 400
+
+    run_qc(ticker=ticker, timestamp=timestamp)
+
+    return jsonify({"message": f"QC task for {ticker} at {timestamp} has been started"}), 200
+
 
 @app.route("/stream_load", methods=["POST"])
 def stream_load():

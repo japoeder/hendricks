@@ -3,27 +3,15 @@ Load historical quote data from Alpaca API into a MongoDB collection.
 """
 
 from datetime import datetime, timezone
+import pytz  # Add this import
+import pandas as pd
 import json
 from dotenv import load_dotenv
 load_dotenv()
 from alpaca_trade_api import REST
-from _utils.mongo_conn import mango_conn
+from _utils.load_credentials import load_credentials
+from _utils.mongo_conn import mongo_conn
 from _utils.mongo_coll_verification import confirm_mongo_collect_exists
-
-
-
-def load_credentials(file_path):
-    """
-    Load Alpaca API credentials from JSON file.
-    """
-    with open(file_path, "r", encoding="utf-8") as file:
-        creds = json.load(file)
-    alpaca_creds = creds["alpaca_api"]
-    return (
-        alpaca_creds["API_KEY"],
-        alpaca_creds["API_SECRET"],
-        alpaca_creds["PAPER_URL"],
-    )
 
 
 def load_historical_quote_alpacaAPI(
@@ -44,6 +32,16 @@ def load_historical_quote_alpacaAPI(
     # Initialize the Alpaca API
     api = REST(API_KEY, API_SECRET, BASE_URL, api_version="v2")
 
+    # Run time conversion
+    TZ = pytz.timezone('America/New_York')
+
+    # Create a timezone-aware timestamp in America/New_York
+    from_date = pd.Timestamp(from_date, tz=TZ)
+    from_date = from_date.tz_convert('UTC').isoformat()
+
+    to_date = pd.Timestamp(to_date, tz=TZ)
+    to_date = to_date.tz_convert('UTC').isoformat()
+
     # Fetch the data
     barset = api.get_bars(ticker_symbol, "1Min", start=from_date, end=to_date).df
 
@@ -53,7 +51,7 @@ def load_historical_quote_alpacaAPI(
     barset["ticker"] = ticker_symbol
 
     # Get the database connection
-    db = mango_conn()
+    db = mongo_conn()
 
     # Ensure the collection exists
     confirm_mongo_collect_exists(collection_name)
@@ -66,10 +64,19 @@ def load_historical_quote_alpacaAPI(
 
     # Prepare documents for batch insert
     documents = []
+    est = pytz.timezone('US/Eastern')  # Define the EST timezone
+
+    # Save barset to a file
+    barset.to_csv('/home/jonathan/pydev/quantum_trade/hendricks/_data/barset.csv', index=False)
+
     for _, row in barset.iterrows():
+        timestamp_utc = row["timestamp"]
+        #print(f'timestamp_utc: {timestamp_utc}' )
+        # timestamp_est = timestamp_utc.tz_convert(TZ)
+        # print(f'timestamp_est: {timestamp_est}')
         document = {
             "ticker": row["ticker"],
-            "timestamp": row["timestamp"],
+            "timestamp": timestamp_utc,
             "open": row["open"],
             "low": row["low"],
             "high": row["high"],
@@ -86,6 +93,7 @@ def load_historical_quote_alpacaAPI(
             collection.insert_many(documents)
             documents = []
 
+    #print(f'documents: {documents}')
     # Insert any remaining documents
     if documents:
         collection.insert_many(documents)
@@ -93,9 +101,9 @@ def load_historical_quote_alpacaAPI(
     print("Data imported successfully!")
 
 
+
 # Example usage
-# load_historical_quote_alpacaAPI('GOOG'
-#                                 , 'historicalPrices'
-#                                 , '2018-01-01T09:30:00-04:00'
-#                                 , datetime.now().strftime('%Y-%m-%dT%H:%M:%S-04:00')
-#                                 )
+# load_historical_quote_alpacaAPI(ticker_symbol='GOOG',
+#                                 collection_name='rawPriceColl',
+#                                 from_date='2024-11-01T00:00:00',
+#                                 to_date='2024-11-02T23:59:00')

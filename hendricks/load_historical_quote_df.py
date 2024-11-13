@@ -3,7 +3,7 @@ Load a historical quote dataframe into a MongoDB collection.
 """
 
 from datetime import datetime, timezone
-from _utils.mongo_conn import mango_conn
+from _utils.mongo_conn import mongo_conn
 from _utils.mongo_coll_verification import confirm_mongo_collect_exists
 
 
@@ -17,7 +17,7 @@ def load_historical_quote_df(df, ticker_symbol, collection_name, batch_size=7500
     df["ticker"] = ticker_symbol
 
     # Get the database connection
-    db = mango_conn()
+    db = mongo_conn()
 
     # Ensure the collection exists
     confirm_mongo_collect_exists(collection_name)

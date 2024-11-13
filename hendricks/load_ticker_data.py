@@ -9,9 +9,9 @@ from alpaca_trade_api import REST
 import websockets
 import json
 import asyncio
-from _utils.load_historical_quote_alpacaAPI import load_historical_quote_alpacaAPI
-from _utils.load_historical_quote_df import load_historical_quote_df
-from _utils.load_historical_quote_csv import load_historical_quote_csv
+from load_historical_quote_alpacaAPI import load_historical_quote_alpacaAPI
+from load_historical_quote_df import load_historical_quote_df
+from load_historical_quote_csv import load_historical_quote_csv
 
 
 class DataLoader:
@@ -23,7 +23,7 @@ class DataLoader:
                  ticker_symbol: str = None,
                  from_date: str = None,
                  to_date: str = None,
-                 collection_name: str = "historicalPrices",
+                 collection_name: str = "rawPriceColl",
                  batch_size: int = 7500
                  ):
         self.file = file
@@ -54,6 +54,7 @@ class DataLoader:
                                             to_date=self.to_date)
         else:
             # Process the file
+            # TODO: Add data checking of input file against dates in database
             extension = self.extension_detection(self.file)
             if extension == 'pkl':
                 df = pd.read_pickle(self.file)

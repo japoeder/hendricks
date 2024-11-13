@@ -3,7 +3,7 @@ Load historical quotes from a CSV file into a MongoDB collection.
 """
 
 import csv
-from _utils.mongo_conn import mango_conn
+from _utils.mongo_conn import mongo_conn
 
 
 def load_historical_quote_csv(ticker_symbol, raw_data_path, collection_name):
@@ -11,7 +11,7 @@ def load_historical_quote_csv(ticker_symbol, raw_data_path, collection_name):
     Load historical quotes from a CSV file into a MongoDB collection.
     """
     # Get the database connection
-    db = mango_conn()
+    db = mongo_conn()
     collection = db[collection_name]
 
     # Path to your CSV file
