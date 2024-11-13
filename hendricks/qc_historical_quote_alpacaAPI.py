@@ -4,9 +4,9 @@ import pytz
 from dotenv import load_dotenv
 load_dotenv()
 from alpaca_trade_api import REST
-from _utils.mongo_conn import mongo_conn
-from _utils.mongo_coll_verification import confirm_mongo_collect_exists
-from _utils.load_credentials import load_credentials
+from hendricks._utils.mongo_conn import mongo_conn
+from hendricks._utils.mongo_coll_verification import confirm_mongo_collect_exists
+from hendricks._utils.load_credentials import load_credentials
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')

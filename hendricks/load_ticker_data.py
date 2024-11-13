@@ -9,9 +9,9 @@ from alpaca_trade_api import REST
 import websockets
 import json
 import asyncio
-from load_historical_quote_alpacaAPI import load_historical_quote_alpacaAPI
-from load_historical_quote_df import load_historical_quote_df
-from load_historical_quote_csv import load_historical_quote_csv
+from hendricks.load_historical_quote_alpacaAPI import load_historical_quote_alpacaAPI
+from hendricks.load_historical_quote_df import load_historical_quote_df
+from hendricks.load_historical_quote_csv import load_historical_quote_csv
 
 
 class DataLoader:

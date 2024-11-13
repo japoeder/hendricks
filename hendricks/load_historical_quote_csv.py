@@ -3,7 +3,7 @@ Load historical quotes from a CSV file into a MongoDB collection.
 """
 
 import csv
-from _utils.mongo_conn import mongo_conn
+from hendricks._utils.mongo_conn import mongo_conn
 
 
 def load_historical_quote_csv(ticker_symbol, raw_data_path, collection_name):

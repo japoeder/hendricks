@@ -1,8 +1,8 @@
 from flask import Flask, request, jsonify
 from dotenv import load_dotenv
 load_dotenv()
-from load_ticker_data import DataLoader
-from qc_historical_quote_alpacaAPI import run_qc
+from hendricks.load_ticker_data import DataLoader
+from hendricks.qc_historical_quote_alpacaAPI import run_qc
 import logging
 import pandas as pd
 

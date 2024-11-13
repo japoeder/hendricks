@@ -3,8 +3,8 @@ Load a historical quote dataframe into a MongoDB collection.
 """
 
 from datetime import datetime, timezone
-from _utils.mongo_conn import mongo_conn
-from _utils.mongo_coll_verification import confirm_mongo_collect_exists
+from hendricks._utils.mongo_conn import mongo_conn
+from hendricks._utils.mongo_coll_verification import confirm_mongo_collect_exists
 
 
 def load_historical_quote_df(df, ticker_symbol, collection_name, batch_size=7500):
