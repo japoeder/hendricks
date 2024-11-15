@@ -5,9 +5,21 @@ from hendricks.load_ticker_data import DataLoader
 from hendricks.qc_historical_quote_alpacaAPI import run_qc
 import logging
 import pandas as pd
+import asyncio
 
 app = Flask(__name__)
-logging.basicConfig(level=logging.INFO)
+# Configure logging
+logging.basicConfig(filename='/Users/jpoeder/dataservices/Documents/pydev/quantum_trade/hendricks/hendricks/app.log', level=logging.DEBUG,
+                    format='%(asctime)s %(levelname)s %(name)s %(threadName)s : %(message)s')
+
+# Add console handler for logging
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(asctime)s %(levelname)s %(name)s %(threadName)s : %(message)s')
+console_handler.setFormatter(formatter)
+logging.getLogger().addHandler(console_handler)
+
+logging.debug("This is a test log message.")
 
 @app.route("/load_ticker", methods=["POST"])
 def load_ticker():
@@ -70,20 +82,24 @@ def run_quality_control():
 
 @app.route("/stream_load", methods=["POST"])
 def stream_load():
-    """Endpoint to start streaming data for a list of tickers."""
-    data = request.json
-    ticker_symbols = data.get("ticker_symbols")
-    if not ticker_symbols:
-        return jsonify({"error": "Ticker symbols are required"}), 400
+    try:
+        data = request.json
+        logging.debug(f"Received data: {data}")
+        ticker_symbols = data.get("ticker_symbols")
+        if not ticker_symbols:
+            return jsonify({"error": "Ticker symbols are required"}), 400
 
-    collection_name = data.get("collection_name", "historicalPrices")
+        collection_name = data.get("collection_name", "rawPriceColl")
 
-    for ticker_symbol in ticker_symbols:
-        logging.info(f"Starting stream for {ticker_symbol}")
-        data_loader = DataLoader(ticker_symbol=ticker_symbol, collection_name=collection_name)
-        data_loader.start_streaming()
+        for ticker_symbol in ticker_symbols:
+            logging.info(f"Starting stream for {ticker_symbol}")
+            data_loader = DataLoader(ticker_symbol=ticker_symbol, collection_name=collection_name)
+            data_loader.start_streaming()
 
-    return jsonify({"status": f"Streaming started for tickers {ticker_symbols}."}), 202
-
+        return jsonify({"status": f"Streaming started for tickers {ticker_symbols}."}), 202
+    except Exception as e:
+        logging.error(f"Error during stream load: {e}")
+        return jsonify({"error": "An internal error occurred"}), 500
+    
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=8001)

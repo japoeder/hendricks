@@ -14,7 +14,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 def run_qc(ticker=None, 
            collection='rawPriceColl', 
            backup_collection='rawPriceColl_bak',
-           creds_file_path="/home/jonathan/pydev/quantum_trade/_cred/creds.json",
+           creds_file_path="/home/japoeder/pydev/quantum_trade/_cred/creds.json",
            timestamp=None):
     """
     Perform quality control checks on the historical quote data.

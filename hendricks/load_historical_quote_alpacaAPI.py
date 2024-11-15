@@ -19,7 +19,7 @@ def load_historical_quote_alpacaAPI(
     collection_name,
     from_date,
     to_date,
-    creds_file_path="/home/jonathan/pydev/quantum_trade/_cred/creds.json",
+    creds_file_path="/home/japoeder/pydev/quantum_trade/_cred/creds.json",
     batch_size=7500,
 ):
     """
@@ -67,7 +67,7 @@ def load_historical_quote_alpacaAPI(
     est = pytz.timezone('US/Eastern')  # Define the EST timezone
 
     # Save barset to a file
-    barset.to_csv('/home/jonathan/pydev/quantum_trade/hendricks/_data/barset.csv', index=False)
+    barset.to_csv('/home/japoeder/pydev/quantum_trade/hendricks/_data/barset.csv', index=False)
 
     for _, row in barset.iterrows():
         timestamp_utc = row["timestamp"]

@@ -1,7 +1,9 @@
 """
 Load ticker data into MongoDB.
 """
-
+import os
+import dotenv
+dotenv.load_dotenv()
 from flask import Flask, request, jsonify
 import pandas as pd
 import pickle
@@ -12,7 +14,7 @@ import asyncio
 from hendricks.load_historical_quote_alpacaAPI import load_historical_quote_alpacaAPI
 from hendricks.load_historical_quote_df import load_historical_quote_df
 from hendricks.load_historical_quote_csv import load_historical_quote_csv
-
+import logging
 
 class DataLoader:
     """
@@ -32,9 +34,11 @@ class DataLoader:
         self.to_date = to_date
         self.collection_name = collection_name
         self.batch_size = int(batch_size)
+        self.API_KEY = os.getenv("API_KEY")
+        self.API_SECRET = os.getenv("API_SECRET")
 
     # Initialize Alpaca API client
-    alpaca_api = REST('APCA-API-KEY-ID', 'APCA-API-SECRET-KEY', base_url='https://paper-api.alpaca.markets')
+    #alpaca_api = REST(API_KEY, API_SECRET, base_url='https://paper-api.alpaca.markets')
 
     def extension_detection(self, file):
         """Detect the extension of the file."""
@@ -69,18 +73,18 @@ class DataLoader:
         return None
 
     async def stream_data(self):
-        uri = "wss://data.alpaca.markets/stream"
+        uri = "wss://stream.data.alpaca.markets/v2/iex"  # Use the correct endpoint for your data feed
         async with websockets.connect(uri) as websocket:
+            print(f"self.API_KEY: {self.API_KEY}")
+            print(f"self.API_SECRET: {self.API_SECRET}")
             # Authenticate with Alpaca
             await websocket.send(json.dumps({
-                "action": "authenticate",
-                "data": {
-                    "key_id": "YOUR_API_KEY",
-                    "secret_key": "YOUR_SECRET_KEY"
-                }
+                "action": "auth",
+                "key": self.API_KEY,
+                "secret": self.API_SECRET
             }))
             response = await websocket.recv()
-            print(response)  # Handle authentication response
+            print("Authentication response:", response)  # Log authentication response
 
             # Subscribe to the ticker
             await websocket.send(json.dumps({
@@ -88,13 +92,15 @@ class DataLoader:
                 "trades": [self.ticker_symbol]
             }))
             response = await websocket.recv()
-            print(response)  # Handle subscription response
+            print("Subscription response:", response)  # Log subscription response
 
             # Stream data
             while True:
                 message = await websocket.recv()
                 data = json.loads(message)
-                print(data)  # Process and store data in the database
+                print("Received data:", data)  # Log received data
 
     def start_streaming(self):
-        asyncio.run(self.stream_data())
+        # Use asyncio.run() in a Jupyter-friendly way
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(self.stream_data())
