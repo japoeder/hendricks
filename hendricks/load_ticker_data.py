@@ -55,7 +55,8 @@ class DataLoader:
             load_historical_quote_alpacaAPI(ticker_symbol=self.ticker_symbol,
                                             collection_name=self.collection_name,
                                             from_date=self.from_date,
-                                            to_date=self.to_date)
+                                            to_date=self.to_date,
+                                            upsert=True)
         else:
             # Process the file
             # TODO: Add data checking of input file against dates in database

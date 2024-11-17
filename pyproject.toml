@@ -1,21 +1,7 @@
-[tool.black]
-line-length = 88
-include = '\.pyi?$'
-exclude = '''
-/(
-  \.toml
-  |\.sh
-  |\.git
-  |\.ini
-  |Dockerfile
-  |Jenkinfile
-  |\.hg
-  |\.mypy_cache
-  |\.tox
-  |\.venv
-  |_build
-  |buck-out
-  |build
-  |dist
-)/
-'''
+[project]
+name = "hendricks"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = []

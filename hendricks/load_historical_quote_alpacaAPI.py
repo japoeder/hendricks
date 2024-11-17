@@ -58,25 +58,19 @@ def load_historical_quote_alpacaAPI(
 
     # Get the collection
     collection = db[collection_name]
+    backup_collection = db[f"{collection_name}_bak"]
 
     # Create a compound index on 'timestamp' and 'ticker'
     collection.create_index([("timestamp", 1), ("ticker", 1)], unique=True)
+    collection.create_index([("timestamp", 1), ("ticker", 1), ("archived_at")], unique=True)
 
     # Prepare documents for batch insert
     documents = []
-    est = pytz.timezone('US/Eastern')  # Define the EST timezone
-
-    # Save barset to a file
-    barset.to_csv('/home/japoeder/pydev/quantum_trade/hendricks/_data/barset.csv', index=False)
 
     for _, row in barset.iterrows():
-        timestamp_utc = row["timestamp"]
-        #print(f'timestamp_utc: {timestamp_utc}' )
-        # timestamp_est = timestamp_utc.tz_convert(TZ)
-        # print(f'timestamp_est: {timestamp_est}')
         document = {
             "ticker": row["ticker"],
-            "timestamp": timestamp_utc,
+            "timestamp": row["timestamp"],
             "open": row["open"],
             "low": row["low"],
             "high": row["high"],
@@ -86,12 +80,30 @@ def load_historical_quote_alpacaAPI(
             "vwap": row.get("vwap", 0),  # Default to 0 if not present
             "created_at": datetime.now(timezone.utc),  # Document creation time in UTC
         }
-        documents.append(document)
 
-        # Insert in batches
-        if len(documents) >= batch_size:
-            collection.insert_many(documents)
-            documents = []
+        # Check if the document exists
+        existing_doc = collection.find_one({"timestamp": row["timestamp"], "ticker": row["ticker"]})
+        if existing_doc:
+            # Compare the existing document with the new data
+            fields_to_check = ["open", "low", "high", "close", "volume", "trade_count", "vwap"]
+            if any(existing_doc[field] != document[field] for field in fields_to_check):
+                # Backup the existing document
+                existing_doc["archived_at"] = datetime.now(timezone.utc)
+                backup_collection.insert_one(existing_doc)
+
+            # Upsert logic
+            collection.update_one(
+                {"timestamp": row["timestamp"], "ticker": row["ticker"]},  # Query
+                {"$set": document},  # Update
+                upsert=True  # Upsert option
+            )
+        else:
+            documents.append(document)
+
+            # Insert in batches
+            if len(documents) >= batch_size:
+                collection.insert_many(documents)
+                documents = []
 
     #print(f'documents: {documents}')
     # Insert any remaining documents

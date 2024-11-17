@@ -1,11 +1,19 @@
 from flask import Flask, request, jsonify
 from dotenv import load_dotenv
 load_dotenv()
+import sys
+import os
+# Add the parent directory to sys.path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from hendricks.load_ticker_data import DataLoader
+from hendricks.load_historical_quote_alpacaAPI import load_historical_quote_alpacaAPI
 from hendricks.qc_historical_quote_alpacaAPI import run_qc
 import logging
 import pandas as pd
+import argparse
 import asyncio
+
 
 app = Flask(__name__)
 # Configure logging
@@ -100,6 +108,14 @@ def stream_load():
     except Exception as e:
         logging.error(f"Error during stream load: {e}")
         return jsonify({"error": "An internal error occurred"}), 500
-    
+
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=8001)
+    # load_historical_quote_alpacaAPI(
+    #     ticker_symbol='AAPL',
+    #     collection_name='rawPriceColl',
+    #     from_date='2016-01-03T00:00',
+    #     to_date='2016-01-04T23:59',
+    #     batch_size=7500,
+    #     creds_file_path="/Users/jpoeder/pydev/quantum_trade/_cred/creds.json"
+    # )

@@ -13,4 +13,7 @@
 use('stocksDB');
 
 // Insert a few documents into the sales collection.
-db.getCollection('rawPriceColl').find({}).sort({timestamp: 1}).limit(1).toArray()
+//db.getCollection('rawPriceColl').find({}).sort({timestamp: 1}).limit(1).toArray()
+
+// delete all documents from the collection
+db.getCollection('rawPriceColl').deleteMany({});
