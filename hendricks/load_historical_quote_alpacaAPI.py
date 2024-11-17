@@ -81,6 +81,7 @@ def load_historical_quote_alpacaAPI(
             "created_at": datetime.now(timezone.utc),  # Document creation time in UTC
         }
 
+        #print(f'document: {document}')
         # Check if the document exists
         existing_doc = collection.find_one({"timestamp": row["timestamp"], "ticker": row["ticker"]})
         if existing_doc:

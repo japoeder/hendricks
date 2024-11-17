@@ -16,4 +16,26 @@ use('stocksDB');
 //db.getCollection('rawPriceColl').find({}).sort({timestamp: 1}).limit(1).toArray()
 
 // delete all documents from the collection
-db.getCollection('rawPriceColl').deleteMany({});
+//db.getCollection('rawPriceColl').deleteMany({});
+
+db('stocksDB').collection('rawPriceColl').aggregate([
+    {
+        $addFields: {
+            year: { $year: "$timestamp" }
+        }
+    },
+    {
+        $match: {
+            year: 2016
+        }
+    },
+    {
+        $sort: { "timestamp": 1 }
+    },
+    {
+        $skip: 154900
+    },
+    {
+        $limit: 100
+    }
+]).toArray()
