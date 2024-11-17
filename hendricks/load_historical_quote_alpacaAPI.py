@@ -1,3 +1,4 @@
+import time
 from datetime import datetime, timezone, timedelta
 import pytz
 import pandas as pd
@@ -15,7 +16,8 @@ def load_historical_quote_alpacaAPI(
     from_date,
     to_date,
     creds_file_path="/home/japoeder/pydev/quantum_trade/_cred/creds.json",
-    batch_size=7500
+    batch_size=7500,
+    rate_limit=200  # Number of allowed requests per minute
 ):
     """
     Load historical quote data from Alpaca API into a MongoDB collection.
@@ -46,6 +48,9 @@ def load_historical_quote_alpacaAPI(
 
     # Create a compound index on 'timestamp' and 'ticker'
     collection.create_index([("timestamp", 1), ("ticker", 1)], unique=True)
+
+    # Calculate the delay needed to respect the rate limit
+    delay_between_requests = 60 / rate_limit
 
     # Iterate over each month in the date range
     current_date = from_date
@@ -110,5 +115,8 @@ def load_historical_quote_alpacaAPI(
 
         # Move to the next month
         current_date += relativedelta(months=1)
+
+        # Respect the rate limit by sleeping
+        time.sleep(delay_between_requests)
 
     print("Data imported successfully!")
