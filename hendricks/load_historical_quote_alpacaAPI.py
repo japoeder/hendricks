@@ -1,19 +1,13 @@
-"""
-Load historical quote data from Alpaca API into a MongoDB collection.
-"""
-
 from datetime import datetime, timezone, timedelta
-import pytz  # Add this import
+import pytz
 import pandas as pd
 from dateutil.relativedelta import relativedelta
-import json
 from dotenv import load_dotenv
 load_dotenv()
 from alpaca_trade_api import REST
 from hendricks._utils.load_credentials import load_credentials
 from hendricks._utils.mongo_conn import mongo_conn
 from hendricks._utils.mongo_coll_verification import confirm_mongo_collect_exists
-
 
 def load_historical_quote_alpacaAPI(
     ticker_symbol,
@@ -36,12 +30,9 @@ def load_historical_quote_alpacaAPI(
     # Run time conversion
     TZ = pytz.timezone('America/New_York')
 
-    # Create a timezone-aware timestamp in America/New_York
-    from_date = pd.Timestamp(from_date, tz=TZ)
-    from_date = from_date.tz_convert('UTC').isoformat()
-
-    to_date = pd.Timestamp(to_date, tz=TZ)
-    to_date = to_date.tz_convert('UTC').isoformat()
+    # Convert from_date and to_date to timezone-aware datetime objects
+    from_date = pd.Timestamp(from_date, tz=TZ).to_pydatetime()
+    to_date = pd.Timestamp(to_date, tz=TZ).to_pydatetime()
 
     # Get the database connection
     db = mongo_conn()
@@ -55,8 +46,8 @@ def load_historical_quote_alpacaAPI(
 
     # Create a compound index on 'timestamp' and 'ticker'
     collection.create_index([("timestamp", 1), ("ticker", 1)], unique=True)
-    collection.create_index([("timestamp", 1), ("ticker", 1), ("archived_at")], unique=True)
 
+    # Iterate over each month in the date range
     current_date = from_date
     while current_date <= to_date:
         # Calculate the end of the current month
@@ -89,7 +80,6 @@ def load_historical_quote_alpacaAPI(
                 "created_at": datetime.now(timezone.utc),  # Document creation time in UTC
             }
 
-            #print(f'document: {document}')
             # Check if the document exists
             existing_doc = collection.find_one({"timestamp": row["timestamp"], "ticker": row["ticker"]})
             if existing_doc:
@@ -114,17 +104,11 @@ def load_historical_quote_alpacaAPI(
                     collection.insert_many(documents)
                     documents = []
 
-        #print(f'documents: {documents}')
         # Insert any remaining documents
         if documents:
             collection.insert_many(documents)
 
-        print("Data imported successfully!")
+        # Move to the next month
+        current_date += relativedelta(months=1)
 
-
-
-# Example usage
-# load_historical_quote_alpacaAPI(ticker_symbol='GOOG',
-#                                 collection_name='rawPriceColl',
-#                                 from_date='2024-11-01T00:00:00',
-#                                 to_date='2024-11-02T23:59:00')
+    print("Data imported successfully!")

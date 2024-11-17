@@ -110,12 +110,12 @@ def stream_load():
         return jsonify({"error": "An internal error occurred"}), 500
 
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=8001)
-    # load_historical_quote_alpacaAPI(
-    #     ticker_symbol='AAPL',
-    #     collection_name='rawPriceColl',
-    #     from_date='2016-01-03T00:00',
-    #     to_date='2016-12-31T23:59',
-    #     batch_size=7500,
-    #     creds_file_path="/Users/jpoeder/pydev/quantum_trade/_cred/creds.json"
-    # )
+    #app.run(debug=True, host="0.0.0.0", port=8001)
+    load_historical_quote_alpacaAPI(
+        ticker_symbol='AAPL',
+        collection_name='rawPriceColl',
+        from_date='2017-03-25T00:00',
+        to_date='2017-04-3T23:59',
+        batch_size=7500,
+        creds_file_path="/Users/jpoeder/pydev/quantum_trade/_cred/creds.json"
+    )
