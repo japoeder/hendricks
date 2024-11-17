@@ -2,9 +2,10 @@
 Load historical quote data from Alpaca API into a MongoDB collection.
 """
 
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import pytz  # Add this import
 import pandas as pd
+from dateutil.relativedelta import relativedelta
 import json
 from dotenv import load_dotenv
 load_dotenv()
@@ -42,14 +43,6 @@ def load_historical_quote_alpacaAPI(
     to_date = pd.Timestamp(to_date, tz=TZ)
     to_date = to_date.tz_convert('UTC').isoformat()
 
-    # Fetch the data
-    barset = api.get_bars(ticker_symbol, "1Min", start=from_date, end=to_date).df
-
-    # Prepare the DataFrame
-    barset.reset_index(inplace=True)
-    barset.columns = barset.columns.str.lower()
-    barset["ticker"] = ticker_symbol
-
     # Get the database connection
     db = mongo_conn()
 
@@ -64,54 +57,69 @@ def load_historical_quote_alpacaAPI(
     collection.create_index([("timestamp", 1), ("ticker", 1)], unique=True)
     collection.create_index([("timestamp", 1), ("ticker", 1), ("archived_at")], unique=True)
 
-    # Prepare documents for batch insert
-    documents = []
+    current_date = from_date
+    while current_date <= to_date:
+        # Calculate the end of the current month
+        month_end = (current_date + relativedelta(months=1)) - timedelta(seconds=1)
+        if month_end > to_date:
+            month_end = to_date
 
-    for _, row in barset.iterrows():
-        document = {
-            "ticker": row["ticker"],
-            "timestamp": row["timestamp"],
-            "open": row["open"],
-            "low": row["low"],
-            "high": row["high"],
-            "close": row["close"],
-            "volume": row["volume"],
-            "trade_count": row.get("trade_count", 0),  # Default to 0 if not present
-            "vwap": row.get("vwap", 0),  # Default to 0 if not present
-            "created_at": datetime.now(timezone.utc),  # Document creation time in UTC
-        }
+        # Fetch the data for the current month
+        barset = api.get_bars(ticker_symbol, "1Min", start=current_date.isoformat(), end=month_end.isoformat()).df
 
-        #print(f'document: {document}')
-        # Check if the document exists
-        existing_doc = collection.find_one({"timestamp": row["timestamp"], "ticker": row["ticker"]})
-        if existing_doc:
-            # Compare the existing document with the new data
-            fields_to_check = ["open", "low", "high", "close", "volume", "trade_count", "vwap"]
-            if any(existing_doc[field] != document[field] for field in fields_to_check):
-                # Backup the existing document
-                existing_doc["archived_at"] = datetime.now(timezone.utc)
-                backup_collection.insert_one(existing_doc)
+        # Prepare the DataFrame
+        barset.reset_index(inplace=True)
+        barset.columns = barset.columns.str.lower()
+        barset["ticker"] = ticker_symbol
 
-            # Upsert logic
-            collection.update_one(
-                {"timestamp": row["timestamp"], "ticker": row["ticker"]},  # Query
-                {"$set": document},  # Update
-                upsert=True  # Upsert option
-            )
-        else:
-            documents.append(document)
+        # Prepare documents for batch insert
+        documents = []
 
-            # Insert in batches
-            if len(documents) >= batch_size:
-                collection.insert_many(documents)
-                documents = []
+        for _, row in barset.iterrows():
+            document = {
+                "ticker": row["ticker"],
+                "timestamp": row["timestamp"],
+                "open": row["open"],
+                "low": row["low"],
+                "high": row["high"],
+                "close": row["close"],
+                "volume": row["volume"],
+                "trade_count": row.get("trade_count", 0),  # Default to 0 if not present
+                "vwap": row.get("vwap", 0),  # Default to 0 if not present
+                "created_at": datetime.now(timezone.utc),  # Document creation time in UTC
+            }
 
-    #print(f'documents: {documents}')
-    # Insert any remaining documents
-    if documents:
-        collection.insert_many(documents)
+            #print(f'document: {document}')
+            # Check if the document exists
+            existing_doc = collection.find_one({"timestamp": row["timestamp"], "ticker": row["ticker"]})
+            if existing_doc:
+                # Compare the existing document with the new data
+                fields_to_check = ["open", "low", "high", "close", "volume", "trade_count", "vwap"]
+                if any(existing_doc[field] != document[field] for field in fields_to_check):
+                    # Backup the existing document
+                    existing_doc["archived_at"] = datetime.now(timezone.utc)
+                    backup_collection.insert_one(existing_doc)
 
-    print("Data imported successfully!")
+                # Upsert logic
+                collection.update_one(
+                    {"timestamp": row["timestamp"], "ticker": row["ticker"]},  # Query
+                    {"$set": document},  # Update
+                    upsert=True  # Upsert option
+                )
+            else:
+                documents.append(document)
+
+                # Insert in batches
+                if len(documents) >= batch_size:
+                    collection.insert_many(documents)
+                    documents = []
+
+        #print(f'documents: {documents}')
+        # Insert any remaining documents
+        if documents:
+            collection.insert_many(documents)
+
+        print("Data imported successfully!")
 
 
 
