@@ -20,7 +20,7 @@ def load_historical_quote_alpacaAPI(
     from_date,
     to_date,
     creds_file_path="/home/japoeder/pydev/quantum_trade/_cred/creds.json",
-    batch_size=7500,
+    batch_size=7500
 ):
     """
     Load historical quote data from Alpaca API into a MongoDB collection.

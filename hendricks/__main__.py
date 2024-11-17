@@ -4,7 +4,7 @@ load_dotenv()
 import sys
 import os
 # Add the parent directory to sys.path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+#sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from hendricks.load_ticker_data import DataLoader
 from hendricks.load_historical_quote_alpacaAPI import load_historical_quote_alpacaAPI
