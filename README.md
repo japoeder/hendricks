@@ -2,7 +2,7 @@
 
 ### Introduction
 
-Data loader that performs the following:
+This is the core data loading service for the following:
 
 1. Simple load that drops existing records in raw collection, and reloads data over the specified window
    * May need to load year by year if you aren't sure how far back the data goes.
@@ -13,6 +13,9 @@ Data loader that performs the following:
 
 1. Restart the service if necessary with:
    * qt_restart_hl
+2. Sample request:
+   * qt_hendricks_load -t AAPL -s "2024-11-01T00:00:00" -e "2024-11-15T23:59:00"
+   * Note that this calls a zsh alias that calls a shell script.  See the
 
 ### Usage Details:
 
