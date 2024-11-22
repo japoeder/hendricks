@@ -18,6 +18,15 @@ import argparse
 import asyncio
 import json
 
+import signal
+
+def handle_sigterm(*args):
+    print("Received SIGTERM, shutting down gracefully...")
+    # Perform any cleanup here
+    sys.exit(0)
+
+signal.signal(signal.SIGTERM, handle_sigterm)
+
 app = Flask(__name__)
 # Configure logging
 logging.basicConfig(filename='/Users/jpoeder/dataservices/Documents/pydev/quantum_trade/hendricks/hendricks/app.log', level=logging.DEBUG,
