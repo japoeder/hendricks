@@ -54,14 +54,13 @@ class DataStreamer:
                     "trades": self.ticker_symbols
                 }))
                 response = await websocket.recv()
-                print("Subscription response:", response)
+                print("Subscription response:", response)   
 
                 # Stream data
                 while True:
                     message = await websocket.recv()
                     stream_data = json.loads(message)
-                    print("Received data:", stream_data)
-                    # Process and store the data
+                    print("Received data:", stream_data)  # Print the data instead of processing it
                     data_loader.load_stream_doc(stream_data)
 
         except websockets.exceptions.ConnectionClosedError as e:
@@ -69,6 +68,19 @@ class DataStreamer:
         except Exception as e:
             print(f"An error occurred: {e}")
         finally:
+            print("WebSocket connection closed.")
+            # Unsubscribe from the ticker
+            try:
+                async with websockets.connect(uri) as websocket:
+                    print(f"Unsubscribing from {self.ticker_symbols}")
+                    await websocket.send(json.dumps({
+                        "action": "unsubscribe",
+                        "trades": self.ticker_symbols
+                    }))
+                    response = await websocket.recv()
+                    print("Unsubscription response:", response)
+            except Exception as e:
+                print(f"An error occurred during unsubscription: {e}")
             print("WebSocket connection closed.")
 
     def start_streaming(self, data_loader):

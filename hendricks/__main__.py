@@ -32,7 +32,6 @@ logging.getLogger().addHandler(console_handler)
 
 logging.debug("This is a test log message.")
 
-#TODO: update to return meta data in response (can prob. use timestame to control)
 @app.route("/load_ticker", methods=["POST"])
 def load_ticker():
     """Endpoint to load a new stock ticker into the database."""

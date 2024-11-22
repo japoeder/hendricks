@@ -63,7 +63,6 @@ class DataLoader:
                                                 creds_file_path=self.creds_file_path)
         else:
             # Process the file
-            # TODO: Add data checking of input file against dates in database
             extension = self.extension_detection(self.file)
             if extension == 'pkl':
                 df = pd.read_pickle(self.file)
