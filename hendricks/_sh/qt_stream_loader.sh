@@ -1,5 +1,7 @@
 #!/bin/bash
 
+#TODO: test stream loader shell script
+
 # Default values
 URL="http://192.168.1.10:8001/load_ticker"
 FROM_DATE="2024-10-03T09:30:00-04:00"

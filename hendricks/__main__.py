@@ -81,12 +81,17 @@ def run_quality_control():
     ticker = data.get('ticker')
     timestamp = data.get('timestamp')
 
-    if not ticker or not timestamp:
-        return jsonify({"error": "Ticker and timestamp are required"}), 400
+    # If timestamp isn't provided, set to False, and run QC on all timestamps
+    if timestamp is None:
+        timestamp = False
+
+    # If ticker isn't provided, set to False, and run QC on all tickers
+    if ticker is None:
+        ticker = False
 
     run_qc(ticker=ticker, timestamp=timestamp)
 
-    return jsonify({"message": f"QC task for {ticker} at {timestamp} has been started"}), 200
+    return jsonify({"message": f"QC task for {ticker} at {timestamp} has been completed"}), 200
 
 
 @app.route("/stream_load", methods=["POST"])
@@ -124,7 +129,6 @@ def stream_load():
         return jsonify({"error": "An internal error occurred"}), 500
 
 if __name__ == "__main__":
-    dotenv.load_dotenv()
     app.run(debug=True, host="0.0.0.0", port=8001)
     # load_historical_quote_alpacaAPI(
     #     ticker_symbol='AAPL',
