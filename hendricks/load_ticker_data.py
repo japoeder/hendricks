@@ -79,7 +79,8 @@ class DataLoader:
 
         return None
     
-    def load_stream(self, stream_list):
+    def load_stream_doc(self, stream_list):
+        #TODO: need to update logic for processing stream doc
         """Process and store streaming data into MongoDB."""
         data = stream_list[0]
         print(f"Loading stream data: {data}")

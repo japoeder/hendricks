@@ -62,7 +62,7 @@ class DataStreamer:
                     stream_data = json.loads(message)
                     print("Received data:", stream_data)
                     # Process and store the data
-                    data_loader.load_stream(stream_data)
+                    data_loader.load_stream_doc(stream_data)
 
         except websockets.exceptions.ConnectionClosedError as e:
             print(f"WebSocket connection closed with error: {e}")
