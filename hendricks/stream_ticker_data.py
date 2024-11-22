@@ -34,9 +34,8 @@ class DataStreamer:
         self.API_KEY = os.getenv("API_KEY")
         self.API_SECRET = os.getenv("API_SECRET")
 
-    async def stream_data(self):
+    async def data_stream(self, data_loader):
         uri = "wss://stream.data.alpaca.markets/v2/iex"
-        data_loader = DataLoader(ticker_symbols=self.ticker_symbols, collection_name=self.collection_name)
         try:
             async with websockets.connect(uri) as websocket:
                 # Authenticate with Alpaca
@@ -60,11 +59,11 @@ class DataStreamer:
                 # Stream data
                 while True:
                     message = await websocket.recv()
-                    data = json.loads(message)
-                    print("Received data:", data)
+                    stream_data = json.loads(message)
+                    print("Received data:", stream_data)
                     # Process and store the data
-                    data_loader.load_stream(data)
-                    
+                    data_loader.load_stream(stream_data)
+
         except websockets.exceptions.ConnectionClosedError as e:
             print(f"WebSocket connection closed with error: {e}")
         except Exception as e:
@@ -72,7 +71,7 @@ class DataStreamer:
         finally:
             print("WebSocket connection closed.")
 
-    def start_streaming(self):
+    def start_streaming(self, data_loader):
         try:
             # Check if there's an existing event loop
             loop = asyncio.get_event_loop()
@@ -82,4 +81,4 @@ class DataStreamer:
             asyncio.set_event_loop(loop)
 
         # Run the stream_data coroutine
-        loop.run_until_complete(self.stream_data())
+        loop.run_until_complete(self.data_stream(data_loader))

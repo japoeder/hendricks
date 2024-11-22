@@ -5,23 +5,29 @@ import pandas as pd
 from dateutil.relativedelta import relativedelta
 from dotenv import load_dotenv
 load_dotenv()
+import os
 from alpaca_trade_api import REST
 from hendricks._utils.load_credentials import load_credentials
 from hendricks._utils.mongo_conn import mongo_conn
 from hendricks._utils.mongo_coll_verification import confirm_mongo_collect_exists
+from hendricks._utils.detect_os import detect_os
+
 
 def load_historical_quote_alpacaAPI(
     ticker_symbol,
     collection_name,
     from_date,
     to_date,
-    creds_file_path="/home/japoeder/pydev/quantum_trade/_cred/creds.json",
+    creds_file_path,
     batch_size=7500,
     rate_limit=200  # Number of allowed requests per minute
 ):
     """
     Load historical quote data from Alpaca API into a MongoDB collection.
     """
+
+    detected_os = detect_os()
+    creds_file_path = os.getenv("APP_PATH_" + detected_os) + "/_cred/creds.json"
 
     # Load Alpaca API credentials from JSON file
     API_KEY, API_SECRET, BASE_URL = load_credentials(creds_file_path)

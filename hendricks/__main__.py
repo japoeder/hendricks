@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
-from dotenv import load_dotenv
-load_dotenv()
+import dotenv
+dotenv.load_dotenv()
 import sys
 import os
 # Add the parent directory to sys.path
@@ -10,11 +10,13 @@ from hendricks.load_ticker_data import DataLoader
 from hendricks.stream_ticker_data import DataStreamer
 from hendricks.load_historical_quote_alpacaAPI import load_historical_quote_alpacaAPI
 from hendricks.qc_historical_quote_alpacaAPI import run_qc
+from hendricks._utils.detect_os import detect_os
+from hendricks._utils.get_path import get_path
 import logging
 import pandas as pd
 import argparse
 import asyncio
-
+import json
 
 app = Flask(__name__)
 # Configure logging
@@ -35,16 +37,13 @@ logging.debug("This is a test log message.")
 def load_ticker():
     """Endpoint to load a new stock ticker into the database."""
     data = request.json
+    print(f"Received data: {data}")
     ticker_symbols = data.get("ticker_symbols")
-    if not ticker_symbol:
+    if not ticker_symbols:
         return jsonify({"error": "Ticker symbol is required"}), 400
 
     # Trigger background task to load ticker data
     # If file is provided, load from file, otherwise load from Alpaca API
-
-    ticker_symbol = data.get("ticker_symbol")
-    if ticker_symbol is None:
-        ticker_symbol = False
 
     file = data.get("file")
     if file is None:
@@ -73,7 +72,7 @@ def load_ticker():
                                      collection_name=collection_name,
                                      batch_size=batch_size)
     
-    load_ticker_data.load_data()
+    load_ticker_data.load_historical()
     return jsonify({"status": f"{ticker_symbols} dataframe loaded into {collection_name} collection."}), 202
 
 @app.route('/run_qc', methods=['POST'])
@@ -97,10 +96,22 @@ def stream_load():
         logging.debug(f"Received data: {data}")
         ticker_symbols = data.get("ticker_symbols")
         if not ticker_symbols:
-            return jsonify({"error": "Ticker symbols are required"}), 400
+            try:
+                # Detect OS and read job ctrl from appropriate .env var + /stream_load_ctrl.json
+                job_ctrl_path = get_path("job_ctrl")
+                with open(job_ctrl_path, 'r') as file:
+                    job_ctrl = json.load(file)
 
-        #TODO: modify to allow collection name to be passed in but default to streamPriceColl
-        # Need to update script that calls flask application to allow for this
+                # Get stream load from request
+                stream_ctrl = data.get("stream_load")
+
+                # Get ticker symbols from stream ctrl
+                ticker_symbols = job_ctrl.get(stream_ctrl)
+
+            except Exception as e:
+                return jsonify({"error": "Ticker symbols are required"}), 400
+
+        # Get collection name from request, default to streamPriceColl
         collection_name = data.get("collection_name", "streamPriceColl")
 
         data_loader = DataLoader(ticker_symbols=ticker_symbols, collection_name=collection_name)
@@ -113,6 +124,7 @@ def stream_load():
         return jsonify({"error": "An internal error occurred"}), 500
 
 if __name__ == "__main__":
+    dotenv.load_dotenv()
     app.run(debug=True, host="0.0.0.0", port=8001)
     # load_historical_quote_alpacaAPI(
     #     ticker_symbol='AAPL',

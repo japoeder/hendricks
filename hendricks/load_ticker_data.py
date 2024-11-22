@@ -14,6 +14,7 @@ import asyncio
 from hendricks.load_historical_quote_alpacaAPI import load_historical_quote_alpacaAPI
 from hendricks.load_historical_quote_df import load_historical_quote_df
 from hendricks.load_historical_quote_csv import load_historical_quote_csv
+from hendricks._utils.get_path import get_path
 from datetime import datetime, timezone
 
 class DataLoader:
@@ -36,7 +37,8 @@ class DataLoader:
         self.batch_size = int(batch_size)
         self.API_KEY = os.getenv("API_KEY")
         self.API_SECRET = os.getenv("API_SECRET")
-
+        self.creds_file_path = get_path("creds")
+        
     # Initialize Alpaca API client
     #alpaca_api = REST(API_KEY, API_SECRET, base_url='https://paper-api.alpaca.markets')
 
@@ -57,7 +59,8 @@ class DataLoader:
                 load_historical_quote_alpacaAPI(ticker_symbol=ticker_symbol,
                                                 collection_name=self.collection_name,
                                                 from_date=self.from_date,
-                                                to_date=self.to_date)
+                                                to_date=self.to_date,
+                                                creds_file_path=self.creds_file_path)
         else:
             # Process the file
             # TODO: Add data checking of input file against dates in database
@@ -76,8 +79,10 @@ class DataLoader:
 
         return None
     
-    def load_stream(self, data):
+    def load_stream(self, stream_list):
         """Process and store streaming data into MongoDB."""
+        data = stream_list[0]
+        print(f"Loading stream data: {data}")
         document = {
             "tickers": data.get("ticker"),
             "timestamp": data.get("timestamp"),
