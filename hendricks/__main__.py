@@ -7,6 +7,7 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from hendricks.load_ticker_data import DataLoader
+from hendricks.stream_ticker_data import DataStreamer
 from hendricks.load_historical_quote_alpacaAPI import load_historical_quote_alpacaAPI
 from hendricks.qc_historical_quote_alpacaAPI import run_qc
 import logging
@@ -34,7 +35,7 @@ logging.debug("This is a test log message.")
 def load_ticker():
     """Endpoint to load a new stock ticker into the database."""
     data = request.json
-    ticker_symbol = data.get("ticker_symbol")
+    ticker_symbols = data.get("ticker_symbols")
     if not ticker_symbol:
         return jsonify({"error": "Ticker symbol is required"}), 400
 
@@ -65,7 +66,7 @@ def load_ticker():
     if batch_size is None:
         batch_size = 7500
 
-    load_ticker_data = DataLoader(ticker_symbol=ticker_symbol,
+    load_ticker_data = DataLoader(ticker_symbols=ticker_symbols,
                                      file=file,
                                      from_date=from_date,
                                      to_date=to_date,
@@ -73,7 +74,7 @@ def load_ticker():
                                      batch_size=batch_size)
     
     load_ticker_data.load_data()
-    return jsonify({"status": f"{ticker_symbol} dataframe loaded into {collection_name} collection."}), 202
+    return jsonify({"status": f"{ticker_symbols} dataframe loaded into {collection_name} collection."}), 202
 
 @app.route('/run_qc', methods=['POST'])
 def run_quality_control():
@@ -98,12 +99,13 @@ def stream_load():
         if not ticker_symbols:
             return jsonify({"error": "Ticker symbols are required"}), 400
 
-        collection_name = data.get("collection_name", "rawPriceColl")
+        #TODO: modify to allow collection name to be passed in but default to streamPriceColl
+        # Need to update script that calls flask application to allow for this
+        collection_name = data.get("collection_name", "streamPriceColl")
 
-        for ticker_symbol in ticker_symbols:
-            logging.info(f"Starting stream for {ticker_symbol}")
-            data_loader = DataLoader(ticker_symbol=ticker_symbol, collection_name=collection_name)
-            data_loader.start_streaming()
+        data_loader = DataLoader(ticker_symbols=ticker_symbols, collection_name=collection_name)
+        data_streamer = DataStreamer(ticker_symbols=ticker_symbols, collection_name=collection_name)
+        data_streamer.start_streaming(data_loader)
 
         return jsonify({"status": f"Streaming started for tickers {ticker_symbols}."}), 202
     except Exception as e:

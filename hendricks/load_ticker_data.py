@@ -14,7 +14,7 @@ import asyncio
 from hendricks.load_historical_quote_alpacaAPI import load_historical_quote_alpacaAPI
 from hendricks.load_historical_quote_df import load_historical_quote_df
 from hendricks.load_historical_quote_csv import load_historical_quote_csv
-import logging
+from datetime import datetime, timezone
 
 class DataLoader:
     """
@@ -22,14 +22,14 @@ class DataLoader:
     """
     def __init__(self,
                  file: str = None,
-                 ticker_symbol: str = None,
+                 ticker_symbols: list = None,
                  from_date: str = None,
                  to_date: str = None,
                  collection_name: str = "rawPriceColl",
                  batch_size: int = 7500
                  ):
         self.file = file
-        self.ticker_symbol = ticker_symbol
+        self.ticker_symbols = ticker_symbols
         self.from_date = from_date
         self.to_date = to_date
         self.collection_name = collection_name
@@ -47,15 +47,17 @@ class DataLoader:
         else:
             return False
 
-    def load_data(self):
+    def load_historical(self):
         """Load ticker data into MongoDB."""
         if not self.file:
             print("No file provided, fetching data from Alpaca API.")
-            # Fetch data from Alpaca API
-            load_historical_quote_alpacaAPI(ticker_symbol=self.ticker_symbol,
-                                            collection_name=self.collection_name,
-                                            from_date=self.from_date,
-                                            to_date=self.to_date)
+            # Fetch data from Alpaca API for each ticker symbol
+            for ticker_symbol in self.ticker_symbols:
+                print(f"Fetching data for {ticker_symbol}")
+                load_historical_quote_alpacaAPI(ticker_symbol=ticker_symbol,
+                                                collection_name=self.collection_name,
+                                                from_date=self.from_date,
+                                                to_date=self.to_date)
         else:
             # Process the file
             # TODO: Add data checking of input file against dates in database
@@ -63,44 +65,29 @@ class DataLoader:
             if extension == 'pkl':
                 df = pd.read_pickle(self.file)
                 self.collection_name = str(self.collection_name)
-                load_historical_quote_df(df=df,
-                                         ticker_symbol=self.ticker_symbol,
-                                         collection_name=self.collection_name,
-                                         batch_size=self.batch_size)
+                for ticker_symbol in self.ticker_symbols:
+                    print(f"Loading data from file for {ticker_symbol}")
+                    load_historical_quote_df(df=df,
+                                            ticker_symbol=ticker_symbol,
+                                            collection_name=self.collection_name,
+                                            batch_size=self.batch_size)
             else:
                 raise ValueError("Unsupported file type")
 
         return None
-
-    async def stream_data(self):
-        uri = "wss://stream.data.alpaca.markets/v2/iex"  # Use the correct endpoint for your data feed
-        async with websockets.connect(uri) as websocket:
-            print(f"self.API_KEY: {self.API_KEY}")
-            print(f"self.API_SECRET: {self.API_SECRET}")
-            # Authenticate with Alpaca
-            await websocket.send(json.dumps({
-                "action": "auth",
-                "key": self.API_KEY,
-                "secret": self.API_SECRET
-            }))
-            response = await websocket.recv()
-            print("Authentication response:", response)  # Log authentication response
-
-            # Subscribe to the ticker
-            await websocket.send(json.dumps({
-                "action": "subscribe",
-                "trades": [self.ticker_symbol]
-            }))
-            response = await websocket.recv()
-            print("Subscription response:", response)  # Log subscription response
-
-            # Stream data
-            while True:
-                message = await websocket.recv()
-                data = json.loads(message)
-                print("Received data:", data)  # Log received data
-
-    def start_streaming(self):
-        # Use asyncio.run() in a Jupyter-friendly way
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(self.stream_data())
+    
+    def load_stream(self, data):
+        """Process and store streaming data into MongoDB."""
+        document = {
+            "tickers": data.get("ticker"),
+            "timestamp": data.get("timestamp"),
+            "open": data.get("open"),
+            "low": data.get("low"),
+            "high": data.get("high"),
+            "close": data.get("close"),
+            "volume": data.get("volume"),
+            "trade_count": data.get("trade_count", 0),  # Default to 0 if not present
+            "vwap": data.get("vwap", 0),  # Default to 0 if not present
+            "created_at": datetime.now(timezone.utc),  # Document creation time in UTC
+        }
+        self.collection_name.insert_one(document)

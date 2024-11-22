@@ -13,9 +13,11 @@ This is the core data loading service for the following:
 
 1. Restart the service if necessary with:
    * qt_restart_hl
-2. Sample request:
+2. Sample historical load request:
    * qt_hendricks_load -t AAPL -s "2024-11-01T00:00:00" -e "2024-11-15T23:59:00"
-   * Note that this calls a zsh alias that calls a shell script.  See the
+   * Note that this calls a zsh alias that calls a shell script.
+3. Sample strem load request:
+   1. qt_hendricks_stream
 
 ### Usage Details:
 

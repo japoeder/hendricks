@@ -18,24 +18,32 @@ use('stocksDB');
 // delete all documents from the collection
 //db.getCollection('rawPriceColl').deleteMany({});
 
-db('stocksDB').collection('rawPriceColl').aggregate([
-    {
-        $addFields: {
-            year: { $year: "$timestamp" }
-        }
-    },
-    {
-        $match: {
-            year: 2016
-        }
-    },
-    {
-        $sort: { "timestamp": 1 }
-    },
-    {
-        $skip: 154900
-    },
-    {
-        $limit: 100
-    }
-]).toArray()
+// db('stocksDB').collection('rawPriceColl').aggregate([
+//     {
+//         $addFields: {
+//             year: { $year: "$timestamp" }
+//         }
+//     },
+//     {
+//         $match: {
+//             year: 2016
+//         }
+//     },
+//     {
+//         $sort: { "timestamp": 1 }
+//     },
+//     {
+//         $skip: 154900
+//     },
+//     {
+//         $limit: 100
+//     }
+// ]).toArray()
+
+use('stocksDB')
+//db.getCollection('rawPriceColl').distinct('ticker')
+db.rawPriceColl.aggregate([
+    { $match: { ticker: 'AAPL' } }, // Filter documents where ticker is 'AAPL'
+    { $group: { _id: "$timestamp" } }, // Group by timestamp to get distinct values
+    { $project: { timestamp: "$_id", _id: 0 } } // Project the distinct timestamps
+])
