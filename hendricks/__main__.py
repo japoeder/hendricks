@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response
 import dotenv
 dotenv.load_dotenv()
 import sys
@@ -41,7 +41,19 @@ logging.getLogger().addHandler(console_handler)
 
 logging.debug("This is a test log message.")
 
+from functools import wraps
+
+def requires_api_key(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        api_key = request.headers.get('x-api-key')
+        if not api_key or api_key != os.getenv("HENDRICKS_API_KEY"):
+            return jsonify({"error": "Unauthorized"}), 401
+        return f(*args, **kwargs)
+    return decorated
+
 @app.route("/load_ticker", methods=["POST"])
+@requires_api_key
 def load_ticker():
     """Endpoint to load a new stock ticker into the database."""
     data = request.json
@@ -84,6 +96,7 @@ def load_ticker():
     return jsonify({"status": f"{ticker_symbols} dataframe loaded into {collection_name} collection."}), 202
 
 @app.route('/run_qc', methods=['POST'])
+@requires_api_key
 def run_quality_control():
     data = request.json
     ticker = data.get('ticker')
@@ -102,39 +115,39 @@ def run_quality_control():
     return jsonify({"message": f"QC task for {ticker} at {timestamp} has been completed"}), 200
 
 
-@app.route("/stream_load", methods=["POST"])
-def stream_load():
-    try:
-        data = request.json
-        logging.debug(f"Received data: {data}")
-        ticker_symbols = data.get("ticker_symbols")
-        if not ticker_symbols:
-            try:
-                # Detect OS and read job ctrl from appropriate .env var + /stream_load_ctrl.json
-                job_ctrl_path = get_path("job_ctrl")
-                with open(job_ctrl_path, 'r') as file:
-                    job_ctrl = json.load(file)
-
-                # Get stream load from request
-                stream_ctrl = data.get("stream_load")
-
-                # Get ticker symbols from stream ctrl
-                ticker_symbols = job_ctrl.get(stream_ctrl)
-
-            except Exception as e:
-                return jsonify({"error": "Ticker symbols are required"}), 400
-
-        # Get collection name from request, default to streamPriceColl
-        collection_name = data.get("collection_name", "streamPriceColl")
-
-        data_loader = DataLoader(ticker_symbols=ticker_symbols, collection_name=collection_name)
-        data_streamer = DataStreamer(ticker_symbols=ticker_symbols, collection_name=collection_name)
-        data_streamer.start_streaming(data_loader)
-
-        return jsonify({"status": f"Streaming started for tickers {ticker_symbols}."}), 202
-    except Exception as e:
-        logging.error(f"Error during stream load: {e}")
-        return jsonify({"error": "An internal error occurred"}), 500
+#@app.route("/stream_load", methods=["POST"])
+#def stream_load():
+#    try:
+#        data = request.json
+#        logging.debug(f"Received data: {data}")
+#        ticker_symbols = data.get("ticker_symbols")
+#        if not ticker_symbols:
+#            try:
+#                # Detect OS and read job ctrl from appropriate .env var + /stream_load_ctrl.json
+#                job_ctrl_path = get_path("job_ctrl")
+#                with open(job_ctrl_path, 'r') as file:
+#                    job_ctrl = json.load(file)
+#
+#                # Get stream load from request
+#                stream_ctrl = data.get("stream_load")
+#
+#                # Get ticker symbols from stream ctrl
+#                ticker_symbols = job_ctrl.get(stream_ctrl)
+#
+#            except Exception as e:
+#                return jsonify({"error": "Ticker symbols are required"}), 400
+#
+#        # Get collection name from request, default to streamPriceColl
+#        collection_name = data.get("collection_name", "streamPriceColl")
+#
+#        data_loader = DataLoader(ticker_symbols=ticker_symbols, collection_name=collection_name)
+#        data_streamer = DataStreamer(ticker_symbols=ticker_symbols, collection_name=collection_name)
+#        data_streamer.start_streaming(data_loader)
+#
+#        return jsonify({"status": f"Streaming started for tickers {ticker_symbols}."}), 202
+#    except Exception as e:
+#        logging.error(f"Error during stream load: {e}")
+#        return jsonify({"error": "An internal error occurred"}), 500
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=8001)
