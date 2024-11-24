@@ -3,7 +3,7 @@
 #TODO: test history loader shell script
 
 # Default values
-URL="http://192.168.1.10:8001/load_ticker"
+URL="https://poederhome.myvnc.com/load_ticker"
 FROM_DATE="2024-10-03T09:30:00-04:00"
 TO_DATE="2024-10-04T00:59:32-04:00"
 BATCH_SIZE=50000
@@ -60,5 +60,5 @@ TICKERS_JSON=$(echo $TICKERS | awk -v RS=, -v ORS=, '{print "\"" $0 "\""}' | sed
 # Execute the curl command
 curl -X POST $URL \
      -H "Content-Type: application/json" \
-     -H "Authorization: Bearer $QT_HENDRICKS_API_KEY" \
+     -H "x-api-key: $QT_HENDRICKS_API_KEY" \
      -d "{\"ticker_symbols\": [$TICKERS_JSON], \"from_date\":\"$FROM_DATE\", \"to_date\":\"$TO_DATE\", \"collection_name\":\"$COLLECTION_NAME\", \"batch_size\":$BATCH_SIZE}"
