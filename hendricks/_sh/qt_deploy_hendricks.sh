@@ -10,7 +10,15 @@ fi
 SERVICE_NAME="hendricks.service"
 
 # Pull the latest changes from the Git repository
-cd "$HENDRICKS_PATH" && git pull
+cd "$HENDRICKS_PATH"
+GIT_OUTPUT=$(git pull)
+
+# Check if the repository is already up to date
+if [[ "$GIT_OUTPUT" == *"Already up to date."* ]]; then
+  echo "Repository is already up to date."
+else
+  echo "Repository updated."
+fi
 
 # Copy scripts to the target directory
 cp "$HENDRICKS_PATH/hendricks/_sh/"* "$SCRIPTING_PATH/"
