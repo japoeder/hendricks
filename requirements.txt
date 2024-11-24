@@ -14,3 +14,5 @@ requests
 flask
 alpaca_trade_api
 pymongo
+ipython
+signal
