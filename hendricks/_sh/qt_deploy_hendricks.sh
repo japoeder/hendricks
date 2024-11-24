@@ -25,3 +25,5 @@ cp "$HENDRICKS_PATH/hendricks/_sh/"* "$SCRIPTING_PATH/"
 
 # Restart the service using the environment variable for the password
 echo "$DS_PWD" | sudo -S systemctl restart "$SERVICE_NAME"
+
+# end of script
