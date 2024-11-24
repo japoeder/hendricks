@@ -9,7 +9,9 @@ This is the core data loading service for the following:
 2. QC checks missing minutes over a specified window, and attempts to reload
 3. Stream load reads live data into the raw price collection
 
-### Running the service
+### Service details
+
+#### Hist Loader
 
 1. Restart the service if necessary with:
 
@@ -17,16 +19,8 @@ This is the core data loading service for the following:
 2. Sample historical load request
 
    * qt_hist_load -t "AAPL,GOOG" -s "2024-11-01T00:00:00Z" -e "2024-11-15T23:59:00Z"
-   * Note that this calls a zsh alias that executes a shell script.
 
-     * Need to make sure if running outside of the server that the qt_hist_load script has the ip / url for the mongo db.
-   * Remote SSL + API key requests
-
-     * url="https://poederhome.myvnc.com/load_ticker"
-     * Need to add api key to the request header
-3. Sample strem load request:
-
-   1. qt_hendricks_stream
+     * This is a zsh alias that executes a qt_hist_loader in _scripting (though run from scripting in root)
 
 ### Usage Details:
 
@@ -42,6 +36,20 @@ optional "parameters "arguments:
   -b    Batch size (default: 50000)
   -h    Show this help message
 ```
+
+#### Stream Loader
+
+1. Sample strem load request:
+   * qt_hendricks_stream
+2. asdf
+
+```
+simple stream: qt_hendricks_stream via the terminal
+
+optional "parameters "arguments:
+  -t    TBD
+```
+
 
 ## Python Packaging
 
