@@ -10,6 +10,12 @@ BATCH_SIZE=50000
 COLLECTION_NAME="rawPriceColl"
 TICKERS="AAPL"  # Default ticker
 
+# Check if API key is set
+if [ -z "$QT_HENDRICKS_API_KEY" ]; then
+    echo "Error: QT_HENDRICKS_API_KEY environment variable is not set."
+    exit 1
+fi
+
 # Help function
 function show_help {
     echo "Usage: $0 -t ticker_symbols [-f file] [-s from_date] [-e to_date] [-c collection_name] [-b batch_size] [-h]"
@@ -54,4 +60,5 @@ TICKERS_JSON=$(echo $TICKERS | awk -v RS=, -v ORS=, '{print "\"" $0 "\""}' | sed
 # Execute the curl command
 curl -X POST $URL \
      -H "Content-Type: application/json" \
+     -H "Authorization: Bearer $QT_HENDRICKS_API_KEY" \
      -d "{\"ticker_symbols\": [$TICKERS_JSON], \"from_date\":\"$FROM_DATE\", \"to_date\":\"$TO_DATE\", \"collection_name\":\"$COLLECTION_NAME\", \"batch_size\":$BATCH_SIZE}"

@@ -16,7 +16,7 @@ This is the core data loading service for the following:
    * qt_restart_hl
 2. Sample historical load request
 
-   * qt_hist_load -t "AAPL,GOOG" -s "2024-11-01T00:00:00" -e "2024-11-15T23:59:00"
+   * qt_hist_load -t "AAPL,GOOG" -s "2024-11-01T00:00:00Z" -e "2024-11-15T23:59:00Z"
    * Note that this calls a zsh alias that executes a shell script.
 
      * Need to make sure if running outside of the server that the qt_hist_load script has the ip / url for the mongo db.
