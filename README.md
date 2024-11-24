@@ -5,49 +5,66 @@
 This is the core data loading service for the following:
 
 1. Simple load that drops existing records in raw collection, and reloads data over the specified window
-   * May need to load year by year if you aren't sure how far back the data goes.
 2. QC checks missing minutes over a specified window, and attempts to reload
 3. Stream load reads live data into the raw price collection
 
 ### Service details
 
+1. Restart the service if necessary with:
+   * qt_restart_hl
+
 #### Hist Loader
 
-1. Restart the service if necessary with:
-
-   * qt_restart_hl
-2. Sample historical load request
+1. Sample historical load request
 
    * qt_hist_load -t "AAPL,GOOG" -s "2024-11-01T00:00:00Z" -e "2024-11-15T23:59:00Z"
 
      * This is a zsh alias that executes a qt_hist_loader in _scripting (though run from scripting in root)
+2. Tickers are required for a historical load
+
+   * These can be single or a quoted list as above
 
 ### Usage Details:
 
-```commandline
-simple load: qt_hendricks_load via the terminal
-  
-optional "parameters "arguments:
+```
+simple load: qt_hendricks_load via the terminaloptional "parameters "arguments:
   -t    Ticker symbol (required)
-  -f    File (optional)
-  -s    From date (default: 2024-10-03T09:30:00-04:00)
-  -e    To date (default: 2024-10-04T00:59:32-04:00)
+  -s    From date (default: 2024-10-03T09:30:00Z)
+  -e    To date (default: 2024-10-04T00:59:32Z)
   -c    Collection name (default: rawPriceColl)
   -b    Batch size (default: 50000)
   -h    Show this help message
 ```
 
-#### Stream Loader
+#### Quality control function
 
-1. Sample strem load request:
-   * qt_hendricks_stream
-2. asdf
+1. Sample qc request:
+   * qt_run_qc -t "GOOG, AAPL" -s "2024-11-20T00:00:00Z"
+2. No requirements for date or ticker.
+   * If no ticker or list of tickers is provided, then all tickers in raw data will be checked
+   * If no start period is provided all periods in the db are evaluated by ticker.
+3. If tickers / date provided in the run_qc() request but the data hasn't been loaded via load_ticker(), run_qc() will not load missing data.
 
 ```
-simple stream: qt_hendricks_stream via the terminal
-
+simple qc: qt_run_qc via the terminal
+  
 optional "parameters "arguments:
-  -t    TBD
+  -t    Ticker symbol
+  -s    From date (default: 2024-10-03T09:30:00Z)
+```
+
+## Stream Loader
+
+1. Sample stream load request:
+   * qt_hendricks_stream
+2. 
+
+```
+simple load: qt_stream_load via the terminal
+  
+optional "parameters "arguments:
+  -t    Ticker symbol (required)
+  -s    From date (default: 2024-10-03T09:30:00Z)
 ```
 
 
@@ -57,7 +74,7 @@ This code is packaged as a python module, with the structure outlined in the sec
 
 ### Project Layout
 
-* [pid_0001_collectability_model_v1](collectability_model): The parent or "root" folder containing all of these files. Can technically have any name.
+* [hendricks](collectability_model): root.
   * [README.md](README.md):
     The guide you're reading.
   * [`__init__.py`](lab1/__init__.py)
@@ -74,45 +91,25 @@ This code is packaged as a python module, with the structure outlined in the sec
     Black exception logic.
   * [`r`](lab1/__init__.py)eq.txt
     Required libraries for model.
-  * [collectability_model](.): This is the *module* in our *package*.
-    * [`html`](lab1/__init__.py)
-      Directory that holds html output
-    * [`t`](lab1/__init__.py)emplates
-      Directory that holds templates for base and enhanced model scenarios and tuning.
-    * [`u`](lab1/__init__.py)tilities
-      * [`m`](lab1/__init__.py)ake_json.py
-        Shell for a program to create a json payload if data comes in another format
-      * [`m`](lab1/__init__.py)l_utils.py
-        Cos similarity model
-      * open_html.py
-        Opens html output if requested
+  * [hendricks](.): This is the *module* in our *package*.
+
+    * _scripting
+      Directory that holds scripting files to execute POST requests via CLI
+    * _utils
+      Directory that holds various utilities the repo relies on
     * [`__init__.py`](lab1/__init__.py)
       Expose what functions, variables, classes, etc when scripts import this module.
     * [`__main__.py`](lab1/__main__.py)
       This file is the entrypoint to your program when ran as a program.
-    * `collectability_model.py`
-      Driver program for the module
-    * `build_report_template.py`
-      Customizes html template for score report
-    * `load_scenario.py`
-      Method to read in data
-    * `load_tuning.py`
-      Helper method to read in tuning parameters
-    * `proc_wams.py`
-      Create weights and measures used in methodology
-    * `score_report.py`
-      Generate the final score report using customized template
-    * `stage_i_scoring.py`
-      Stage I scoring to assess fraud
-    * `stage_ii_scoring.py`
-      Stage II scoring to get modeled collectability score
-    * `stage_iii_planning_calcs.py`
-      Run final calculations for payment / settlement planning
-    * [`t`](lab1/__init__.py)uning.json
-      Default tuning sensitivities for attribute weights
-    * `validate_input_files.py`
-      Validates the json inputs (raw data and tuning)
-    * `utilities/make_json.py`
-      Use to format raw data if not in json format
-    * `utilities/open_html.py`
-      Opens the system browser and displays report
+    * `load_historical_quote_alpacaAPI.py`
+      Logic for loading historical data into MongoDB from the Alpaca API.
+    * `load_historical_quote_csv.py`
+      Logic for loading historical data into MongoDB from csv files.
+    * `load_historical_quote_df.py`
+      Logic for loading historical data into MongoDB from a pickled dataframe.
+    * `load_ticker_data.py`
+      DataLoader class that calls and drives the individual methods above.
+    * `qc_historical_quote_alpacaAPI.py`
+      Logic for running QC of loaded data against the Alpaca API.
+    * `stream_ticker_data.py`
+      DataStreamer class that initiates the websocket stream and calls DataLoader for processing and ingestion.
