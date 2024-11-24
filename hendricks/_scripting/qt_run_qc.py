@@ -66,7 +66,7 @@ data = {
     "ticker": args.tickers.split(",")
     if args.tickers
     else None,  # Use None if no tickers are provided
-    "from_date": args.from_date,
+    "timestamp": args.from_date,
     "batch_size": args.batch_size,
 }
 
