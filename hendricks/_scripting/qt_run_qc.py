@@ -79,7 +79,7 @@ headers = {"Content-Type": "application/json", "x-api-key": QT_HENDRICKS_API_KEY
 # Send the POST request to the Flask server
 try:
     response = requests.post(
-        URL, json=data, headers=headers, timeout=10
+        URL, json=data, headers=headers, timeout=6000
     )  # 10 seconds timeout
     response.raise_for_status()  # Raise an error for bad responses (4xx or 5xx)
 
