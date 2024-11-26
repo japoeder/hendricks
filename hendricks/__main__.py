@@ -123,12 +123,12 @@ def run_quality_control():
     data = request.json
     tickers = data.get("tickers")
     from_date = data.get("from_date")
+    to_date = data.get("to_date")
 
     # If from_date isn't provided, set to False, and run QC on all timestamps
     if from_date is None:
         from_date = False
 
-    to_date = data.get("to_date")
     if to_date is None:
         to_date = False
 
