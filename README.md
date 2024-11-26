@@ -43,7 +43,8 @@ simple load: qt_hendricks_load via the terminaloptional "parameters "arguments:
 2. No requirements for date or ticker.
    * If no ticker or list of tickers is provided, then all tickers in raw data will be checked
    * If no start period is provided all periods in the db are evaluated by ticker.
-3. If tickers / date provided in the run_qc() request but the data hasn't been loaded via load_ticker(), run_qc() will not load missing data.
+3. If tickers / date provided in the run_qc() request but the data hasn't been loaded via load_ticker(), run_qc() will load missing data.
+   * Intuitively, loading historical data is a one and done exercise for a ticker's historical data.  New data should be captured via the stream_load method.  To
 
 ```
 simple qc: qt_run_qc via the terminal
@@ -66,7 +67,6 @@ optional "parameters "arguments:
   -t    Ticker symbol (required)
   -s    From date (default: 2024-10-03T09:30:00Z)
 ```
-
 
 ## Python Packaging
 

@@ -19,17 +19,11 @@ class DataStreamer:
         self,
         file: str = None,
         ticker_symbols: list = None,
-        from_date: str = None,
-        to_date: str = None,
         collection_name: str = "rawPriceColl",
-        batch_size: int = 7500,
     ):
         self.file = file
         self.ticker_symbols = ticker_symbols
-        self.from_date = from_date
-        self.to_date = to_date
         self.collection_name = collection_name
-        self.batch_size = int(batch_size)
         self.API_KEY = os.getenv("API_KEY")
         self.API_SECRET = os.getenv("API_SECRET")
 

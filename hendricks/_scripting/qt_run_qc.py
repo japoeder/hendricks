@@ -23,13 +23,16 @@ def show_help():
     """
     Show the help message.
     """
-    print("Usage: python qt_run_qc.py -t ticker_symbols [-s from_date] [-b batch_size]")
+    print(
+        "Usage: python qt_run_qc.py -t ticker_symbols [-s from_date] [-e to_date] [-b batch_size]"
+    )
     print()
     print("Options:")
     print(
         "  -t    Comma-separated list of ticker symbols (optional, if not provided, QC will run on all tickers)"
     )
     print("  -s    From date (default: {})".format(FROM_DATE))
+    print("  -e    To date (optional)")
     print("  -b    Batch size (default: {})".format(BATCH_SIZE))
     print("  -h    Show this help message")
 
@@ -53,11 +56,11 @@ parser.add_argument(
     help="From date (default: {})".format(FROM_DATE),
 )
 parser.add_argument(
-    "-b",
-    "--batch_size",
-    type=int,
-    default=BATCH_SIZE,
-    help="Batch size (default: {})".format(BATCH_SIZE),
+    "-e",
+    "--to_date",
+    type=str,
+    default=None,
+    help="To date (optional)",
 )
 args = parser.parse_args()
 
@@ -66,8 +69,8 @@ data = {
     "ticker": args.tickers.split(",")
     if args.tickers
     else None,  # Use None if no tickers are provided
-    "timestamp": args.from_date,
-    "batch_size": args.batch_size,
+    "from_date": args.from_date,
+    "to_date": args.to_date,
 }
 
 # Define the headers

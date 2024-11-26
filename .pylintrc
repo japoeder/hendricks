@@ -83,7 +83,8 @@ disable=
     missing-timeout,
     no-name-in-module,
     too-many-positional-arguments,
-    no-member
+    no-member,
+    too-many-boolean-expressions
 #    len-as-condition,
 #    too-few-public-methods,
 #    anomalous-backslash-in-string,

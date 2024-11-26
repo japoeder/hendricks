@@ -11,15 +11,14 @@ from functools import wraps
 import dotenv
 from flask import Flask, request, jsonify
 
-from hendricks.load_ticker_data import DataLoader
-from hendricks.stream_ticker_data import DataStreamer
-from hendricks.qc_historical_quote_alpacaAPI import run_qc
-from hendricks._utils.get_path import get_path
-
 dotenv.load_dotenv()
-
 # Add the parent directory to sys.path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from hendricks.load_ticker_data import DataLoader  # pylint: disable=C0413
+from hendricks.stream_ticker_data import DataStreamer  # pylint: disable=C0413
+from hendricks.qc_historical_quote_alpacaAPI import run_qc  # pylint: disable=C0413
+from hendricks._utils.get_path import get_path  # pylint: disable=C0413
 
 
 def handle_sigterm(*args):
@@ -123,20 +122,28 @@ def run_quality_control():
     """Endpoint to run quality control on a ticker at a given timestamp."""
     data = request.json
     ticker = data.get("ticker")
-    timestamp = data.get("timestamp")
+    from_date = data.get("from_date")
 
-    # If timestamp isn't provided, set to False, and run QC on all timestamps
-    if timestamp is None:
-        timestamp = False
+    # If from_date isn't provided, set to False, and run QC on all timestamps
+    if from_date is None:
+        from_date = False
+
+    to_date = data.get("to_date")
+    if to_date is None:
+        to_date = False
 
     # If ticker isn't provided, set to False, and run QC on all tickers
     if ticker is None:
         ticker = False
 
-    run_qc(ticker=ticker, timestamp=timestamp)
+    run_qc(ticker=ticker, from_date=from_date, to_date=to_date)
 
     return (
-        jsonify({"message": f"QC task for {ticker} at {timestamp} has been completed"}),
+        jsonify(
+            {
+                "message": f"QC task for {ticker} from {from_date} to {to_date} has been completed"
+            }
+        ),
         200,
     )
 
@@ -186,11 +193,3 @@ def stream_load():
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=8001)
-    # load_historical_quote_alpacaAPI(
-    #     ticker_symbol='AAPL',
-    #     collection_name='rawPriceColl',
-    #     from_date='2017-03-25T00:00',
-    #     to_date='2017-04-3T23:59',
-    #     batch_size=7500,
-    #     creds_file_path="/Users/jpoeder/pydev/quantum_trade/_cred/creds.json"
-    # )
