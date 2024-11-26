@@ -166,13 +166,13 @@ def run_qc(
                     new_document = {
                         "ticker": t,
                         "timestamp": current_time,
-                        "open": row["open"],
-                        "low": row["low"],
-                        "high": row["high"],
-                        "close": row["close"],
-                        "volume": row["volume"],
-                        "trade_count": row.get("trade_count", 0),
-                        "vwap": row.get("vwap", 0),
+                        "open": float(row["open"]),
+                        "low": float(row["low"]),
+                        "high": float(row["high"]),
+                        "close": float(row["close"]),
+                        "volume": float(row["volume"]),
+                        "trade_count": float(row.get("trade_count", 0)),
+                        "vwap": float(row.get("vwap", 0)),
                         "created_at": datetime.now(timezone.utc),
                     }
                     logging.info(f"{new_document}")
