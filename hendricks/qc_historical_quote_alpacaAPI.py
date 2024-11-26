@@ -19,7 +19,7 @@ logging.basicConfig(
 
 
 def run_qc(
-    ticker=None,
+    tickers=None,
     collection="rawPriceColl",
     backup_collection="rawPriceColl_bak",
     creds_file_path=None,
@@ -40,7 +40,7 @@ def run_qc(
     confirm_mongo_collect_exists(backup_collection)
 
     # Step 4: Iterate through each ticker and timestamp
-    tickers = [ticker] if ticker else db[collection].distinct("ticker")
+    tickers = tickers if tickers else db[collection].distinct("ticker")
     for t in tickers:
         logging.info(f"Running QC on {t}")
 

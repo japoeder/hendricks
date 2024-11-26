@@ -121,7 +121,7 @@ def load_ticker():
 def run_quality_control():
     """Endpoint to run quality control on a ticker at a given timestamp."""
     data = request.json
-    ticker = data.get("ticker")
+    tickers = data.get("tickers")
     from_date = data.get("from_date")
 
     # If from_date isn't provided, set to False, and run QC on all timestamps
@@ -133,15 +133,15 @@ def run_quality_control():
         to_date = False
 
     # If ticker isn't provided, set to False, and run QC on all tickers
-    if ticker is None:
-        ticker = False
+    if tickers is None:
+        tickers = False
 
-    run_qc(ticker=ticker, from_date=from_date, to_date=to_date)
+    run_qc(tickers=tickers, from_date=from_date, to_date=to_date)
 
     return (
         jsonify(
             {
-                "message": f"QC task for {ticker} from {from_date} to {to_date} has been completed"
+                "message": f"QC task for {tickers} from {from_date} to {to_date} has been completed"
             }
         ),
         200,
