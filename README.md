@@ -39,12 +39,18 @@ simple load: qt_hendricks_load via the terminaloptional "parameters "arguments:
 #### Quality control function
 
 1. Sample qc request:
-   * qt_run_qc -t "GOOG, AAPL" -s "2024-11-20T00:00:00Z"
+
+   * qt_run_qc -t "GOOG, AAPL" -s "2024-01-02T11:00:00Z -e "2024-11-20T11:10:00Z"
+   * Note these are UTC times that translate to 5 to 5:10am
 2. No requirements for date or ticker.
+
    * If no ticker or list of tickers is provided, then all tickers in raw data will be checked
    * If no start period is provided all periods in the db are evaluated by ticker.
+   * If only the start period is provided, it will run from start period to current period minus 1 minute.
 3. If tickers / date provided in the run_qc() request but the data hasn't been loaded via load_ticker(), run_qc() will load missing data.
-   * Intuitively, loading historical data is a one and done exercise for a ticker's historical data.  New data should be captured via the stream_load method.  To
+
+   * Intuitively, loading historical data is a one and done exercise for a ticker's historical data.  New data should be captured via the stream_load method.
+   * This ensures missing periods can be captured after the initial load is performed.
 
 ```
 simple qc: qt_run_qc via the terminal

@@ -175,6 +175,7 @@ def run_qc(
                         "vwap": row.get("vwap", 0),
                         "created_at": datetime.now(timezone.utc),
                     }
+                    logging.info(f"{new_document}")
                     try:
                         db[collection].insert_one(new_document)
                         logging.info(
