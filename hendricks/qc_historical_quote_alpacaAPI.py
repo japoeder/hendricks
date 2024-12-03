@@ -18,6 +18,9 @@ logging.basicConfig(
 )
 
 
+# TODO: Convert to batch processing
+
+
 def run_qc(
     tickers=None,
     collection="rawPriceColl",
