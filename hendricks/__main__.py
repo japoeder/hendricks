@@ -35,7 +35,7 @@ app = Flask(__name__)
 app_log_path = get_path("log")
 # Configure logging
 logging.basicConfig(
-    filename="/Users/jpoeder/pydev/quantum_trade/hendricks/hendricks/app.log",
+    filename=app_log_path,
     level=logging.DEBUG,
     format="%(asctime)s %(levelname)s %(name)s %(threadName)s : %(message)s",
 )
