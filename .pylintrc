@@ -84,7 +84,8 @@ disable=
     no-name-in-module,
     too-many-positional-arguments,
     no-member,
-    too-many-boolean-expressions
+    too-many-boolean-expressions,
+    wrong-import-position
 #    len-as-condition,
 #    too-few-public-methods,
 #    anomalous-backslash-in-string,
