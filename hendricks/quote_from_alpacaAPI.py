@@ -98,12 +98,12 @@ def quote_from_alpacaAPI(
             {"timestamp": row["timestamp"], "ticker": row["ticker"]}
         )
         if existing_doc:
+            # Remove the _id field to avoid duplicate key error
+            existing_doc.pop("_id", None)  # This removes the _id field if it exists
+
             # Backup the existing document
-            try:
-                existing_doc["archived_at"] = datetime.now(timezone.utc)
-                backup_collection.insert_one(existing_doc)
-            except:
-                pass
+            existing_doc["archived_at"] = datetime.now(timezone.utc)
+            backup_collection.insert_one(existing_doc)
 
             # Upsert logic
             collection.update_one(
