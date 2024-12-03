@@ -8,7 +8,7 @@ from hendricks._utils.mongo_conn import mongo_conn
 from hendricks._utils.mongo_coll_verification import confirm_mongo_collect_exists
 
 
-def load_stream_quote_alpacaAPI(
+def stream_from_alpacaAPI(
     stream_data,
     collection_name,
     creds_file_path,
