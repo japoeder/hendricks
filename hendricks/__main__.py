@@ -30,6 +30,9 @@ def handle_sigterm(*args):
 signal.signal(signal.SIGTERM, handle_sigterm)
 
 app = Flask(__name__)
+
+
+app_log_path = get_path("log")
 # Configure logging
 logging.basicConfig(
     filename="/Users/jpoeder/pydev/quantum_trade/hendricks/hendricks/app.log",
