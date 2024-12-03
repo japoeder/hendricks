@@ -18,11 +18,11 @@ class DataStreamer:
     def __init__(
         self,
         file: str = None,
-        ticker_symbols: list = None,
+        tickers: list = None,
         collection_name: str = "rawPriceColl",
     ):
         self.file = file
-        self.ticker_symbols = ticker_symbols
+        self.tickers = tickers
         self.collection_name = collection_name
         self.API_KEY = os.getenv("API_KEY")
         self.API_SECRET = os.getenv("API_SECRET")
@@ -47,11 +47,9 @@ class DataStreamer:
                     print("Authentication response:", response)
 
                     # Subscribe to the ticker
-                    print(f"Subscribing to {self.ticker_symbols}")
+                    print(f"Subscribing to {self.tickers}")
                     await websocket.send(
-                        json.dumps(
-                            {"action": "subscribe", "trades": self.ticker_symbols}
-                        )
+                        json.dumps({"action": "subscribe", "trades": self.tickers})
                     )
                     response = await websocket.recv()
                     print("Subscription response:", response)
@@ -93,10 +91,10 @@ class DataStreamer:
                 # Unsubscribe from the ticker
                 try:
                     async with websockets.connect(uri) as websocket:
-                        print(f"Unsubscribing from {self.ticker_symbols}")
+                        print(f"Unsubscribing from {self.tickers}")
                         await websocket.send(
                             json.dumps(
-                                {"action": "unsubscribe", "trades": self.ticker_symbols}
+                                {"action": "unsubscribe", "trades": self.tickers}
                             )
                         )
                         response = await websocket.recv()
