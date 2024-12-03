@@ -2,7 +2,6 @@
 Load historical quote data from Alpaca API into a MongoDB collection.
 """
 
-import os
 from datetime import datetime, timezone
 import pytz
 import pandas as pd
@@ -13,18 +12,23 @@ load_dotenv()
 from hendricks._utils.load_credentials import load_credentials
 from hendricks._utils.mongo_conn import mongo_conn
 from hendricks._utils.mongo_coll_verification import confirm_mongo_collect_exists
-from hendricks._utils.detect_os import detect_os
+from hendricks._utils.get_path import get_path
 
 
-def load_historical_quote_alpacaAPI(
-    ticker_symbol, collection_name, from_date, to_date, creds_file_path, batch_size=7500
+def quote_from_alpacaAPI(
+    tickers=None,
+    collection_name="rawPriceColl",
+    creds_file_path=None,
+    from_date=None,
+    to_date=None,
+    batch_size=7500,
 ):
     """
     Load historical quote data from Alpaca API into a MongoDB collection.
     """
 
-    detected_os = detect_os()
-    creds_file_path = os.getenv("APP_PATH_" + detected_os) + "/_cred/creds.json"
+    if creds_file_path is None:
+        creds_file_path = get_path("creds")
 
     # Load Alpaca API credentials from JSON file
     API_KEY, API_SECRET, BASE_URL = load_credentials(creds_file_path)
@@ -55,7 +59,7 @@ def load_historical_quote_alpacaAPI(
     # Fetch the data for the entire date range
     try:
         barset = api.get_bars(
-            ticker_symbol, "1Min", start=from_date.isoformat(), end=to_date.isoformat()
+            tickers, "1Min", start=from_date.isoformat(), end=to_date.isoformat()
         ).df
     except Exception as e:
         print(f"Error fetching data from Alpaca API: {e}")
@@ -64,7 +68,9 @@ def load_historical_quote_alpacaAPI(
     # Prepare the DataFrame
     barset.reset_index(inplace=True)
     barset.columns = barset.columns.str.lower()
-    barset["ticker"] = ticker_symbol
+
+    # Rename barset 'symbol' to 'ticker'
+    barset.rename(columns={"symbol": "ticker"}, inplace=True)
 
     # Prepare documents for batch insert
     documents = []
