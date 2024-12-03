@@ -55,6 +55,9 @@ def quote_from_alpacaAPI(
 
     # Create a compound index on 'timestamp' and 'ticker'
     collection.create_index([("timestamp", 1), ("ticker", 1)], unique=True)
+    backup_collection.create_index(
+        [("timestamp", 1), ("ticker", 1), ("created_at", 1)], unique=True
+    )
 
     # Fetch the data for the entire date range
     try:
