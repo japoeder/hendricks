@@ -17,7 +17,6 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from hendricks.load_ticker_data import DataLoader  # pylint: disable=C0413
 from hendricks.stream_ticker_data import DataStreamer  # pylint: disable=C0413
-from hendricks.qc_historical_quote_alpacaAPI import run_qc  # pylint: disable=C0413
 from hendricks._utils.get_path import get_path  # pylint: disable=C0413
 
 
@@ -33,7 +32,7 @@ signal.signal(signal.SIGTERM, handle_sigterm)
 app = Flask(__name__)
 # Configure logging
 logging.basicConfig(
-    filename="/Users/jpoeder/dataservices/Documents/pydev/quantum_trade/hendricks/hendricks/app.log",
+    filename="/Users/jpoeder/pydev/quantum_trade/hendricks/hendricks/app.log",
     level=logging.DEBUG,
     format="%(asctime)s %(levelname)s %(name)s %(threadName)s : %(message)s",
 )
@@ -63,14 +62,14 @@ def requires_api_key(f):
     return decorated
 
 
-@app.route("/load_ticker", methods=["POST"])
+@app.route("/load_tickers", methods=["POST"])
 @requires_api_key
-def load_ticker():
+def load_tickers():
     """Endpoint to load a new stock ticker into the database."""
     data = request.json
     print(f"Received data: {data}")
-    ticker_symbols = data.get("ticker_symbols")
-    if not ticker_symbols:
+    tickers = data.get("tickers")
+    if not tickers:
         return jsonify({"error": "Ticker symbol is required"}), 400
 
     # Trigger background task to load ticker data
@@ -96,8 +95,8 @@ def load_ticker():
     if batch_size is None:
         batch_size = 7500
 
-    load_ticker_data = DataLoader(
-        ticker_symbols=ticker_symbols,
+    loader = DataLoader(
+        tickers=tickers,
         file=file,
         from_date=from_date,
         to_date=to_date,
@@ -105,46 +104,12 @@ def load_ticker():
         batch_size=batch_size,
     )
 
-    load_ticker_data.load_historical()
+    loader.load_ticker_data()
     return (
         jsonify(
-            {
-                "status": f"{ticker_symbols} dataframe loaded into {collection_name} collection."
-            }
+            {"status": f"{tickers} dataframe loaded into {collection_name} collection."}
         ),
         202,
-    )
-
-
-@app.route("/run_qc", methods=["POST"])
-@requires_api_key
-def run_quality_control():
-    """Endpoint to run quality control on a ticker at a given timestamp."""
-    data = request.json
-    tickers = data.get("tickers")
-    from_date = data.get("from_date")
-    to_date = data.get("to_date")
-
-    # If from_date isn't provided, set to False, and run QC on all timestamps
-    if from_date is None:
-        from_date = False
-
-    if to_date is None:
-        to_date = False
-
-    # If ticker isn't provided, set to False, and run QC on all tickers
-    if tickers is None:
-        tickers = False
-
-    run_qc(tickers=tickers, from_date=from_date, to_date=to_date)
-
-    return (
-        jsonify(
-            {
-                "message": f"QC task for {tickers} from {from_date} to {to_date} has been completed"
-            }
-        ),
-        200,
     )
 
 
@@ -154,8 +119,8 @@ def stream_load():
     try:
         data = request.json
         logging.debug(f"Received data: {data}")
-        ticker_symbols = data.get("ticker_symbols")
-        if not ticker_symbols:
+        tickers = data.get("tickers")
+        if not tickers:
             try:
                 # Detect OS and read job ctrl from appropriate .env var + /stream_load_ctrl.json
                 job_ctrl_path = get_path("job_ctrl")
@@ -166,7 +131,7 @@ def stream_load():
                 stream_ctrl = data.get("stream_load")
 
                 # Get ticker symbols from stream ctrl
-                ticker_symbols = job_ctrl.get(stream_ctrl)
+                tickers = job_ctrl.get(stream_ctrl)
 
             except Exception:
                 return jsonify({"error": "Ticker symbols are required "}), 400
@@ -174,16 +139,12 @@ def stream_load():
         # Get collection name from request, default to streamPriceColl
         collection_name = data.get("collection_name", "streamPriceColl")
 
-        data_loader = DataLoader(
-            ticker_symbols=ticker_symbols, collection_name=collection_name
-        )
-        data_streamer = DataStreamer(
-            ticker_symbols=ticker_symbols, collection_name=collection_name
-        )
+        data_loader = DataLoader(tickers=tickers, collection_name=collection_name)
+        data_streamer = DataStreamer(tickers=tickers, collection_name=collection_name)
         data_streamer.start_streaming(data_loader)
 
         return (
-            jsonify({"status": f"Streaming started for tickers {ticker_symbols}."}),
+            jsonify({"status": f"Streaming started for tickers {tickers}."}),
             202,
         )
     except Exception as e:

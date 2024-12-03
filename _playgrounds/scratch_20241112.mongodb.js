@@ -42,8 +42,12 @@ use('stocksDB');
 
 use('stocksDB')
 //db.getCollection('rawPriceColl').distinct('ticker')
-db.rawPriceColl.aggregate([
-    { $match: { ticker: 'AAPL' } }, // Filter documents where ticker is 'AAPL'
-    { $group: { _id: "$timestamp" } }, // Group by timestamp to get distinct values
-    { $project: { timestamp: "$_id", _id: 0 } } // Project the distinct timestamps
-])
+// db.rawPriceColl.aggregate([
+//     { $match: { ticker: 'AAPL' } }, // Filter documents where ticker is 'AAPL'
+//     { $group: { _id: "$timestamp" } }, // Group by timestamp to get distinct values
+//     { $project: { timestamp: "$_id", _id: 0 } } // Project the distinct timestamps
+// ])
+
+db.getCollection('rawPriceColl').deleteMany({
+    ticker: { $in: ["CRWD", "PANW", "AAPL", "MSFT"] }
+});
