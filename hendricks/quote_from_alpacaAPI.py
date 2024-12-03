@@ -99,8 +99,11 @@ def quote_from_alpacaAPI(
         )
         if existing_doc:
             # Backup the existing document
-            existing_doc["archived_at"] = datetime.now(timezone.utc)
-            backup_collection.insert_one(existing_doc)
+            try:
+                existing_doc["archived_at"] = datetime.now(timezone.utc)
+                backup_collection.insert_one(existing_doc)
+            except:
+                pass
 
             # Upsert logic
             collection.update_one(
