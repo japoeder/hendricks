@@ -21,7 +21,7 @@ def quote_from_alpacaAPI(
     creds_file_path=None,
     from_date=None,
     to_date=None,
-    batch_size=7500,
+    batch_size=75000,
 ):
     """
     Load historical quote data from Alpaca API into a MongoDB collection.

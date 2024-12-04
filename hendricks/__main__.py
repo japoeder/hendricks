@@ -8,6 +8,7 @@ import logging
 import json
 import signal
 from functools import wraps
+from logging.handlers import RotatingFileHandler
 import dotenv
 from flask import Flask, request, jsonify
 
@@ -33,12 +34,20 @@ app = Flask(__name__)
 
 
 app_log_path = get_path("log")
-# Configure logging
-logging.basicConfig(
-    filename=app_log_path,
-    level=logging.DEBUG,
-    format="%(asctime)s %(levelname)s %(name)s %(threadName)s : %(message)s",
+
+# Configure logging with RotatingFileHandler
+handler = RotatingFileHandler(
+    app_log_path, maxBytes=5 * 1024 * 1024, backupCount=5
+)  # 5 MB max size, keep 5 backups
+handler.setLevel(logging.DEBUG)
+formatter = logging.Formatter(
+    "%(asctime)s %(levelname)s %(name)s %(threadName)s : %(message)s"
 )
+handler.setFormatter(formatter)
+
+# Add the handler to the root logger
+logging.getLogger().addHandler(handler)
+logging.getLogger().setLevel(logging.DEBUG)
 
 # Add console handler for logging
 console_handler = logging.StreamHandler()
