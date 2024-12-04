@@ -165,3 +165,4 @@ _scratch/
 _data/
 .env
 .venv/
+app.lo*
