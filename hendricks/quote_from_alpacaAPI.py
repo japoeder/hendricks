@@ -93,7 +93,19 @@ def quote_from_alpacaAPI(
             {"timestamp": row["timestamp"], "ticker": row["ticker"]}
         )
         if existing_doc:
-            # Upsert logic
+            # Compare fields except for 'created_at'
+            if (
+                existing_doc["open"] == document["open"]
+                and existing_doc["low"] == document["low"]
+                and existing_doc["high"] == document["high"]
+                and existing_doc["close"] == document["close"]
+                and existing_doc["volume"] == document["volume"]
+                and existing_doc["trade_count"] == document["trade_count"]
+                and existing_doc["vwap"] == document["vwap"]
+            ):
+                # Fields are the same, do nothing
+                continue
+            # Upsert logic if fields are different
             collection.update_one(
                 {"timestamp": row["timestamp"], "ticker": row["ticker"]},  # Query
                 {"$set": document},  # Update
