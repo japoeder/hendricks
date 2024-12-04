@@ -3,6 +3,7 @@ Load historical quote data from Alpaca API into a MongoDB collection.
 """
 
 from datetime import datetime, timezone
+import logging
 import pytz
 import pandas as pd
 from dotenv import load_dotenv
@@ -13,6 +14,12 @@ from hendricks._utils.load_credentials import load_credentials
 from hendricks._utils.mongo_conn import mongo_conn
 from hendricks._utils.mongo_coll_verification import confirm_mongo_collect_exists
 from hendricks._utils.get_path import get_path
+
+
+# Set up logging
+logging.basicConfig(level=logging.WARNING)  # Set to WARNING to suppress DEBUG messages
+logger = logging.getLogger("pymongo")
+logger.setLevel(logging.WARNING)  # Suppress pymongo debug messages
 
 
 def quote_from_alpacaAPI(
@@ -109,8 +116,12 @@ def quote_from_alpacaAPI(
                     {"$set": document},  # Update
                     upsert=True,  # Upsert option
                 )
+                logger.info(
+                    f"Upserted document for {row['ticker']} at {row['timestamp']}"
+                )
         else:
             # Insert the document directly
             collection.insert_one(document)
+            logger.info(f"Inserted document for {row['ticker']} at {row['timestamp']}")
 
     print("Data imported successfully!")
