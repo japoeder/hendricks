@@ -71,9 +71,6 @@ def quote_from_alpacaAPI(
     # Rename barset 'symbol' to 'ticker'
     barset.rename(columns={"symbol": "ticker"}, inplace=True)
 
-    # Prepare documents for batch insert
-    documents = []
-
     for _, row in barset.iterrows():
         document = {
             "ticker": row["ticker"],
@@ -113,15 +110,7 @@ def quote_from_alpacaAPI(
                     upsert=True,  # Upsert option
                 )
         else:
-            documents.append(document)
-
-            # Insert in batches
-            if len(documents) >= batch_size:
-                collection.insert_many(documents)
-                documents = []
-
-    # Insert any remaining documents
-    if documents:
-        collection.insert_many(documents)
+            # Insert the document directly
+            collection.insert_one(document)
 
     print("Data imported successfully!")
