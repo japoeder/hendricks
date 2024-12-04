@@ -51,14 +51,9 @@ def quote_from_alpacaAPI(
 
     # Get the collection
     collection = db[collection_name]
-    backup_collection = db[f"{collection_name}_bak"]
 
     # Create a compound index on 'timestamp' and 'ticker'
     collection.create_index([("timestamp", 1), ("ticker", 1)], unique=True)
-    backup_collection.create_index(
-        [("timestamp", 1), ("ticker", 1), ("created_at", 1), ("archived_at", 1)],
-        unique=True,
-    )
 
     # Fetch the data for the entire date range
     try:
@@ -98,13 +93,6 @@ def quote_from_alpacaAPI(
             {"timestamp": row["timestamp"], "ticker": row["ticker"]}
         )
         if existing_doc:
-            # Remove the _id field to avoid duplicate key error
-            # existing_doc.pop("_id", None)  # This removes the _id field if it exists
-
-            # Backup the existing document
-            # existing_doc["archived_at"] = datetime.now(timezone.utc)
-            # backup_collection.insert_one(existing_doc)
-
             # Upsert logic
             collection.update_one(
                 {"timestamp": row["timestamp"], "ticker": row["ticker"]},  # Query
