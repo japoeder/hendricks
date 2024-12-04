@@ -105,12 +105,13 @@ def quote_from_alpacaAPI(
             ):
                 # Fields are the same, do nothing
                 continue
-            # Upsert logic if fields are different
-            collection.update_one(
-                {"timestamp": row["timestamp"], "ticker": row["ticker"]},  # Query
-                {"$set": document},  # Update
-                upsert=True,  # Upsert option
-            )
+            else:  # pylint: disable=no-else-return
+                # Upsert logic if fields are different
+                collection.update_one(
+                    {"timestamp": row["timestamp"], "ticker": row["ticker"]},  # Query
+                    {"$set": document},  # Update
+                    upsert=True,  # Upsert option
+                )
         else:
             documents.append(document)
 
