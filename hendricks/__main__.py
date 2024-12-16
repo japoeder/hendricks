@@ -17,6 +17,7 @@ dotenv.load_dotenv()
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from hendricks.load_ticker_data import DataLoader  # pylint: disable=C0413
+from hendricks.load_news_data import NewsLoader  # pylint: disable=C0413
 from hendricks.stream_ticker_data import DataStreamer  # pylint: disable=C0413
 from hendricks._utils.get_path import get_path  # pylint: disable=C0413
 
@@ -120,6 +121,44 @@ def load_tickers():
     return (
         jsonify(
             {"status": f"{tickers} dataframe loaded into {collection_name} collection."}
+        ),
+        202,
+    )
+
+
+@app.route("/load_news", methods=["POST"])
+@requires_api_key
+def load_news():
+    """Endpoint to load news articles into the database."""
+    data = request.json
+    print(f"Received data: {data}")
+    tickers = data.get("tickers")
+    if not tickers:
+        return jsonify({"error": "Ticker symbol is required"}), 400
+
+    from_date = data.get("from_date")
+    to_date = data.get("to_date")
+    collection_name = data.get("collection_name")
+    if collection_name is None:
+        collection_name = "rawNewsColl"
+    batch_size = data.get("batch_size")
+    source = data.get("source")
+    articles_limit = data.get("articles_limit")
+
+    loader = NewsLoader(
+        tickers=tickers,
+        from_date=from_date,
+        to_date=to_date,
+        collection_name=collection_name,
+        batch_size=batch_size,
+        source=source,
+        articles_limit=articles_limit,
+    )
+
+    loader.load_news_data()
+    return (
+        jsonify(
+            {"status": f"{tickers} news loaded into {collection_name} collection."}
         ),
         202,
     )
