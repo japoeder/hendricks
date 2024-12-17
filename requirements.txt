@@ -17,7 +17,6 @@ ipython
 ipykernel
 ipywidgets
 ipympl
-signal
 pytz
 alpaca-py
 debugpy
@@ -27,3 +26,8 @@ torchvision
 torchaudio
 websockets
 gunicorn
+easygui
+bs4
+selenium
+tweepy
+requests
