@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 from alpaca_trade_api import REST
 
 load_dotenv()
-from hendricks._utils.load_credentials import load_credentials
+from hendricks._utils.load_credentials import load_alpaca_credentials
 from hendricks._utils.mongo_conn import mongo_conn
 from hendricks._utils.mongo_coll_verification import confirm_mongo_collect_exists
 from hendricks._utils.get_path import get_path
@@ -38,7 +38,9 @@ def quote_from_alpacaAPI(
         creds_file_path = get_path("creds")
 
     # Load Alpaca API credentials from JSON file
-    API_KEY, API_SECRET, BASE_URL = load_credentials(creds_file_path)
+    API_KEY, API_SECRET, BASE_URL = load_alpaca_credentials(
+        creds_file_path, "paper_trade"
+    )
 
     # Initialize the Alpaca API
     api = REST(API_KEY, API_SECRET, BASE_URL, api_version="v2")

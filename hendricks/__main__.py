@@ -142,26 +142,30 @@ def load_news():
     if collection_name is None:
         collection_name = "rawNewsColl"
     batch_size = data.get("batch_size")
-    source = data.get("source")
+    sources = data.get("sources")
     articles_limit = data.get("articles_limit")
 
-    loader = NewsLoader(
-        tickers=tickers,
-        from_date=from_date,
-        to_date=to_date,
-        collection_name=collection_name,
-        batch_size=batch_size,
-        source=source,
-        articles_limit=articles_limit,
-    )
+    if not sources:
+        return jsonify({"error": "Source are required"}), 400
 
-    loader.load_news_data()
-    return (
-        jsonify(
-            {"status": f"{tickers} news loaded into {collection_name} collection."}
-        ),
-        202,
-    )
+    for source in sources:
+        loader = NewsLoader(
+            tickers=tickers,
+            from_date=from_date,
+            to_date=to_date,
+            collection_name=collection_name,
+            batch_size=batch_size,
+            source=source,
+            articles_limit=articles_limit,
+        )
+
+        loader.load_news_data()
+        return (
+            jsonify(
+                {"status": f"{tickers} news loaded into {collection_name} collection."}
+            ),
+            202,
+        )
 
 
 @app.route("/stream_load", methods=["POST"])

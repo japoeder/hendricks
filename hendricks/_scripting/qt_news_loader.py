@@ -4,7 +4,6 @@ Load historical ticker data into MongoDB.
 
 import argparse
 import os
-import json
 import requests
 
 # Default values
@@ -16,7 +15,7 @@ BATCH_SIZE = 50000
 COLLECTION_NAME = "rawNewsColl"
 TICKERS = "AAPL"  # Default ticker
 ARTICLES_LIMIT = 50
-NEWS_SOURCE = "alpaca"
+NEWS_SOURCES = "alpaca"
 
 # Check if API key is set
 QT_HENDRICKS_API_KEY = os.getenv("QT_HENDRICKS_API_KEY")
@@ -41,7 +40,7 @@ def show_help():
     print("  -c    Collection name (default: {})".format(COLLECTION_NAME))
     print("  -b    Batch size (default: {})".format(BATCH_SIZE))
     print("  -a    Articles limit (default: {})".format(ARTICLES_LIMIT))
-    print("  -n    Source (default: {})".format(NEWS_SOURCE))
+    print("  -n    Source (default: {})".format(NEWS_SOURCES))
     print("  -h    Show this help message")
 
 
@@ -91,10 +90,10 @@ parser.add_argument(
 )
 parser.add_argument(
     "-n",
-    "--news_source",
+    "--news_sources",
     type=str,
-    default=NEWS_SOURCE,
-    help="News source (default: {})".format(NEWS_SOURCE),
+    default=NEWS_SOURCES,
+    help="News source list (default: {})".format(NEWS_SOURCES),
 )
 args = parser.parse_args()
 
@@ -104,9 +103,15 @@ if not args.tickers:
     show_help()
     exit(1)
 
-# Convert comma-separated tickers to JSON array format
+# Check if ticker symbols are provided
+if not args.news_sources:
+    print("Error: Source is required")
+    show_help()
+    exit(1)
+
+# Convert comma-separated ticker and source strings to lists
 tickers_list = args.tickers.split(",")
-tickers_json = json.dumps(tickers_list)
+sources_list = args.news_sources.split(",")
 
 # Prepare the data payload
 data = {
@@ -116,7 +121,7 @@ data = {
     "collection_name": args.collection_name,
     "batch_size": args.batch_size,
     "articles_limit": args.articles_limit,
-    "source": args.news_source,
+    "sources": sources_list,
 }
 
 # Define the headers

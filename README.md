@@ -55,10 +55,9 @@ optional "parameters "arguments:
 ## News Loader
 
 1. Sample alpaca news load request:
-    - qt_alpaca_news_load -t "TSLA" -s "2024-11-01T00:00:00Z" -e "2024-11-15T23:59:00Z" -a 10
-    - 
 
-
+   - qt_news_load -t "TSLA" -s "2024-11-01T00:00:00Z" -e "2024-11-15T23:59:00Z" -a 10
+   - 
 
 ## Python Packaging
 
