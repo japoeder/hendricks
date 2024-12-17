@@ -59,8 +59,6 @@ formatter = logging.Formatter(
 console_handler.setFormatter(formatter)
 logging.getLogger().addHandler(console_handler)
 
-logging.debug("This is a test log message.")
-
 
 def requires_api_key(f):
     """Decorator to require an API key for a route."""
