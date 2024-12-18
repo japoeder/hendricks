@@ -31,3 +31,5 @@ bs4
 selenium
 tweepy
 requests
+zenrows
+proxies
