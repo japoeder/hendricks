@@ -14,7 +14,7 @@ TO_DATE = "2024-10-04T00:59:32-04:00"
 BATCH_SIZE = 50000
 COLLECTION_NAME = "rawNewsColl"
 TICKERS = "AAPL"  # Default ticker
-ARTICLES_LIMIT = 50
+ARTICLES_LIMIT = 5000
 NEWS_SOURCES = "alpaca"
 
 # Check if API key is set
@@ -38,9 +38,8 @@ def show_help():
     print("  -s    From date (default: {})".format(FROM_DATE))
     print("  -e    To date (default: {})".format(TO_DATE))
     print("  -c    Collection name (default: {})".format(COLLECTION_NAME))
-    print("  -b    Batch size (default: {})".format(BATCH_SIZE))
     print("  -a    Articles limit (default: {})".format(ARTICLES_LIMIT))
-    print("  -n    Source (default: {})".format(NEWS_SOURCES))
+    print("  -o    Source (default: {})".format(NEWS_SOURCES))
     print("  -h    Show this help message")
 
 
@@ -75,13 +74,6 @@ parser.add_argument(
     help="Collection name (default: {})".format(COLLECTION_NAME),
 )
 parser.add_argument(
-    "-b",
-    "--batch_size",
-    type=int,
-    default=BATCH_SIZE,
-    help="Batch size (default: {})".format(BATCH_SIZE),
-)
-parser.add_argument(
     "-a",
     "--articles_limit",
     type=int,
@@ -89,7 +81,7 @@ parser.add_argument(
     help="Articles limit (default: {})".format(ARTICLES_LIMIT),
 )
 parser.add_argument(
-    "-n",
+    "-o",
     "--news_sources",
     type=str,
     default=NEWS_SOURCES,

@@ -10,11 +10,11 @@ from dotenv import load_dotenv
 from alpaca_trade_api import REST
 
 load_dotenv()
-from hendricks._utils.load_credentials import load_alpaca_credentials
+from hendricks._utils.load_credentials import load_credentials
 from hendricks._utils.mongo_conn import mongo_conn
 from hendricks._utils.mongo_coll_verification import confirm_mongo_collect_exists
 from hendricks._utils.get_path import get_path
-
+from hendricks._utils.exceptions import APIError
 
 # Set up logging
 logging.basicConfig(level=logging.WARNING)  # Set to WARNING to suppress DEBUG messages
@@ -28,7 +28,7 @@ def quote_from_alpacaAPI(
     creds_file_path=None,
     from_date=None,
     to_date=None,
-    batch_size=75000,
+    minute_adjustment=True,
 ):
     """
     Load historical quote data from Alpaca API into a MongoDB collection.
@@ -38,8 +38,8 @@ def quote_from_alpacaAPI(
         creds_file_path = get_path("creds")
 
     # Load Alpaca API credentials from JSON file
-    API_KEY, API_SECRET, BASE_URL = load_alpaca_credentials(
-        creds_file_path, "paper_trade"
+    API_KEY, API_SECRET, BASE_URL = load_credentials(
+        creds_file_path, "alpaca_paper_trade"
     )
 
     # Initialize the Alpaca API
@@ -70,8 +70,7 @@ def quote_from_alpacaAPI(
             tickers, "1Min", start=from_date.isoformat(), end=to_date.isoformat()
         ).df
     except Exception as e:
-        print(f"Error fetching data from Alpaca API: {e}")
-        return
+        raise APIError(f"Error fetching data from Alpaca API: {e}")
 
     # Prepare the DataFrame
     barset.reset_index(inplace=True)
@@ -79,6 +78,10 @@ def quote_from_alpacaAPI(
 
     # Rename barset 'symbol' to 'ticker'
     barset.rename(columns={"symbol": "ticker"}, inplace=True)
+
+    if minute_adjustment:
+        # Subtract 1 minute from the timestamp
+        barset["timestamp"] = barset["timestamp"] - pd.Timedelta(minutes=1)
 
     for _, row in barset.iterrows():
         document = {
@@ -89,8 +92,7 @@ def quote_from_alpacaAPI(
             "high": row["high"],
             "close": row["close"],
             "volume": row["volume"],
-            "trade_count": row.get("trade_count", 0),  # Default to 0 if not present
-            "vwap": row.get("vwap", 0),  # Default to 0 if not present
+            "source": "alpaca",
             "created_at": datetime.now(timezone.utc),  # Document creation time in UTC
         }
 
@@ -99,28 +101,7 @@ def quote_from_alpacaAPI(
             {"timestamp": row["timestamp"], "ticker": row["ticker"]}
         )
         if existing_doc:
-            # Compare fields except for 'created_at'
-            if (
-                existing_doc["open"] == document["open"]
-                and existing_doc["low"] == document["low"]
-                and existing_doc["high"] == document["high"]
-                and existing_doc["close"] == document["close"]
-                and existing_doc["volume"] == document["volume"]
-                and existing_doc["trade_count"] == document["trade_count"]
-                and existing_doc["vwap"] == document["vwap"]
-            ):
-                # Fields are the same, do nothing
-                continue
-            else:  # pylint: disable=no-else-return
-                # Upsert logic if fields are different
-                collection.update_one(
-                    {"timestamp": row["timestamp"], "ticker": row["ticker"]},  # Query
-                    {"$set": document},  # Update
-                    upsert=True,  # Upsert option
-                )
-                logger.info(
-                    f"Upserted document for {row['ticker']} at {row['timestamp']}"
-                )
+            continue
         else:
             # Insert the document directly
             collection.insert_one(document)

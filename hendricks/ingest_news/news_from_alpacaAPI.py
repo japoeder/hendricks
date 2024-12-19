@@ -11,7 +11,7 @@ from alpaca.data.historical import NewsClient
 from alpaca.data.requests import NewsRequest
 
 load_dotenv()
-from hendricks._utils.load_credentials import load_alpaca_credentials
+from hendricks._utils.load_credentials import load_credentials
 from hendricks._utils.mongo_conn import mongo_conn
 from hendricks._utils.mongo_coll_verification import confirm_mongo_collect_exists
 from hendricks._utils.get_path import get_path
@@ -41,7 +41,7 @@ def news_from_alpacaAPI(
         creds_file_path = get_path("creds")
 
     # Load Alpaca API credentials from JSON file
-    API_KEY, API_SECRET = load_alpaca_credentials(creds_file_path, "news")
+    API_KEY, API_SECRET = load_credentials(creds_file_path, "alpaca_news")
 
     # Initialize the NewsClient (no keys required for news data)
     client = NewsClient(api_key=API_KEY, secret_key=API_SECRET)

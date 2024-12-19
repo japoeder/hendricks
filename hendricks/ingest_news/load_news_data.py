@@ -2,7 +2,7 @@
 Load news data into MongoDB.
 """
 import dotenv
-from hendricks.news_from_alpacaAPI import news_from_alpacaAPI
+from hendricks.ingest_news.news_from_alpacaAPI import news_from_alpacaAPI
 
 dotenv.load_dotenv()
 
@@ -35,8 +35,7 @@ class NewsLoader:
     def load_news_data(self):
         """Load news data into MongoDB."""
         if self.source == "alpaca":
-            print("No file provided, fetching data from Alpaca API.")
-            print(f"Fetching data for {self.tickers}")
+            print(f"Fetching data from Alpaca API for {self.tickers}")
             if self.articles_limit is None:
                 self.articles_limit = 1
             if self.batch_size is None:
