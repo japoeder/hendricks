@@ -11,7 +11,6 @@ import requests
 URL = "http://localhost:8001/load_news"
 FROM_DATE = "2024-10-03T09:30:00-04:00"
 TO_DATE = "2024-10-04T00:59:32-04:00"
-BATCH_SIZE = 50000
 COLLECTION_NAME = "rawNewsColl"
 TICKERS = "AAPL"  # Default ticker
 ARTICLES_LIMIT = 5000
@@ -30,7 +29,7 @@ def show_help():
     Show the help message.
     """
     print(
-        "Usage: python qt_alpaca_news_loader.py -t ticker_symbols [-f file] [-s from_date] [-e to_date] [-c collection_name] [-b batch_size]"
+        "Usage: python qt_alpaca_news_loader.py -t ticker_symbols [-s from_date] [-e to_date] [-c collection_name] [-a articles_limit] [-o news_sources]"
     )
     print()
     print("Options:")
@@ -111,7 +110,6 @@ data = {
     "from_date": args.from_date,
     "to_date": args.to_date,
     "collection_name": args.collection_name,
-    "batch_size": args.batch_size,
     "articles_limit": args.articles_limit,
     "sources": sources_list,
 }
