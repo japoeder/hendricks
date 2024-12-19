@@ -4,16 +4,16 @@ Load historical ticker data into MongoDB.
 
 import argparse
 import os
+from datetime import datetime
 import requests
 
 # Default values
 # URL = "https://poederhome.myvnc.com/load_quotes"
 URL = "http://localhost:8001/load_quotes"
-FROM_DATE = "2024-10-03T09:30:00-04:00"
-TO_DATE = "2024-10-04T00:59:32-04:00"
-BATCH_SIZE = 50000
+# Default start date is a string for today in this format: 2024-10-03T09:30:00Z
+FROM_DATE = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+TO_DATE = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
 COLLECTION_NAME = "rawPriceColl"
-TICKERS = "AAPL"  # Default ticker
 MINUTE_ADJUSTMENT = True
 QUOTE_SOURCE = "fmp"
 
@@ -96,11 +96,7 @@ if not args.tickers:
     print("Error: Ticker symbols are required")
     show_help()
     exit(1)
-# Check if ticker symbols are provided
-if not args.source:
-    print("Error: Ticker source are required")
-    show_help()
-    exit(1)
+
 
 # Convert comma-separated tickers to JSON array format
 tickers_list = args.tickers.split(",")

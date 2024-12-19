@@ -24,6 +24,6 @@ class IncorrectAPIKeyError(ValueError):
 
     def __init__(
         self,
-        message="The API key you provided can't be validated against AWS SecretsManager.  Please contact your system administrator.",
+        message="The API key you provided is incorrect. Please contact your system administrator.",
     ):
         super().__init__(message)

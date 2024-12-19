@@ -67,10 +67,47 @@ def requires_api_key(f):
 
     @wraps(f)
     def decorated(*args, **kwargs):
-        api_key = request.headers.get("x-api-key")
-        if not api_key or api_key != os.getenv("HENDRICKS_API_KEY"):
-            return jsonify({"error": "Unauthorized"}), 401
-        return f(*args, **kwargs)
+        try:
+            api_key = request.headers.get("x-api-key")
+            if not api_key:
+                return (
+                    jsonify(
+                        {
+                            "status": "error",
+                            "message": "API key is missing",
+                            "error_type": "authentication",
+                        }
+                    ),
+                    401,
+                )
+
+            if api_key != os.getenv("HENDRICKS_API_KEY"):
+                logging.warning(f"Invalid API key attempt: {api_key[:8]}...")
+                return (
+                    jsonify(
+                        {
+                            "status": "error",
+                            "message": "Invalid API key",
+                            "error_type": "authentication",
+                        }
+                    ),
+                    403,
+                )
+
+            return f(*args, **kwargs)
+
+        except Exception as e:
+            logging.error(f"Authentication error: {str(e)}")
+            return (
+                jsonify(
+                    {
+                        "status": "error",
+                        "message": "Authentication system error",
+                        "error_type": "system",
+                    }
+                ),
+                500,
+            )
 
     return decorated
 
@@ -80,7 +117,7 @@ def requires_api_key(f):
 def load_quotes():
     """Endpoint to load a new stock ticker into the database."""
     data = request.json
-    print(f"Received data: {data}")
+    logging.info(f"Received data: {data}")
 
     tickers = data.get("tickers")
     from_date = data.get("from_date")
@@ -105,20 +142,36 @@ def load_quotes():
     if not source:
         return jsonify({"error": "Source is required"}), 400
 
-    loader = DataLoader(
-        tickers=tickers,
-        from_date=from_date,
-        to_date=to_date,
-        collection_name=collection_name,
-        source=source,
-        minute_adjustment=minute_adjustment,
-    )
+    failed_tickers = []
+    successful_tickers = []
 
-    loader.load_quote_data()
+    # Process each ticker individually
+    for ticker in tickers:
+        try:
+            loader = DataLoader(
+                tickers=[ticker],  # Process one ticker at a time
+                from_date=from_date,
+                to_date=to_date,
+                collection_name=collection_name,
+                source=source,
+                minute_adjustment=minute_adjustment,
+            )
+            loader.load_quote_data()
+            successful_tickers.append(ticker)
+        except Exception as e:
+            logging.error(f"Error loading ticker {ticker}: {e}")
+            failed_tickers.append({"ticker": ticker, "error": str(e)})
+            continue  # Continue with next ticker even if this one fails
 
+    # Return detailed status
     return (
         jsonify(
-            {"status": f"{tickers} quotes loaded into {collection_name} collection."}
+            {
+                "status": "completed",
+                "successful_tickers": successful_tickers,
+                "failed_tickers": failed_tickers,
+                "collection": collection_name,
+            }
         ),
         202,
     )
@@ -137,7 +190,6 @@ def load_news():
     collection_name = data.get("collection_name")
     if collection_name is None:
         collection_name = "rawNewsColl"
-    batch_size = data.get("batch_size")
     sources = data.get("sources")
     articles_limit = data.get("articles_limit")
 
@@ -152,7 +204,6 @@ def load_news():
             from_date=from_date,
             to_date=to_date,
             collection_name=collection_name,
-            batch_size=batch_size,
             source=source,
             articles_limit=articles_limit,
         )

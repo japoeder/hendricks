@@ -1,7 +1,7 @@
 """
 Load ticker data into MongoDB.
 """
-import logging
+
 import dotenv
 import pandas as pd
 
@@ -52,9 +52,6 @@ class DataLoader:
             )
         elif self.source == "fmp":
             print(f"Fetching data from FMP API for {self.tickers}")
-            # Convert string dates to pandas Timestamps
-            logging.info(self.from_date)
-            logging.info(self.to_date)
             from_date = pd.to_datetime(self.from_date)
             to_date = pd.to_datetime(self.to_date)
 
