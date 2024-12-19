@@ -16,9 +16,11 @@ dotenv.load_dotenv()
 # Add the parent directory to sys.path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from hendricks.load_ticker_data import DataLoader  # pylint: disable=C0413
-from hendricks.load_news_data import NewsLoader  # pylint: disable=C0413
-from hendricks.stream_ticker_data import DataStreamer  # pylint: disable=C0413
+from hendricks.ingest_quotes.load_quote_data import DataLoader  # pylint: disable=C0413
+from hendricks.ingest_news.load_news_data import NewsLoader  # pylint: disable=C0413
+from hendricks.stream_quotes.stream_ticker_data import (
+    DataStreamer,
+)  # pylint: disable=C0413
 from hendricks._utils.get_path import get_path  # pylint: disable=C0413
 
 
@@ -73,52 +75,50 @@ def requires_api_key(f):
     return decorated
 
 
-@app.route("/load_tickers", methods=["POST"])
+@app.route("/load_quotes", methods=["POST"])
 @requires_api_key
-def load_tickers():
+def load_quotes():
     """Endpoint to load a new stock ticker into the database."""
     data = request.json
     print(f"Received data: {data}")
+
     tickers = data.get("tickers")
-    if not tickers:
-        return jsonify({"error": "Ticker symbol is required"}), 400
-
-    # Trigger background task to load ticker data
-    # If file is provided, load from file, otherwise load from Alpaca API
-
-    file = data.get("file")
-    if file is None:
-        file = False
-
     from_date = data.get("from_date")
-    if from_date is None:
-        from_date = False
-
     to_date = data.get("to_date")
-    if to_date is None:
-        to_date = False
+    minute_adjustment = data.get("minute_adjustment")
+    if minute_adjustment is None:
+        minute_adjustment = True
 
     collection_name = data.get("collection_name")
     if collection_name is None:
         collection_name = "rawPriceColl"
 
-    batch_size = data.get("batch_size")
-    if batch_size is None:
-        batch_size = 7500
+    source = data.get("source")
+    if source is None:
+        source = "fmp"
+    else:
+        source = source[0]
+        print(f"Source: {source}")
+
+    if not tickers:
+        return jsonify({"error": "Ticker symbol is required"}), 400
+    if not source:
+        return jsonify({"error": "Source is required"}), 400
 
     loader = DataLoader(
         tickers=tickers,
-        file=file,
         from_date=from_date,
         to_date=to_date,
         collection_name=collection_name,
-        batch_size=batch_size,
+        source=source,
+        minute_adjustment=minute_adjustment,
     )
 
-    loader.load_ticker_data()
+    loader.load_quote_data()
+
     return (
         jsonify(
-            {"status": f"{tickers} dataframe loaded into {collection_name} collection."}
+            {"status": f"{tickers} quotes loaded into {collection_name} collection."}
         ),
         202,
     )
@@ -130,10 +130,8 @@ def load_news():
     """Endpoint to load news articles into the database."""
     data = request.json
     print(f"Received data: {data}")
-    tickers = data.get("tickers")
-    if not tickers:
-        return jsonify({"error": "Ticker symbol is required"}), 400
 
+    tickers = data.get("tickers")
     from_date = data.get("from_date")
     to_date = data.get("to_date")
     collection_name = data.get("collection_name")
@@ -143,6 +141,8 @@ def load_news():
     sources = data.get("sources")
     articles_limit = data.get("articles_limit")
 
+    if not tickers:
+        return jsonify({"error": "Ticker symbol is required"}), 400
     if not sources:
         return jsonify({"error": "Source are required"}), 400
 
@@ -158,12 +158,13 @@ def load_news():
         )
 
         loader.load_news_data()
-        return (
-            jsonify(
-                {"status": f"{tickers} news loaded into {collection_name} collection."}
-            ),
-            202,
-        )
+
+    return (
+        jsonify(
+            {"status": f"{tickers} news loaded into {collection_name} collection."}
+        ),
+        202,
+    )
 
 
 @app.route("/stream_load", methods=["POST"])

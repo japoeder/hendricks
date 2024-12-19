@@ -14,11 +14,24 @@ This is the core data loading service for the following:
 
    - qt_restart_hl
 
+## Data Sources
+
+#### Quotes
+
+- Alpaca (supplement to FMP, needs minute adjustment)
+- FMP
+
+#### News
+
+- FMP
+- Mediastack
+- TheNewsAPI
+
 ## Quote Loader
 
 1. Sample quote load request
 
-   - qt_hist_load -t "AAPL,GOOG" -s "2024-11-01T00:00:00Z" -e "2024-11-15T23:59:00Z"
+   - qt_quote_load -t "AAPL,GOOG" -s "2024-11-01T00:00:00Z" -e "2024-11-15T23:59:00Z"
        - This is a zsh alias that executes a qt_hist_loader in _scripting (though run from scripting in root)
 2. Tickers are required
 
