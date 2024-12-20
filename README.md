@@ -14,15 +14,29 @@ This is the core data loading service for the following:
 
    - qt_restart_hl
 
+## Data Sources
+
+#### Quotes
+
+- Alpaca (supplement to FMP, needs minute adjustment)
+- FMP
+
+#### News
+
+- FMP
+- Mediastack
+- TheNewsAPI
+
 ## Quote Loader
 
 1. Sample quote load request
 
-   - qt_hist_load -t "AAPL,GOOG" -s "2024-11-01T00:00:00Z" -e "2024-11-15T23:59:00Z"
+   - qt_quote_load -t "AAPL,GOOG" -s "2024-11-01T00:00:00Z" -e "2024-11-15T23:59:00Z" -o "fmp"
        - This is a zsh alias that executes a qt_hist_loader in _scripting (though run from scripting in root)
-2. Tickers are required
+2. Required
 
-   - These can be single or a quoted list as above
+   - Tickers - these can be single or a quoted list as above
+   - From date
 
 ### Usage Details:
 
@@ -34,7 +48,8 @@ optional "parameters "arguments:
   -s    From date (default: 2024-10-03T09:30:00Z)
   -e    To date (default: 2024-10-04T00:59:32Z)
   -c    Collection name (default: rawPriceColl)
-  -b    Batch size (default: 50000)
+  -m    Minute adjustment (default: True)
+	-o		Source (default: "fmp")
   -h    Show this help message
 ```
 
@@ -57,7 +72,8 @@ optional "parameters "arguments:
 1. Sample alpaca news load request:
 
    - qt_news_load -t "TSLA" -s "2024-11-01T00:00:00Z" -e "2024-11-15T23:59:00Z" -a 10 -n "alpaca"
-   - 
+       - alpaca: max articles is 50
+       - for fmp can put what you like
 
 ## Python Packaging
 
