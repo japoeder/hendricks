@@ -11,10 +11,11 @@ from alpaca.data.historical import NewsClient
 from alpaca.data.requests import NewsRequest
 
 load_dotenv()
-from hendricks._utils.load_credentials import load_alpaca_credentials
+from hendricks._utils.load_credentials import load_credentials
 from hendricks._utils.mongo_conn import mongo_conn
 from hendricks._utils.mongo_coll_verification import confirm_mongo_collect_exists
 from hendricks._utils.get_path import get_path
+from hendricks._utils.grab_html import grab_html
 
 
 # Set up logging
@@ -25,11 +26,10 @@ logger.setLevel(logging.WARNING)  # Suppress pymongo debug messages
 
 def news_from_alpacaAPI(
     tickers=None,
-    collection_name="alpacaNewsColl",
+    collection_name="rawNewsColl",
     creds_file_path=None,
     from_date=None,
     to_date=None,
-    batch_size=75000,
     articles_limit: int = 1,
     include_content: bool = True,
 ):
@@ -41,7 +41,7 @@ def news_from_alpacaAPI(
         creds_file_path = get_path("creds")
 
     # Load Alpaca API credentials from JSON file
-    API_KEY, API_SECRET = load_alpaca_credentials(creds_file_path, "news")
+    API_KEY, API_SECRET = load_credentials(creds_file_path, "alpaca_news")
 
     # Initialize the NewsClient (no keys required for news data)
     client = NewsClient(api_key=API_KEY, secret_key=API_SECRET)
@@ -94,13 +94,23 @@ def news_from_alpacaAPI(
         news.rename(columns={"symbols": "tickers"}, inplace=True)
 
         for _, row in news.iterrows():
+            html_content = grab_html(row["url"])
+            timestamp = (
+                row["created_at"]
+                .floor("min")
+                .astimezone(pytz.utc)
+                .strftime("%Y-%m-%d %H:%M:%S")
+            )
+
             document = {
                 "unique_id": row["url"],
-                "timestamp": row["created_at"],
+                # Convert timestamp to datetime, floor to the nearest minute, convert to UTC, and convert to string
+                "timestamp": timestamp,
+                "timestamp_conversion_result": "N/A",
                 "ticker": ticker,
                 "article_id": row["id"],
                 "headline": row["headline"],
-                "source": row["source"],
+                "article_source": row["source"],
                 "url": row["url"],
                 "summary": row["summary"],
                 "article_created_at": row["created_at"],
@@ -109,6 +119,8 @@ def news_from_alpacaAPI(
                 "author": row["author"],
                 "content": row["content"],
                 "images": row["images"],
+                "html": html_content,
+                "source": "alpaca",
                 "created_at": datetime.now(
                     timezone.utc
                 ),  # Document creation time in UTC
@@ -118,18 +130,13 @@ def news_from_alpacaAPI(
             existing_doc = collection.find_one(
                 {
                     "unique_id": row["url"],
-                    "timestamp": row["created_at"],
+                    "timestamp": timestamp,
                     "ticker": ticker,
                 }
             )
-            if existing_doc:
-                # Already loaded article for this ticker, do nothing
-                continue
-            elif len(row["content"]) == 0:
-                continue
-            else:
+            if not existing_doc:
                 # Insert the document directly
                 collection.insert_one(document)
                 logger.info(f"Inserted document for {ticker} at {row['created_at']}")
 
-    print("Articles imported successfully!")
+    logger.info("Articles imported successfully!")

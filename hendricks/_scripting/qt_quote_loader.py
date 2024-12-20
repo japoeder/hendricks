@@ -4,16 +4,18 @@ Load historical ticker data into MongoDB.
 
 import argparse
 import os
-import json
+from datetime import datetime
 import requests
 
 # Default values
-URL = "https://poederhome.myvnc.com/load_ticker"
-FROM_DATE = "2024-10-03T09:30:00-04:00"
-TO_DATE = "2024-10-04T00:59:32-04:00"
-BATCH_SIZE = 50000
+# URL = "https://poederhome.myvnc.com/load_quotes"
+URL = "http://localhost:8001/load_quotes"
+# Default start date is a string for today in this format: 2024-10-03T09:30:00Z
+FROM_DATE = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+TO_DATE = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
 COLLECTION_NAME = "rawPriceColl"
-TICKERS = "AAPL"  # Default ticker
+MINUTE_ADJUSTMENT = True
+QUOTE_SOURCE = "fmp"
 
 # Check if API key is set
 QT_HENDRICKS_API_KEY = os.getenv("QT_HENDRICKS_API_KEY")
@@ -28,17 +30,18 @@ def show_help():
     Show the help message.
     """
     print(
-        "Usage: python qt_hist_loader.py -t ticker_symbols [-f file] [-s from_date] [-e to_date] [-c collection_name] [-b batch_size]"
+        "Usage: python qt_hist_loader.py -t ticker_symbols [-f file] [-s from_date] [-e to_date] [-c collection_name] [-b batch_size] [-m minute_adjustment]"
     )
     print()
     print("Options:")
     print("  -t    Comma-separated list of ticker symbols (required)")
-    print("  -f    File (optional)")
     print("  -s    From date (default: {})".format(FROM_DATE))
     print("  -e    To date (default: {})".format(TO_DATE))
     print("  -c    Collection name (default: {})".format(COLLECTION_NAME))
-    print("  -b    Batch size (default: {})".format(BATCH_SIZE))
+    print("  -m    Minute adjustment (default: {})".format(MINUTE_ADJUSTMENT))
+    print("  -o    Source (default: {})".format(QUOTE_SOURCE))
     print("  -h    Show this help message")
+    print(" ")
 
 
 # Parse command-line arguments
@@ -73,11 +76,18 @@ parser.add_argument(
     help="Collection name (default: {})".format(COLLECTION_NAME),
 )
 parser.add_argument(
-    "-b",
-    "--batch_size",
-    type=int,
-    default=BATCH_SIZE,
-    help="Batch size (default: {})".format(BATCH_SIZE),
+    "-m",
+    "--minute_adjustment",
+    type=bool,
+    default=MINUTE_ADJUSTMENT,
+    help="Minute adjustment (default: {})".format(MINUTE_ADJUSTMENT),
+)
+parser.add_argument(
+    "-o",
+    "--source",
+    type=str,
+    default=QUOTE_SOURCE,
+    help="Source (default: {})".format(QUOTE_SOURCE),
 )
 args = parser.parse_args()
 
@@ -87,17 +97,20 @@ if not args.tickers:
     show_help()
     exit(1)
 
+
 # Convert comma-separated tickers to JSON array format
 tickers_list = args.tickers.split(",")
-tickers_json = json.dumps(tickers_list)
+source_list = args.source.split(",")
+
 
 # Prepare the data payload
 data = {
-    "ticker_symbols": tickers_list,
+    "tickers": tickers_list,
     "from_date": args.from_date,
     "to_date": args.to_date,
     "collection_name": args.collection_name,
-    "batch_size": args.batch_size,
+    "source": source_list,
+    "minute_adjustment": args.minute_adjustment,
 }
 
 # Define the headers
