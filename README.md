@@ -13,22 +13,22 @@ A robust financial data ingestion service for real-time and historical stock pri
 ## 📋 Table of Contents
 
 - [Hendricks 🚀](#hendricks-)
-  - [📋 Table of Contents](#-table-of-contents)
-  - [🔍 Overview](#-overview)
-  - [✨ Features](#-features)
-  - [🛠 Installation](#-installation)
-  - [📊 Data Sources](#-data-sources)
-    - [Market Quotes](#market-quotes)
-    - [News Sources](#news-sources)
-  - [📖 Usage](#-usage)
-    - [Quote Loader](#quote-loader)
-      - [Parameters](#parameters)
-    - [Stream Loader](#stream-loader)
-    - [News Loader](#news-loader)
-  - [📁 Project Structure](#-project-structure)
-  - [🔧 Development](#-development)
-    - [Service Management](#service-management)
-    - [Code Quality](#code-quality)
+    - [📋 Table of Contents](#-table-of-contents)
+    - [🔍 Overview](#-overview)
+    - [✨ Features](#-features)
+    - [🛠 Installation](#-installation)
+    - [📊 Data Sources](#-data-sources)
+        - [Market Quotes](#market-quotes)
+        - [News Sources](#news-sources)
+    - [📖 Usage](#-usage)
+        - [Quote Loader](#quote-loader)
+            - [Parameters](#parameters)
+        - [Stream Loader](#stream-loader)
+        - [News Loader](#news-loader)
+    - [📁 Project Structure](#-project-structure)
+    - [🔧 Development](#-development)
+        - [Service Management](#service-management)
+        - [Code Quality](#code-quality)
 
 ## 🔍 Overview
 
@@ -53,7 +53,7 @@ Hendricks is a core data loading service designed for efficient financial data i
 2. Install dependencies:
 
 ```bash
-pip install -r req.txt
+pip install -r requirements.txt
 ```
 
 3. Configure your API keys (see Configuration section)
