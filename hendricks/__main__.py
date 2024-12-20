@@ -90,7 +90,7 @@ def requires_api_key(f):
     return decorated
 
 
-@app.route("/load_quotes", methods=["POST"])
+@app.route("/hendricks/load_quotes", methods=["POST"])
 @requires_api_key
 def load_quotes():
     """Endpoint to load a new stock ticker into the database."""
@@ -155,7 +155,7 @@ def load_quotes():
     )
 
 
-@app.route("/load_news", methods=["POST"])
+@app.route("/hendricks/load_news", methods=["POST"])
 @requires_api_key
 def load_news():
     """Endpoint to load news articles into the database."""
@@ -196,7 +196,7 @@ def load_news():
     )
 
 
-@app.route("/stream_load", methods=["POST"])
+@app.route("/hendricks/stream_load", methods=["POST"])
 def stream_load():
     """Endpoint to stream a ticker from the Alpaca API."""
     try:
