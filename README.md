@@ -1,117 +1,135 @@
-# Hendricks
+# Hendricks 🚀
 
-### Introduction
+[![Python](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://www.python.org/downloads/)
 
-This is the core data loading service for the following:
+[![MongoDB](https://img.shields.io/badge/MongoDB-4.4%2B-green.svg)](https://www.mongodb.com/)
 
-1. Simple load that drops existing records in raw collection, and reloads data over the specified window
-2. QC checks missing minutes over a specified window, and attempts to reload
-3. Stream load reads live data into the raw price collection
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-### Service details
+A robust financial data ingestion service for real-time and historical market data.
 
-1. Restart the service if necessary with:
+## 📋 Table of Contents
 
-   - qt_restart_hl
+- [Overview](#overview)
+- [Features](#features)
+- [Installation](#installation)
+- [Data Sources](#data-sources)
+- [Usage](#usage)
+    - [Quote Loader](#quote-loader)
+    - [Stream Loader](#stream-loader)
+    - [News Loader](#news-loader)
+- [Project Structure](#project-structure)
+- [Development](#development)
 
-## Data Sources
+## 🔍 Overview
 
-#### Quotes
+Hendricks is a core data loading service designed for efficient financial data ingestion. It provides three primary functionalities:
 
-- Alpaca (supplement to FMP, needs minute adjustment)
-- FMP
+1. **Batch Loading**: Performs complete data reloads over specified time windows
+2. **Quality Control**: Implements automated checks for missing data points and recovery mechanisms
+3. **Real-time Streaming**: Enables live market data ingestion into raw price collections
 
-#### News
+## ✨ Features
 
-- FMP
-- Mediastack
-- TheNewsAPI
+- Multi-source data integration (FMP, Alpaca, etc.)
+- Real-time and historical data processing
+- Automated quality control and data validation
+- Flexible API for custom data queries
+- Robust error handling and logging
+- Command-line interface for easy operation
 
-## Quote Loader
+## 🛠 Installation
 
-1. Sample quote load request
+1. Clone the repository
+2. Install dependencies:
 
-   - qt_quote_load -t "AAPL,GOOG" -s "2024-11-01T00:00:00Z" -e "2024-11-15T23:59:00Z" -o "fmp"
-       - This is a zsh alias that executes a qt_hist_loader in _scripting (though run from scripting in root)
-2. Required
-
-   - Tickers - these can be single or a quoted list as above
-   - From date
-
-### Usage Details:
-
-```
-simple load: qt_hendricks_load via the terminal
-
-optional "parameters "arguments:
-  -t    Ticker symbol (required)
-  -s    From date (default: 2024-10-03T09:30:00Z)
-  -e    To date (default: 2024-10-04T00:59:32Z)
-  -c    Collection name (default: rawPriceColl)
-  -m    Minute adjustment (default: True)
-	-o		Source (default: "fmp")
-  -h    Show this help message
+```bash
+pip install -r req.txt
 ```
 
-## Stream Loader
+3. Configure your API keys (see Configuration section)
 
-1. Sample stream load request:
+## 📊 Data Sources
 
-   - Dev on pause for the moment.
+### Market Quotes
+
+- **Alpaca**: Real-time and historical market data (supplementary to FMP)
+- **Financial Modeling Prep (FMP)**: Primary source for market data
+
+### News Sources
+
+- **Financial Modeling Prep (FMP)**: Financial news and analysis
+- **Mediastack**: General market news
+- **TheNewsAPI**: Additional news coverage
+
+## 📖 Usage
+
+### Quote Loader
+
+```bash
+# Load historical quotes
+qt_quote_load -t "AAPL,GOOG" -s "2024-11-01T00:00:00Z" -e "2024-11-15T23:59:00Z" -o "fmp"
+```
+
+#### Parameters
+
+| Parameter | Description       | Default              | Required |
+| --------- | ----------------- | -------------------- | -------- |
+| `-t`      | Ticker symbol(s)  | -                    | Yes      |
+| `-s`      | Start date        | 2024-10-03T09:30:00Z | No       |
+| `-e`      | End date          | Current time         | No       |
+| `-c`      | Collection name   | rawPriceColl         | No       |
+| `-m`      | Minute adjustment | True                 | No       |
+| `-o`      | Data source       | "fmp"                | No       |
+
+### Stream Loader
+
+```bash
+# Start real-time data stream
+qt_stream_load -t "TSLA" -s "2024-10-03T09:30:00Z"
+```
+
+### News Loader
+
+```bash
+# Load news articles
+qt_news_load -t "TSLA" -s "2024-11-01T00:00:00Z" -e "2024-11-15T23:59:00Z" -a 10 -n "alpaca"
+```
+
+> Note: Alpaca news API has a limit of 50 articles per request
+
+## 📁 Project Structure
 
 ```
-simple load: qt_stream_load via the terminal
-  
-optional "parameters "arguments:
-  -t    Ticker symbol (required)
-  -s    From date (default: 2024-10-03T09:30:00Z)
+hendricks/
+├── README.md         # Project documentation
+├── __init__.py       # Package initialization
+├── hendricks/        # Core module
+│   ├── _utils/       # Utility functions
+│   ├── _scripting/   # CLI scripts
+│   ├── ingest_news/  # News ingestion logic
+│   ├── ingest_quotes/# Quote ingestion logic
+│   ├── stream_quotes/# Real-time streaming
+│   └── __main__.py   # Entry point
+├── .pre-commit-config.yaml
+├── .pylintrc
+├── pyproject.toml
+└── req.txt           # Dependencies
 ```
 
-## News Loader
+## 🔧 Development
 
-1. Sample alpaca news load request:
+### Service Management
 
-   - qt_news_load -t "TSLA" -s "2024-11-01T00:00:00Z" -e "2024-11-15T23:59:00Z" -a 10 -n "alpaca"
-       - alpaca: max articles is 50
-       - for fmp can put what you like
+```bash
+# Restart the service
+qt_restart_hl
+```
 
-## Python Packaging
+### Code Quality
 
-This code is packaged as a python module, with the structure outlined in the section below.
+This project uses:
 
-### Project Layout
-
-- [hendricks](collectability_model): root.
-    - [README.md](README.md):
-        - The guide you're reading.
-    - [`__init__.py`
-        - For package / module structure.
-    - [`.`](lab1/init.py)gitignore
-        - Version control doc.
-    - .pre-commit-config.yaml
-        - Pre-commit hooks for formatting and linting.
-    - .pylintrc
-        - Linter parameter file.
-    - pyproject.toml
-        - Black exception logic.
-    - req.txt
-        - Required libraries for model.
-    - [hendricks](.): This is the *module* in our *package*.
-        - _scripting
-            - Directory that holds scripting files to execute POST requests via CLI
-        - _utils
-            - Directory that holds various utilities the repo relies on
-        - `__init__.py`
-            - Expose what functions, variables, classes, etc when scripts import this module.
-        - [`__main__.py`]
-            - This file is the entrypoint to your program when ran as a program.
-        - `quote_from_alpacaAPI.py`
-            - Logic for loading historical data into MongoDB from the Alpaca API.
-        - `quote_from_csv.py`
-            - Logic for loading historical data into MongoDB from csv files.
-        - `quote_from_df.py`
-            - Logic for loading historical data into MongoDB from a pickled dataframe.
-        - `load_ticker_data.py`
-            - DataLoader class that calls and drives the individual methods above.
-        - `stream_ticker_data.py`
-            - DataStreamer class that initiates the websocket stream and calls DataLoader for processing and ingestion.
+- Black for code formatting
+- Pylint for code analysis
+- Pre-commit hooks for consistency
