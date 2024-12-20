@@ -8,7 +8,6 @@ import logging
 import json
 import signal
 from functools import wraps
-from logging.handlers import RotatingFileHandler
 import dotenv
 from flask import Flask, request, jsonify
 
@@ -22,6 +21,10 @@ from hendricks.stream_quotes.stream_ticker_data import (
     DataStreamer,
 )  # pylint: disable=C0413
 from hendricks._utils.get_path import get_path  # pylint: disable=C0413
+from hendricks._utils.logging_config import setup_logging  # pylint: disable=C0413
+
+
+app = Flask(__name__)
 
 
 def handle_sigterm(*args):
@@ -33,33 +36,8 @@ def handle_sigterm(*args):
 
 signal.signal(signal.SIGTERM, handle_sigterm)
 
-app = Flask(__name__)
-
-
-app_log_path = get_path("log")
-
-# Configure logging with RotatingFileHandler
-handler = RotatingFileHandler(
-    app_log_path, maxBytes=5 * 1024 * 1024, backupCount=5
-)  # 5 MB max size, keep 5 backups
-handler.setLevel(logging.DEBUG)
-formatter = logging.Formatter(
-    "%(asctime)s %(levelname)s %(name)s %(threadName)s : %(message)s"
-)
-handler.setFormatter(formatter)
-
-# Add the handler to the root logger
-logging.getLogger().addHandler(handler)
-logging.getLogger().setLevel(logging.DEBUG)
-
-# Add console handler for logging
-console_handler = logging.StreamHandler()
-console_handler.setLevel(logging.DEBUG)
-formatter = logging.Formatter(
-    "%(asctime)s %(levelname)s %(name)s %(threadName)s : %(message)s"
-)
-console_handler.setFormatter(formatter)
-logging.getLogger().addHandler(console_handler)
+# Set up logging configuration
+setup_logging()
 
 
 def requires_api_key(f):
