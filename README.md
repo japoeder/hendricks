@@ -1,4 +1,4 @@
-![Hendricks Banner](https://github.com/japoeder/hendricks/blob/main/hendricks/_img/hendricks_banner.jpg)
+![Hendricks Banner](https://raw.githubusercontent.com/japoeder/hendricks/main/hendricks/_img/hendricks_banner.jpg)
 
 # Hendricks 🚀
 
@@ -8,20 +8,27 @@
 
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-A robust financial data ingestion service for real-time and historical stock, news, social data, and more.
+A robust financial data ingestion service for real-time and historical stock pricing, company news, social data, and more.
 
 ## 📋 Table of Contents
 
-- [Overview](#overview)
-- [Features](#features)
-- [Installation](#installation)
-- [Data Sources](#data-sources)
-- [Usage](#usage)
+- [Hendricks 🚀](#hendricks-)
+  - [📋 Table of Contents](#-table-of-contents)
+  - [🔍 Overview](#-overview)
+  - [✨ Features](#-features)
+  - [🛠 Installation](#-installation)
+  - [📊 Data Sources](#-data-sources)
+    - [Market Quotes](#market-quotes)
+    - [News Sources](#news-sources)
+  - [📖 Usage](#-usage)
     - [Quote Loader](#quote-loader)
+      - [Parameters](#parameters)
     - [Stream Loader](#stream-loader)
     - [News Loader](#news-loader)
-- [Project Structure](#project-structure)
-- [Development](#development)
+  - [📁 Project Structure](#-project-structure)
+  - [🔧 Development](#-development)
+    - [Service Management](#service-management)
+    - [Code Quality](#code-quality)
 
 ## 🔍 Overview
 
