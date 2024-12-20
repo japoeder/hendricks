@@ -1,14 +1,12 @@
-![Hendricks Banner](https://github.com/japoeder/hendricks/blob/main/hendricks/_img/hendricks_banner.jpg)
-
 # Hendricks 🚀
 
-[![Python](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/downloads/)
+[![Python](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://www.python.org/downloads/)
 
 [![MongoDB](https://img.shields.io/badge/MongoDB-4.4%2B-green.svg)](https://www.mongodb.com/)
 
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-A robust financial data ingestion service for real-time and historical market data.
+A robust financial data ingestion service for real-time and historical stock, news, social data, and more.
 
 ## 📋 Table of Contents
 
