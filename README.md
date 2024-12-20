@@ -1,3 +1,5 @@
+![Hendricks Banner](https://github.com/japoeder/hendricks/blob/main/hendricks/_img/hendricks_banner.jpg)
+
 # Hendricks 🚀
 
 [![Python](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://www.python.org/downloads/)
