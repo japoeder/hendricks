@@ -50,5 +50,28 @@ def load_credentials(file_path, data_type):
             fmp_creds["BASE_URL"],
         )
 
+    if data_type == "hendricks_api":
+        with open(file_path, "r", encoding="utf-8") as file:
+            creds = json.load(file)
+        hendricks_creds = creds["hendricks_api"]
+        return (hendricks_creds["API_KEY"],)
+
+    if data_type == "gilfoyle_api":
+        with open(file_path, "r", encoding="utf-8") as file:
+            creds = json.load(file)
+        gilfoyle_creds = creds["gilfoyle_api"]
+        return (gilfoyle_creds["API_KEY"],)
+
+    if data_type == "mongo_ds":
+        with open(file_path, "r", encoding="utf-8") as file:
+            creds = json.load(file)
+        mongo_creds = creds["mongo_ds"]
+        return (
+            mongo_creds["MONGO_USER"],
+            mongo_creds["MONGO_PASSWORD"],
+            mongo_creds["MONGO_HOST"],
+            mongo_creds["MONGO_PORT"],
+        )
+
     else:
         raise ValueError(f"Invalid data type: {data_type}")
