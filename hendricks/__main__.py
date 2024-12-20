@@ -11,7 +11,6 @@ from functools import wraps
 import dotenv
 from flask import Flask, request, jsonify
 
-dotenv.load_dotenv()
 # Add the parent directory to sys.path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -23,6 +22,7 @@ from hendricks.stream_quotes.stream_ticker_data import (
 from hendricks._utils.get_path import get_path  # pylint: disable=C0413
 from hendricks._utils.logging_config import setup_logging  # pylint: disable=C0413
 
+dotenv.load_dotenv(get_path("env"))
 
 app = Flask(__name__)
 
