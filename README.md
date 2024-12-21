@@ -102,7 +102,7 @@ qt_stream_load -t "TSLA" -s "2024-10-03T09:30:00Z"
 
 ```bash
 # Load news articles
-qt_news_load -t "TSLA" -s "2024-11-01T00:00:00Z" -e "2024-11-15T23:59:00Z" -a 10 -n "alpaca"
+qt_news_load -t "TSLA" -s "2024-11-01T00:00:00Z" -e "2024-11-15T23:59:00Z" -a 10 -o "alpaca"
 ```
 
 > Note: Alpaca news API has a limit of 50 articles per request
