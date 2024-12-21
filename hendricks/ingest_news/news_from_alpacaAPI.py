@@ -55,12 +55,19 @@ def news_from_alpacaAPI(
 
     print("converting from_date and to_date")
     # Convert from_date and to_date to timezone-aware datetime objects
-    # from date should be the value or to_date, whichever is earlier
-    from_date = pd.Timestamp(from_date, tz=TZ).to_pydatetime()
-    # to date shoul be max current time minus 15 minutes
-    to_date = pd.Timestamp(
-        datetime.now(TZ) - timedelta(minutes=15), tz=TZ
-    ).to_pydatetime()
+    if isinstance(from_date, (datetime, pd.Timestamp)) and from_date.tzinfo is not None:
+        from_date = pd.Timestamp(from_date).tz_convert(TZ)
+    else:
+        from_date = pd.Timestamp(from_date, tz=TZ)
+
+    # Calculate to_date as current time minus 15 minutes
+    current_time = datetime.now(TZ) - timedelta(minutes=15)
+    if to_date is None:
+        to_date = pd.Timestamp(current_time)
+    elif isinstance(to_date, (datetime, pd.Timestamp)) and to_date.tzinfo is not None:
+        to_date = pd.Timestamp(to_date).tz_convert(TZ)
+    else:
+        to_date = pd.Timestamp(to_date, tz=TZ)
 
     # Format from_date and to_date like "2024-11-01T00:00:00Z"
     from_date = from_date.strftime("%Y-%m-%dT%H:%M:%SZ")
