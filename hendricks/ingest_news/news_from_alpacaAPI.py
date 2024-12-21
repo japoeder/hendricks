@@ -93,9 +93,6 @@ def news_from_alpacaAPI(
         # Rename barset 'symbol' to 'ticker'
         news.rename(columns={"symbols": "tickers"}, inplace=True)
 
-        # Sort results by publishedDate in descending order
-        news.sort_values(by="created_at", ascending=False, inplace=True)
-
         for _, row in news.iterrows():
             html_content = grab_html(row["url"])
             timestamp = (
