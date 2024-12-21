@@ -86,6 +86,9 @@ def news_from_alpacaAPI(
         if "news" in locals():
             del news
 
+        print(
+            f"from_date: {from_date}, to_date: {to_date}, articles_limit: {articles_limit}, include_content: {include_content}"
+        )
         print("creating news request")
         # Create the news request
         request_params = NewsRequest(
