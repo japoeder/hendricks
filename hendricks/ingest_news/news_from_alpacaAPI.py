@@ -85,6 +85,7 @@ def news_from_alpacaAPI(
         # Get the news data
         news = client.get_news(request_params)
         news = news.df
+        news.reset_index(inplace=True)
 
         # Prepare the DataFrame
         news.reset_index(inplace=True)
