@@ -83,6 +83,9 @@ def news_from_alpacaAPI(
             del news
 
         print("creating news request")
+        print(
+            f"from_date: {from_date}, to_date: {to_date}, articles_limit: {articles_limit}, include_content: {include_content}"
+        )
         # Create the news request
         request_params = NewsRequest(
             symbols=ticker,
