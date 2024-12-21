@@ -103,6 +103,9 @@ def news_from_fmpAPI(
             # Rename barset 'symbol' to 'ticker'
             news.rename(columns={"symbol": "ticker"}, inplace=True)
 
+            # Sort results by publishedDate in descending order
+            news.sort_values(by="publishedDate", ascending=False, inplace=True)
+
             for _, row in news.iterrows():
                 # Grab the html content
                 html_content = grab_html(row["url"])

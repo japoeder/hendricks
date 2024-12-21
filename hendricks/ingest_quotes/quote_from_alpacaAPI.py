@@ -83,6 +83,9 @@ def quote_from_alpacaAPI(
         # Subtract 1 minute from the timestamp
         barset["timestamp"] = barset["timestamp"] - pd.Timedelta(minutes=1)
 
+    # Sort results by timestamp in descending order
+    barset.sort_values(by="timestamp", ascending=False, inplace=True)
+
     for _, row in barset.iterrows():
         document = {
             "ticker": row["ticker"],
