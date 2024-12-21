@@ -82,6 +82,7 @@ def news_from_alpacaAPI(
         if "news" in locals():
             del news
 
+        print("creating news request")
         # Create the news request
         request_params = NewsRequest(
             symbols=ticker,
@@ -92,18 +93,22 @@ def news_from_alpacaAPI(
             sort="DESC",  # Get newest articles first
         )
 
+        print("getting news data")
         # Get the news data
         news = client.get_news(request_params)
         news = news.df
 
+        print("resetting index")
         # Prepare the DataFrame
         news.reset_index(inplace=True)
         news_df = news.copy()
         news_df.columns = news_df.columns.str.lower()
 
+        print("renaming barset 'symbol' to 'ticker'")
         # Rename barset 'symbol' to 'ticker'
         news_df.rename(columns={"symbols": "tickers"}, inplace=True)
 
+        print("looping through rows")
         for _, row in news_df.iterrows():
             html_content = grab_html(row["url"])
             timestamp = (
@@ -113,8 +118,7 @@ def news_from_alpacaAPI(
                 .strftime("%Y-%m-%d %H:%M:%S")
             )
 
-            logging.error(f"row data: {row}")
-
+            print("creating document")
             document = {
                 "unique_id": row["url"],
                 # Convert timestamp to datetime, floor to the nearest minute, convert to UTC, and convert to string
