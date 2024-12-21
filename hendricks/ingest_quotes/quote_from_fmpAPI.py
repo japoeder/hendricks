@@ -94,6 +94,8 @@ def quote_from_fmpAPI(
 
         # Print the processed quotes
         for quote in quotes_df.iterrows():
+            quote = quote[1]
+
             # Convert timestamp to UTC timezone
             quote["timestamp"] = pd.Timestamp(
                 quote["timestamp"], tz="America/New_York"
