@@ -37,38 +37,46 @@ def news_from_alpacaAPI(
     Load historical quote data from Alpaca API into a MongoDB collection.
     """
 
-    logger.info(f"Now executing news_from_alpacaAPI for {tickers}")
+    print(f"Now executing news_from_alpacaAPI for {tickers}")
 
     if creds_file_path is None:
         creds_file_path = get_path("creds")
 
     # Load Alpaca API credentials from JSON file
+    print("getting credentials")
     API_KEY, API_SECRET = load_credentials(creds_file_path, "alpaca_news")
 
     # Initialize the NewsClient (no keys required for news data)
     client = NewsClient(api_key=API_KEY, secret_key=API_SECRET)
 
+    print("getting timezone")
     # Run time conversion
     TZ = pytz.timezone("America/New_York")
 
+    print("converting from_date and to_date")
     # Convert from_date and to_date to timezone-aware datetime objects
     from_date = pd.Timestamp(from_date, tz=TZ).to_pydatetime()
     to_date = pd.Timestamp(to_date, tz=TZ).to_pydatetime()
 
+    print("getting database connection")
     # Get the database connection
     db = mongo_conn()
 
+    print("confirming collection exists")
     # Ensure the collection exists
     confirm_mongo_collect_exists(collection_name)
 
+    print("getting collection")
     # Get the collection
     collection = db[collection_name]
 
+    print("creating compound index")
     # Create a compound index on 'timestamp' and 'ticker'
     collection.create_index(
         [("unique_id", 1), ("timestamp", 1), ("ticker", 1)], unique=True
     )
 
+    print("looping through tickers")
     for ticker in tickers:
         # drop news variable if it exists
         if "news" in locals():
