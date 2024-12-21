@@ -111,7 +111,7 @@ def news_from_alpacaAPI(
                 "timestamp": timestamp,
                 "timestamp_conversion_result": "N/A",
                 "ticker": ticker,
-                "article_id": row["id"],
+                # "article_id": row["id"],
                 "headline": row["headline"],
                 "article_source": row["source"],
                 "url": row["url"],
