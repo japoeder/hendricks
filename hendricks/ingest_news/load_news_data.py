@@ -37,14 +37,15 @@ class NewsLoader:
             from_date = pd.to_datetime(self.from_date)
             to_date = pd.to_datetime(self.to_date)
 
+            if self.articles_limit is None:
+                self.articles_limit = 1000
+
             # If from_date and to_date are more than 30 days, loop by month
             if (to_date - from_date).days > 30:
                 # Loop by month
                 loop_mon_beg = from_date
                 loop_mon_end = from_date + pd.DateOffset(months=1)
                 while loop_mon_end < to_date:
-                    if self.articles_limit is None:
-                        self.articles_limit = 1000
                     news_from_alpacaAPI(
                         tickers=self.tickers,
                         from_date=loop_mon_beg.strftime(
@@ -59,8 +60,6 @@ class NewsLoader:
                     loop_mon_beg = loop_mon_end
                     loop_mon_end = loop_mon_beg + pd.DateOffset(months=1)
             else:
-                if self.articles_limit is None:
-                    self.articles_limit = 1000
                 news_from_alpacaAPI(
                     tickers=self.tickers,
                     from_date=self.from_date,

@@ -37,6 +37,8 @@ def news_from_alpacaAPI(
     Load historical quote data from Alpaca API into a MongoDB collection.
     """
 
+    logger.info(f"Now executing news_from_alpacaAPI for {tickers}")
+
     if creds_file_path is None:
         creds_file_path = get_path("creds")
 
@@ -111,7 +113,7 @@ def news_from_alpacaAPI(
                 "timestamp": timestamp,
                 "timestamp_conversion_result": "N/A",
                 "ticker": ticker,
-                # "article_id": row["id"],
+                "article_id": row["id"],
                 "headline": row["headline"],
                 "article_source": row["source"],
                 "url": row["url"],
