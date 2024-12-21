@@ -89,10 +89,11 @@ def quote_from_fmpAPI(
             raise APIError(f"Error: {response.status_code}, {response.text}")
 
         # Sort results by timestamp in descending order
-        quotes.sort_values(by="timestamp", ascending=False, inplace=True)
+        quotes_df = pd.DataFrame(quotes)
+        quotes_df = quotes_df.sort_values(by="timestamp", ascending=False)
 
         # Print the processed quotes
-        for quote in quotes:
+        for quote in quotes_df.iterrows():
             # Convert timestamp to UTC timezone
             quote["timestamp"] = pd.Timestamp(
                 quote["timestamp"], tz="America/New_York"
