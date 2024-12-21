@@ -88,12 +88,13 @@ def news_from_alpacaAPI(
 
         # Prepare the DataFrame
         news.reset_index(inplace=True)
-        news.columns = news.columns.str.lower()
+        news_df = news.copy()
+        news_df.columns = news_df.columns.str.lower()
 
         # Rename barset 'symbol' to 'ticker'
-        news.rename(columns={"symbols": "tickers"}, inplace=True)
+        news_df.rename(columns={"symbols": "tickers"}, inplace=True)
 
-        for _, row in news.iterrows():
+        for _, row in news_df.iterrows():
             html_content = grab_html(row["url"])
             timestamp = (
                 row["created_at"]
