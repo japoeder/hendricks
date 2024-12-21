@@ -16,7 +16,6 @@ class NewsLoader:
 
     def __init__(
         self,
-        file: str = None,
         tickers: list = None,
         from_date: str = None,
         to_date: str = None,
@@ -24,7 +23,6 @@ class NewsLoader:
         articles_limit: int = None,
         source: str = None,
     ):
-        self.file = file
         self.tickers = tickers
         self.from_date = from_date
         self.to_date = to_date

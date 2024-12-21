@@ -176,21 +176,40 @@ def load_news():
     if not sources:
         return jsonify({"error": "Source are required"}), 400
 
-    for source in sources:
-        loader = NewsLoader(
-            tickers=tickers,
-            from_date=from_date,
-            to_date=to_date,
-            collection_name=collection_name,
-            source=source,
-            articles_limit=articles_limit,
-        )
+    failed_sources = []
+    successful_sources = []
 
-        loader.load_news_data()
+    for source in sources:
+        if articles_limit is None:
+            if source == "fmp":
+                articles_limit = 1000
+            else:
+                articles_limit = 50
+
+        try:
+            loader = NewsLoader(
+                tickers=tickers,
+                from_date=from_date,
+                to_date=to_date,
+                collection_name=collection_name,
+                source=source,
+                articles_limit=articles_limit,
+            )
+            loader.load_news_data()
+            successful_sources.append(source)
+        except Exception as e:
+            logging.error(f"Error loading source {source}: {e}")
+            failed_sources.append({"source": source, "error": str(e)})
+            continue  # Continue with next source even if this one fails
 
     return (
         jsonify(
-            {"status": f"{tickers} news loaded into {collection_name} collection."}
+            {
+                "status": "completed",
+                "successful_sources": successful_sources,
+                "failed_sources": failed_sources,
+                "collection": collection_name,
+            }
         ),
         202,
     )
