@@ -98,7 +98,7 @@ def news_from_alpacaAPI(
 
         print("getting news data")
         # Get the news data
-        news = client.get_news(request_params)
+        news = client.get_ticker_news(request_params)
         news = news.df
 
         print("resetting index")
