@@ -110,7 +110,10 @@ def news_from_alpacaAPI(
 
         print("looping through rows")
         for _, row in news_df.iterrows():
+            print("grabbing html")
             html_content = grab_html(row["url"])
+
+            print("creating timestamp")
             timestamp = (
                 row["created_at"]
                 .floor("min")
