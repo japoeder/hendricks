@@ -86,6 +86,10 @@ def news_from_alpacaAPI(
         print(
             f"from_date: {from_date}, to_date: {to_date}, articles_limit: {articles_limit}, include_content: {include_content}"
         )
+
+        from_date = "2024-11-01T00:00:00Z"
+        to_date = "2024-11-02T00:00:00Z"
+
         # Create the news request
         request_params = NewsRequest(
             symbols=ticker,
@@ -98,7 +102,7 @@ def news_from_alpacaAPI(
 
         print("getting news data")
         # Get the news data
-        news = client.get_ticker_news(request_params)
+        news = client.get_news(request_params)
         news = news.df
 
         print("resetting index")
