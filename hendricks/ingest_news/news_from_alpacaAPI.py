@@ -103,7 +103,7 @@ def news_from_alpacaAPI(
                 .strftime("%Y-%m-%d %H:%M:%S")
             )
 
-            logger.info(f"{row}")
+            logging.error(f"row data: {row}")
 
             document = {
                 "unique_id": row["url"],
