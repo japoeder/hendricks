@@ -88,6 +88,9 @@ def quote_from_fmpAPI(
         else:
             raise APIError(f"Error: {response.status_code}, {response.text}")
 
+        # Sort results by timestamp in descending order
+        quotes.sort_values(by="timestamp", ascending=False, inplace=True)
+
         # Print the processed quotes
         for quote in quotes:
             # Convert timestamp to UTC timezone
