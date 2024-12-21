@@ -70,8 +70,8 @@ def news_from_alpacaAPI(
         to_date = pd.Timestamp(to_date, tz=TZ)
 
     # Format from_date and to_date like "2024-11-01T00:00:00Z"
-    from_date = from_date.strftime("%Y-%m-%dT%H:%M:%SZ")
-    to_date = to_date.strftime("%Y-%m-%dT%H:%M:%SZ")
+    from_date = from_date.strftime("%Y-%m-%d %H:%M:%S")
+    to_date = to_date.strftime("%Y-%m-%d %H:%M:%S")
 
     print("getting database connection")
     # Get the database connection
