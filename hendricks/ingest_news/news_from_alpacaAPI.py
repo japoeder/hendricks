@@ -58,6 +58,10 @@ def news_from_alpacaAPI(
     from_date = pd.Timestamp(from_date, tz=TZ).to_pydatetime()
     to_date = pd.Timestamp(to_date, tz=TZ).to_pydatetime()
 
+    # Format from_date and to_date like "2024-11-01T00:00:00Z"
+    from_date = from_date.strftime("%Y-%m-%dT%H:%M:%SZ")
+    to_date = to_date.strftime("%Y-%m-%dT%H:%M:%SZ")
+
     print("getting database connection")
     # Get the database connection
     db = mongo_conn()
@@ -83,13 +87,6 @@ def news_from_alpacaAPI(
             del news
 
         print("creating news request")
-        print(
-            f"from_date: {from_date}, to_date: {to_date}, articles_limit: {articles_limit}, include_content: {include_content}"
-        )
-
-        from_date = "2024-11-01T00:00:00Z"
-        to_date = "2024-11-02T00:00:00Z"
-
         # Create the news request
         request_params = NewsRequest(
             symbols=ticker,
