@@ -117,6 +117,12 @@ def news_from_alpacaAPI(
         # Get the news data
         news = client.get_news(request_params)
         news = news.df
+        logger.info(f"Alpaca API Response Shape: {news.shape}")
+        logger.info(f"Alpaca API Columns: {news.columns.tolist()}")
+
+        if news.empty:
+            logger.info(f"No news found for {ticker}")
+            continue
 
         print("resetting index")
         # Prepare the DataFrame
