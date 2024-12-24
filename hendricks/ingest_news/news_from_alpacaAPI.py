@@ -88,10 +88,8 @@ def news_from_alpacaAPI(
     collection = db[collection_name]
 
     print("creating compound index")
-    # Create a compound index on 'timestamp' and 'ticker'
-    collection.create_index(
-        [("unique_id", 1), ("timestamp", 1), ("ticker", 1)], unique=True
-    )
+    # Create a compound index on url and ticker
+    collection.create_index([("unique_id", 1), ("ticker", 1)], unique=True)
 
     print("looping through tickers")
     for ticker in tickers:
@@ -169,8 +167,7 @@ def news_from_alpacaAPI(
             bulk_operations.append(
                 UpdateOne(
                     {
-                        "unique_id": document["unique_id"],
-                        "timestamp": document["timestamp"],
+                        "unique_id": document["unique_id"],  # This is the URL
                         "ticker": document["ticker"],
                         # Only update if any of these values are different
                         "$or": [
