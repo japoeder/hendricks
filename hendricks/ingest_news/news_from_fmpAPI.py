@@ -61,10 +61,8 @@ def news_from_fmpAPI(
     # Get the collection
     collection = db[collection_name]
 
-    # Create a compound index on 'timestamp' and 'ticker'
-    collection.create_index(
-        [("unique_id", 1), ("timestamp", 1), ("ticker", 1)], unique=True
-    )
+    # Create a compound index on url and ticker
+    collection.create_index([("unique_id", 1), ("ticker", 1)], unique=True)
 
     # Convert from_date and to_date to 'yyyy-mm-dd' format
     from_date = from_date.strftime("%Y-%m-%d")
@@ -147,9 +145,9 @@ def news_from_fmpAPI(
                 bulk_operations.append(
                     UpdateOne(
                         {
-                            "unique_id": document["unique_id"],
-                            "timestamp": document["timestamp"],
+                            "unique_id": document["unique_id"],  # This is the URL
                             "ticker": document["ticker"],
+                            # Remove timestamp from the key criteria
                         },
                         {"$set": document},
                         upsert=True,
