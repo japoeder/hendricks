@@ -111,6 +111,8 @@ def news_from_alpacaAPI(
             limit=articles_limit,
             include_content=include_content,
             sort="DESC",  # Get newest articles first
+            news_types=["press_release", "article", "blog"],  # Include all news types
+            # sources=["businesswire", "reuters", "benzinga", "globe_newswire"],  # Uncomment to specify sources
         )
 
         print("getting news data")

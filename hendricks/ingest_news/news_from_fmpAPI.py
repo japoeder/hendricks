@@ -8,6 +8,8 @@ import pytz
 import pandas as pd
 from dotenv import load_dotenv
 import requests
+from pymongo import UpdateOne
+from pymongo.errors import BulkWriteError
 
 load_dotenv()
 from hendricks._utils.load_credentials import load_credentials
@@ -106,8 +108,10 @@ def news_from_fmpAPI(
             # Sort results by publishedDate in descending order
             news.sort_values(by="publishedDate", ascending=False, inplace=True)
 
+            # Process news items in bulk
+            bulk_operations = []
             for _, row in news.iterrows():
-                # Grab the html content
+                # Get HTML content
                 html_content = grab_html(row["url"])
 
                 # Convert the publishedDate to UTC
@@ -136,29 +140,33 @@ def news_from_fmpAPI(
                     "images": row["image"],
                     "html": html_content,
                     "source": "fmp",
-                    "created_at": datetime.now(
-                        timezone.utc
-                    ),  # Document creation time in UTC
+                    "created_at": datetime.now(timezone.utc),
                 }
 
-                # Check if the document exists
-                existing_doc = collection.find_one(
-                    {
-                        "unique_id": document["unique_id"],
-                        "timestamp": document["timestamp"],
-                        "ticker": document["ticker"],
-                    }
-                )
-                if existing_doc:
-                    # Already loaded article for this ticker, do nothing
-                    continue
-                elif len(document["content"]) == 0:
-                    continue
-                else:
-                    # Insert the document directly
-                    collection.insert_one(document)
-                    logger.info(
-                        f"Inserted document for {ticker} at {document['created_at']}"
+                # Create update operation that only updates if values are different
+                bulk_operations.append(
+                    UpdateOne(
+                        {
+                            "unique_id": document["unique_id"],
+                            "timestamp": document["timestamp"],
+                            "ticker": document["ticker"],
+                        },
+                        {"$set": document},
+                        upsert=True,
                     )
+                )
+
+            # Execute all bulk operations at once
+            if bulk_operations:
+                try:
+                    result = collection.bulk_write(bulk_operations, ordered=False)
+                    logger.info(
+                        f"Processed {len(bulk_operations)} news items for {ticker}"
+                    )
+                    logger.info(
+                        f"Inserted: {result.upserted_count}, Modified: {result.modified_count}"
+                    )
+                except BulkWriteError as bwe:
+                    logger.warning(f"Some writes failed for {ticker}: {bwe.details}")
 
             page += 1
