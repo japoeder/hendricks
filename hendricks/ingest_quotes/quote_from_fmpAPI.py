@@ -8,6 +8,7 @@ import pytz
 import pandas as pd
 from dotenv import load_dotenv
 import requests
+from pymongo import UpdateOne
 
 load_dotenv()
 from hendricks._utils.load_credentials import load_credentials
@@ -92,7 +93,8 @@ def quote_from_fmpAPI(
         quotes_df = pd.DataFrame(quotes)
         quotes_df = quotes_df.sort_values(by="timestamp", ascending=False)
 
-        # Print the processed quotes
+        # Process quotes in bulk instead of one by one
+        bulk_operations = []
         for quote in quotes_df.iterrows():
             quote = quote[1]
 
@@ -110,44 +112,34 @@ def quote_from_fmpAPI(
                 "close": quote["close"],
                 "volume": quote["volume"],
                 "source": "fmp",
-                "created_at": datetime.now(
-                    timezone.utc
-                ),  # Document creation time in UTC
+                "created_at": datetime.now(timezone.utc),
             }
 
-            # Check if the document exists
-            existing_doc = collection.find_one(
-                {"timestamp": document["timestamp"], "ticker": document["ticker"]}
-            )
-            if existing_doc:
-                # Compare fields except for 'created_at'
-                if (
-                    existing_doc["open"] == document["open"]
-                    and existing_doc["low"] == document["low"]
-                    and existing_doc["high"] == document["high"]
-                    and existing_doc["close"] == document["close"]
-                    and existing_doc["volume"] == document["volume"]
-                ):
-                    # Fields are the same, do nothing
-                    continue
-                else:  # pylint: disable=no-else-return
-                    # Upsert logic if fields are different
-                    collection.update_one(
-                        {
-                            "timestamp": document["timestamp"],
-                            "ticker": document["ticker"],
-                        },  # Query
-                        {"$set": document},  # Update
-                        upsert=True,  # Upsert option
-                    )
-                    logger.info(
-                        f"Upserted document for {document['ticker']} at {document['timestamp']}"
-                    )
-            else:
-                # Insert the document directly
-                collection.insert_one(document)
-                logger.info(
-                    f"Inserted document for {document['ticker']} at {document['timestamp']}"
+            # Create update operation that only updates if values are different
+            bulk_operations.append(
+                UpdateOne(
+                    {
+                        "timestamp": document["timestamp"],
+                        "ticker": document["ticker"],
+                        # Only update if any of these values are different
+                        "$or": [
+                            {"open": {"$ne": document["open"]}},
+                            {"low": {"$ne": document["low"]}},
+                            {"high": {"$ne": document["high"]}},
+                            {"close": {"$ne": document["close"]}},
+                            {"volume": {"$ne": document["volume"]}},
+                        ],
+                    },
+                    {"$set": document},
+                    upsert=True,
                 )
+            )
+
+        # Print the processed quotes
+        for operation in bulk_operations:
+            collection.bulk_write([operation])
+            logger.info(
+                f"Upserted document for {operation['document']['ticker']} at {operation['document']['timestamp']}"
+            )
 
         print("Data imported successfully!")

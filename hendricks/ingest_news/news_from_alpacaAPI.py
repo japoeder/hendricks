@@ -9,6 +9,8 @@ import pandas as pd
 from dotenv import load_dotenv
 from alpaca.data.historical import NewsClient
 from alpaca.data.requests import NewsRequest
+from pymongo import UpdateOne
+from pymongo.errors import BulkWriteError
 
 load_dotenv()
 from hendricks._utils.load_credentials import load_credentials
@@ -70,8 +72,8 @@ def news_from_alpacaAPI(
         to_date = pd.Timestamp(to_date, tz=TZ)
 
     # Format from_date and to_date like "2024-11-01T00:00:00Z"
-    from_date = from_date.strftime("%Y-%m-%d %H:%M:%S")
-    to_date = to_date.strftime("%Y-%m-%d %H:%M:%S")
+    from_date = from_date.strftime("%Y-%m-%dT%H:%M:%SZ")
+    to_date = to_date.strftime("%Y-%m-%dT%H:%M:%SZ")
 
     print("getting database connection")
     # Get the database connection
@@ -127,6 +129,7 @@ def news_from_alpacaAPI(
         news_df.rename(columns={"symbols": "tickers"}, inplace=True)
 
         print("looping through rows")
+        bulk_operations = []
         for _, row in news_df.iterrows():
             print("grabbing html")
             html_content = grab_html(row["url"])
@@ -139,10 +142,8 @@ def news_from_alpacaAPI(
                 .strftime("%Y-%m-%d %H:%M:%S")
             )
 
-            print("creating document")
             document = {
                 "unique_id": row["url"],
-                # Convert timestamp to datetime, floor to the nearest minute, convert to UTC, and convert to string
                 "timestamp": timestamp,
                 "timestamp_conversion_result": "N/A",
                 "ticker": ticker,
@@ -159,22 +160,41 @@ def news_from_alpacaAPI(
                 "images": row["images"],
                 "html": html_content,
                 "source": "alpaca",
-                "created_at": datetime.now(
-                    timezone.utc
-                ),  # Document creation time in UTC
+                "created_at": datetime.now(timezone.utc),
             }
 
-            # Check if the document exists
-            existing_doc = collection.find_one(
-                {
-                    "unique_id": row["url"],
-                    "timestamp": timestamp,
-                    "ticker": ticker,
-                }
+            # Create update operation that only updates if values are different
+            bulk_operations.append(
+                UpdateOne(
+                    {
+                        "unique_id": document["unique_id"],
+                        "timestamp": document["timestamp"],
+                        "ticker": document["ticker"],
+                        # Only update if any of these values are different
+                        "$or": [
+                            {"headline": {"$ne": document["headline"]}},
+                            {"summary": {"$ne": document["summary"]}},
+                            {"content": {"$ne": document["content"]}},
+                            {"html": {"$ne": document["html"]}},
+                            {
+                                "article_updated_at": {
+                                    "$ne": document["article_updated_at"]
+                                }
+                            },
+                        ],
+                    },
+                    {"$set": document},
+                    upsert=True,
+                )
             )
-            if not existing_doc:
-                # Insert the document directly
-                collection.insert_one(document)
-                logger.info(f"Inserted document for {ticker} at {row['created_at']}")
+
+        # Execute bulk operations if any exist
+        if bulk_operations:
+            try:
+                collection.bulk_write(bulk_operations, ordered=False)
+                logger.info(f"Processed {len(bulk_operations)} documents for {ticker}")
+            except BulkWriteError as bwe:
+                # Log write errors but continue processing
+                logger.warning(f"Some writes failed for {ticker}: {bwe.details}")
 
     logger.info("Articles imported successfully!")
