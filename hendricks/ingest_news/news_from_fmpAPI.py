@@ -85,9 +85,12 @@ def news_from_fmpAPI(
 
             # Get the news data
             response = requests.get(url)
+            logger.info(f"FMP API URL: {url}")
+            logger.info(f"FMP API Response Status: {response.status_code}")
 
             if response.status_code == 200:
                 news = response.json()
+                logger.info(f"FMP API Response Length: {len(news)}")
 
                 if len(news) == 0:
                     a = False
@@ -97,74 +100,80 @@ def news_from_fmpAPI(
                         logger.info("Articles imported successfully!")
                     break
 
-            # Convert news list of dictionaries to a pandas DataFrame
-            news = pd.DataFrame(news)
+                # Convert news list of dictionaries to a pandas DataFrame
+                news = pd.DataFrame(news)
+                logger.info(f"DataFrame shape: {news.shape}")
+                logger.info(f"DataFrame columns: {news.columns.tolist()}")
 
-            # Rename barset 'symbol' to 'ticker'
-            news.rename(columns={"symbol": "ticker"}, inplace=True)
+                # Rename barset 'symbol' to 'ticker'
+                news.rename(columns={"symbol": "ticker"}, inplace=True)
 
-            # Sort results by publishedDate in descending order
-            news.sort_values(by="publishedDate", ascending=False, inplace=True)
+                # Sort results by publishedDate in descending order
+                news.sort_values(by="publishedDate", ascending=False, inplace=True)
 
-            # Process news items in bulk
-            bulk_operations = []
-            for _, row in news.iterrows():
-                # Get HTML content
-                html_content = grab_html(row["url"])
+                # Process news items in bulk
+                bulk_operations = []
+                for _, row in news.iterrows():
+                    # Get HTML content
+                    html_content = grab_html(row["url"])
 
-                # Convert the publishedDate to UTC
-                conversion_result = std_article_time(row["publishedDate"], row["site"])
-                if conversion_result[1] == "converted":
-                    publishedDate = conversion_result[0]
-                else:
-                    publishedDate = row["publishedDate"]
-
-                document = {
-                    "unique_id": row["url"],
-                    # Floor timestamp to the nearest minute
-                    "timestamp": publishedDate,
-                    "timestamp_conversion_result": conversion_result[1],
-                    "ticker": row["ticker"],
-                    "article_id": "N/A",
-                    "headline": row["title"],
-                    "article_source": row["site"],
-                    "url": row["url"],
-                    "summary": row["text"],
-                    "article_created_at": publishedDate,
-                    "article_updated_at": publishedDate,
-                    "article_tickers": [row["ticker"]],
-                    "author": "N/A",
-                    "content": "N/A",
-                    "images": row["image"],
-                    "html": html_content,
-                    "source": "fmp",
-                    "created_at": datetime.now(timezone.utc),
-                }
-
-                # Create update operation that only updates if values are different
-                bulk_operations.append(
-                    UpdateOne(
-                        {
-                            "unique_id": document["unique_id"],  # This is the URL
-                            "ticker": document["ticker"],
-                            # Remove timestamp from the key criteria
-                        },
-                        {"$set": document},
-                        upsert=True,
+                    # Convert the publishedDate to UTC
+                    conversion_result = std_article_time(
+                        row["publishedDate"], row["site"]
                     )
-                )
+                    if conversion_result[1] == "converted":
+                        publishedDate = conversion_result[0]
+                    else:
+                        publishedDate = row["publishedDate"]
 
-            # Execute all bulk operations at once
-            if bulk_operations:
-                try:
-                    result = collection.bulk_write(bulk_operations, ordered=False)
-                    logger.info(
-                        f"Processed {len(bulk_operations)} news items for {ticker}"
+                    document = {
+                        "unique_id": row["url"],
+                        # Floor timestamp to the nearest minute
+                        "timestamp": publishedDate,
+                        "timestamp_conversion_result": conversion_result[1],
+                        "ticker": row["ticker"],
+                        "article_id": "N/A",
+                        "headline": row["title"],
+                        "article_source": row["site"],
+                        "url": row["url"],
+                        "summary": row["text"],
+                        "article_created_at": publishedDate,
+                        "article_updated_at": publishedDate,
+                        "article_tickers": [row["ticker"]],
+                        "author": "N/A",
+                        "content": "N/A",
+                        "images": row["image"],
+                        "html": html_content,
+                        "source": "fmp",
+                        "created_at": datetime.now(timezone.utc),
+                    }
+
+                    # Create update operation that only updates if values are different
+                    bulk_operations.append(
+                        UpdateOne(
+                            {
+                                "unique_id": document["unique_id"],  # This is the URL
+                                "ticker": document["ticker"],
+                                # Remove timestamp from the key criteria
+                            },
+                            {"$set": document},
+                            upsert=True,
+                        )
                     )
-                    logger.info(
-                        f"Inserted: {result.upserted_count}, Modified: {result.modified_count}"
-                    )
-                except BulkWriteError as bwe:
-                    logger.warning(f"Some writes failed for {ticker}: {bwe.details}")
+
+                # Execute all bulk operations at once
+                if bulk_operations:
+                    try:
+                        result = collection.bulk_write(bulk_operations, ordered=False)
+                        logger.info(
+                            f"Processed {len(bulk_operations)} news items for {ticker}"
+                        )
+                        logger.info(
+                            f"Inserted: {result.upserted_count}, Modified: {result.modified_count}"
+                        )
+                    except BulkWriteError as bwe:
+                        logger.warning(
+                            f"Some writes failed for {ticker}: {bwe.details}"
+                        )
 
             page += 1
