@@ -2,8 +2,11 @@
 Load ticker data into MongoDB.
 """
 
+from datetime import timedelta
 import dotenv
 import pandas as pd
+from pandas.tseries.holiday import USFederalHolidayCalendar
+from pandas.tseries.offsets import CustomBusinessDay
 
 from hendricks.ingest_quotes.quote_from_alpacaAPI import quote_from_alpacaAPI
 from hendricks.ingest_quotes.quote_from_fmpAPI import quote_from_fmpAPI
@@ -29,66 +32,86 @@ class DataLoader:
         minute_adjustment: bool = True,
     ):
         self.tickers = tickers
-        self.from_date = from_date
-        self.to_date = to_date
+        self.from_date = pd.to_datetime(from_date)
+        self.to_date = pd.to_datetime(to_date) if to_date else pd.Timestamp.now()
         self.collection_name = collection_name
         self.batch_size = int(batch_size)
         self.creds_file_path = get_path("creds")
         self.source = source
         self.minute_adjustment = minute_adjustment
 
+        # Create US business day calendar
+        self.us_bd = CustomBusinessDay(calendar=USFederalHolidayCalendar())
+
+    def is_trading_day(self, date):
+        """Check if a given date is a trading day."""
+        # Convert to pandas timestamp if not already
+        date = pd.Timestamp(date)
+
+        # Check if it's a weekend
+        if date.weekday() in [5, 6]:  # Saturday = 5, Sunday = 6
+            return False
+
+        # Check if it's a holiday
+        calendar = USFederalHolidayCalendar()
+        holidays = calendar.holidays(start=date, end=date)
+        if len(holidays) > 0:
+            return False
+
+        return True
+
     def load_quote_data(self):
-        """Load ticker data into MongoDB."""
+        """Load ticker data into MongoDB day by day."""
+        current_date = self.from_date
 
-        if self.source == "alpaca":
-            print(f"Fetching data from Alpaca API for {self.tickers}")
-            quote_from_alpacaAPI(
-                tickers=self.tickers,
-                collection_name=self.collection_name,
-                from_date=self.from_date,
-                to_date=self.to_date,
-                creds_file_path=self.creds_file_path,
-                minute_adjustment=self.minute_adjustment,
-            )
-        elif self.source == "fmp":
-            print(f"Fetching data from FMP API for {self.tickers}")
-            from_date = pd.to_datetime(self.from_date)
-            to_date = pd.to_datetime(self.to_date)
+        while current_date <= self.to_date:
+            # Skip non-trading days
+            if not self.is_trading_day(current_date):
+                print(f"Skipping non-trading day: {current_date.strftime('%Y-%m-%d')}")
+                current_date += timedelta(days=1)
+                continue
 
-            # If from_date and to_date are more than 30 days, loop by month
-            if (to_date - from_date).days > 30:
-                # Loop by month
-                loop_mon_beg = from_date
-                loop_mon_end = from_date + pd.DateOffset(months=1)
-                while loop_mon_end < to_date:
+            # Format date as string for API calls
+            date_str = current_date.strftime("%Y-%m-%d")
+            next_date = (current_date + timedelta(days=1)).strftime("%Y-%m-%d")
+
+            print(f"Processing data for {date_str}")
+
+            try:
+                if self.source == "alpaca":
+                    print(f"Fetching data from Alpaca API for {self.tickers}")
+                    quote_from_alpacaAPI(
+                        tickers=self.tickers,
+                        collection_name=self.collection_name,
+                        from_date=date_str,
+                        to_date=next_date,
+                        creds_file_path=self.creds_file_path,
+                        minute_adjustment=self.minute_adjustment,
+                    )
+                elif self.source == "fmp":
+                    print(f"Fetching data from FMP API for {self.tickers}")
                     quote_from_fmpAPI(
                         tickers=self.tickers,
                         collection_name=self.collection_name,
-                        from_date=loop_mon_beg.strftime(
-                            "%Y-%m-%d"
-                        ),  # Convert back to string
-                        to_date=loop_mon_end.strftime(
-                            "%Y-%m-%d"
-                        ),  # Convert back to string
+                        from_date=date_str,
+                        to_date=next_date,
                         creds_file_path=self.creds_file_path,
                     )
-                    loop_mon_beg = loop_mon_end
-                    loop_mon_end = loop_mon_beg + pd.DateOffset(months=1)
-            else:
-                quote_from_fmpAPI(
-                    tickers=self.tickers,
-                    collection_name=self.collection_name,
-                    from_date=self.from_date,
-                    to_date=self.to_date,
-                    creds_file_path=self.creds_file_path,
-                )
-        else:
-            raise ValueError("Unsupported source")
+                else:
+                    raise ValueError("Unsupported source")
+
+                print(f"Completed processing for {date_str}")
+
+            except Exception as e:
+                print(f"Error processing {date_str}: {str(e)}")
+                # Continue to next day even if current day fails
+
+            # Move to next day
+            current_date += timedelta(days=1)
 
         return None
 
     def load_stream_doc(self, stream_list):
-        # TODO: need to update logic for processing stream doc
         """Process and store streaming data into MongoDB."""
         stream_from_alpacaAPI(
             stream_data=stream_list,

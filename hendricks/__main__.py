@@ -169,7 +169,6 @@ def load_news():
     if collection_name is None:
         collection_name = "rawNewsColl"
     sources = data.get("sources")
-    articles_limit = data.get("articles_limit")
 
     if not tickers:
         return jsonify({"error": "Ticker symbol is required"}), 400
@@ -180,12 +179,6 @@ def load_news():
     successful_sources = []
 
     for source in sources:
-        if articles_limit is None:
-            if source == "fmp":
-                articles_limit = 1000
-            else:
-                articles_limit = 50
-
         try:
             loader = NewsLoader(
                 tickers=tickers,
@@ -193,7 +186,6 @@ def load_news():
                 to_date=to_date,
                 collection_name=collection_name,
                 source=source,
-                articles_limit=articles_limit,
             )
             loader.load_news_data()
             successful_sources.append(source)

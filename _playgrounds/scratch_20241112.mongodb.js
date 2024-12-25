@@ -48,6 +48,8 @@ use('stocksDB')
 //     { $project: { timestamp: "$_id", _id: 0 } } // Project the distinct timestamps
 // ])
 
-db.getCollection('rawPriceColl').deleteMany({
-    ticker: { $in: ["CRWD", "PANW", "AAPL", "MSFT"] }
-});
+// db.getCollection('rawPriceColl').deleteMany({
+//     ticker: { $in: ["CRWD", "PANW", "AAPL", "MSFT"] }
+// });
+
+db.getCollection('rawNewsColl').find({}).limit(100).toArray();

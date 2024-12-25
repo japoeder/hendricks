@@ -11,6 +11,7 @@ from alpaca.data.historical import NewsClient
 from alpaca.data.requests import NewsRequest
 from pymongo import UpdateOne
 from pymongo.errors import BulkWriteError
+from gridfs import GridFS
 
 load_dotenv()
 from hendricks._utils.load_credentials import load_credentials
@@ -32,7 +33,7 @@ def news_from_alpacaAPI(
     creds_file_path=None,
     from_date=None,
     to_date=None,
-    articles_limit: int = 1,
+    articles_limit: int = 50,
     include_content: bool = True,
 ):
     """
@@ -88,8 +89,28 @@ def news_from_alpacaAPI(
     collection = db[collection_name]
 
     print("creating compound index")
-    # Create a compound index on url and ticker
-    collection.create_index([("unique_id", 1), ("ticker", 1)], unique=True)
+    # Create indexes for common query patterns
+    collection.create_index([("timestamp", 1)])  # For date range queries
+    collection.create_index([("ticker", 1)])  # For ticker queries
+    collection.create_index([("source", 1)])  # For source filtering
+
+    # Compound indexes for common query combinations
+    collection.create_index(
+        [("ticker", 1), ("timestamp", -1)]
+    )  # For ticker + time sorting
+    collection.create_index(
+        [("source", 1), ("timestamp", -1)]
+    )  # For source + time sorting
+
+    # Uniqueness constraint
+    collection.create_index(
+        [("unique_id", 1), ("ticker", 1)],
+        unique=True,
+        background=True,  # Allow other operations while building index
+    )
+
+    # Initialize GridFS
+    fs = GridFS(db)
 
     print("looping through tickers")
     for ticker in tickers:
@@ -148,44 +169,55 @@ def news_from_alpacaAPI(
                 .strftime("%Y-%m-%d %H:%M:%S")
             )
 
-            document = {
-                "unique_id": row["url"],
-                "timestamp": timestamp,
-                "timestamp_conversion_result": "N/A",
-                "ticker": ticker,
-                "article_id": row["id"],
-                "headline": row["headline"],
-                "article_source": row["source"],
-                "url": row["url"],
+            # HTML should be the row['content'] if it exists, otherwise it should be the row['summary'  ]
+            if row["content"]:
+                html_content = row["content"]
+            else:
+                html_content = row["summary"]
+
+            # Store large content in GridFS
+            content_data = {
                 "summary": row["summary"],
-                "article_created_at": row["created_at"],
-                "article_updated_at": row["updated_at"],
-                "article_tickers": row["tickers"],
-                "author": row["author"],
                 "content": row["content"],
                 "images": row["images"],
                 "html": html_content,
-                "source": "alpaca",
-                "created_at": datetime.now(timezone.utc),
+                "article_tickers": row["tickers"],
+                "author": row["author"],
+                "article_created_at": row["created_at"],
+                "article_updated_at": row["updated_at"],
             }
 
-            # Create update operation that only updates if values are different
+            # Store in GridFS with metadata
+            content_id = fs.put(
+                str(content_data).encode("utf-8"),
+                filename=row["url"],
+                ticker=ticker,
+                source="alpaca",
+            )
+
+            # Streamlined main document
+            document = {
+                "unique_id": row["url"],
+                "timestamp": timestamp,
+                "ticker": ticker,
+                # grab www.address.com and nothing after .com from url for article_source
+                "article_source": row["url"].split("www.")[-1].split(".com")[0],
+                "headline": row["headline"],
+                "source": "alpaca",
+                "created_at": datetime.now(timezone.utc),
+                "content_id": content_id,  # Reference to GridFS content
+            }
+
+            # Modified update operation
             bulk_operations.append(
                 UpdateOne(
                     {
-                        "unique_id": document["unique_id"],  # This is the URL
+                        "unique_id": document["unique_id"],
                         "ticker": document["ticker"],
-                        # Only update if any of these values are different
+                        # Only update if headline changes
                         "$or": [
                             {"headline": {"$ne": document["headline"]}},
-                            {"summary": {"$ne": document["summary"]}},
-                            {"content": {"$ne": document["content"]}},
-                            {"html": {"$ne": document["html"]}},
-                            {
-                                "article_updated_at": {
-                                    "$ne": document["article_updated_at"]
-                                }
-                            },
+                            {"content_id": {"$ne": document["content_id"]}},
                         ],
                     },
                     {"$set": document},

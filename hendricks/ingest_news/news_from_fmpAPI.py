@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 import requests
 from pymongo import UpdateOne
 from pymongo.errors import BulkWriteError
+from gridfs import GridFS
 
 load_dotenv()
 from hendricks._utils.load_credentials import load_credentials
@@ -61,12 +62,32 @@ def news_from_fmpAPI(
     # Get the collection
     collection = db[collection_name]
 
-    # Create a compound index on url and ticker
-    collection.create_index([("unique_id", 1), ("ticker", 1)], unique=True)
+    # Create indexes for common query patterns
+    collection.create_index([("timestamp", 1)])  # For date range queries
+    collection.create_index([("ticker", 1)])  # For ticker queries
+    collection.create_index([("source", 1)])  # For source filtering
+
+    # Compound indexes for common query combinations
+    collection.create_index(
+        [("ticker", 1), ("timestamp", -1)]
+    )  # For ticker + time sorting
+    collection.create_index(
+        [("source", 1), ("timestamp", -1)]
+    )  # For source + time sorting
+
+    # Uniqueness constraint
+    collection.create_index(
+        [("unique_id", 1), ("ticker", 1)],
+        unique=True,
+        background=True,  # Allow other operations while building index
+    )
 
     # Convert from_date and to_date to 'yyyy-mm-dd' format
     from_date = from_date.strftime("%Y-%m-%d")
     to_date = to_date.strftime("%Y-%m-%d")
+
+    # Initialize GridFS
+    fs = GridFS(db)
 
     for ticker in tickers:
         a = True
@@ -114,7 +135,6 @@ def news_from_fmpAPI(
                 # Process news items in bulk
                 bulk_operations = []
                 for _, row in news.iterrows():
-                    # Get HTML content
                     html_content = grab_html(row["url"])
 
                     # Convert the publishedDate to UTC
@@ -126,42 +146,52 @@ def news_from_fmpAPI(
                     else:
                         publishedDate = row["publishedDate"]
 
-                    document = {
-                        "unique_id": row["url"],
-                        # Floor timestamp to the nearest minute
-                        "timestamp": publishedDate,
-                        "timestamp_conversion_result": conversion_result[1],
-                        "ticker": row["ticker"],
-                        "article_id": "N/A",
-                        "headline": row["title"],
-                        "article_source": row["site"],
-                        "url": row["url"],
+                    # Store large content in GridFS
+                    content_data = {
                         "summary": row["text"],
-                        "article_created_at": publishedDate,
-                        "article_updated_at": publishedDate,
+                        "content": row.get("content", "N/A"),
+                        "images": row.get("image"),
+                        "html": html_content,
                         "article_tickers": [row["ticker"]],
                         "author": "N/A",
-                        "content": "N/A",
-                        "images": row["image"],
-                        "html": html_content,
-                        "source": "fmp",
-                        "created_at": datetime.now(timezone.utc),
+                        "article_created_at": publishedDate,
+                        "article_updated_at": publishedDate,
+                        "timestamp_conversion_result": conversion_result[1],
                     }
 
-                    # Create update operation that only updates if values are different
+                    # Store in GridFS with metadata
+                    content_id = fs.put(
+                        str(content_data).encode("utf-8"),
+                        filename=row["url"],
+                        ticker=ticker,
+                        source="fmp",
+                    )
+
+                    # Streamlined main document
+                    document = {
+                        "unique_id": row["url"],
+                        "timestamp": publishedDate,
+                        "ticker": row["ticker"],
+                        "article_source": row["site"],
+                        "headline": row["title"],
+                        "source": "fmp",
+                        "created_at": datetime.now(timezone.utc),
+                        "content_id": content_id,  # Reference to GridFS content
+                    }
+
+                    # Create update operation
                     bulk_operations.append(
                         UpdateOne(
                             {
-                                "unique_id": document["unique_id"],  # This is the URL
+                                "unique_id": document["unique_id"],
                                 "ticker": document["ticker"],
-                                # Remove timestamp from the key criteria
                             },
                             {"$set": document},
                             upsert=True,
                         )
                     )
 
-                # Execute all bulk operations at once
+                # Execute bulk operations if any exist
                 if bulk_operations:
                     try:
                         result = collection.bulk_write(bulk_operations, ordered=False)
