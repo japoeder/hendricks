@@ -1,5 +1,5 @@
 """
-Load historical quote data from Alpaca API into a MongoDB collection.
+Load historical quote data from FMP API into a MongoDB collection.
 """
 
 from datetime import datetime, timezone
@@ -9,6 +9,7 @@ import pandas as pd
 from dotenv import load_dotenv
 import requests
 from pymongo import UpdateOne
+from pymongo.errors import BulkWriteError
 
 load_dotenv()
 from hendricks._utils.load_credentials import load_credentials
@@ -135,11 +136,17 @@ def quote_from_fmpAPI(
                 )
             )
 
-        # Print the processed quotes
-        for operation in bulk_operations:
-            collection.bulk_write([operation])
-            logger.info(
-                f"Upserted document for {operation['document']['ticker']} at {operation['document']['timestamp']}"
-            )
+        # Execute all bulk operations at once
+        if bulk_operations:
+            try:
+                result = collection.bulk_write(bulk_operations, ordered=False)
+                logger.info(f"Processed {len(bulk_operations)} quotes for {ticker}")
+                logger.info(
+                    f"Inserted: {result.upserted_count}, Modified: {result.modified_count}"
+                )
+            except BulkWriteError as bwe:
+                # Only log the count of failed operations instead of full details
+                failed_count = len(bwe.details.get("writeErrors", []))
+                logger.warning(f"{failed_count} duplicate entries skipped for {ticker}")
 
-        print("Data imported successfully!")
+        print(f"Data import completed for {ticker}")

@@ -62,10 +62,21 @@ def load_credentials(file_path, data_type):
         gilfoyle_creds = creds["gilfoyle_api"]
         return (gilfoyle_creds["API_KEY"],)
 
-    if data_type == "mongo_ds":
+    if data_type == "mongo_ds_remote":
         with open(file_path, "r", encoding="utf-8") as file:
             creds = json.load(file)
-        mongo_creds = creds["mongo_ds"]
+        mongo_creds = creds["mongo_ds_remote"]
+        return (
+            mongo_creds["MONGO_USER"],
+            mongo_creds["MONGO_PASSWORD"],
+            mongo_creds["MONGO_HOST"],
+            mongo_creds["MONGO_PORT"],
+        )
+
+    if data_type == "mongo_ds_local":
+        with open(file_path, "r", encoding="utf-8") as file:
+            creds = json.load(file)
+        mongo_creds = creds["mongo_ds_local"]
         return (
             mongo_creds["MONGO_USER"],
             mongo_creds["MONGO_PASSWORD"],
