@@ -29,12 +29,13 @@ logger.setLevel(logging.WARNING)  # Suppress pymongo debug messages
 
 def news_from_alpacaAPI(
     tickers=None,
-    collection_name="rawNewsColl",
+    collection_name=None,
     creds_file_path=None,
     from_date=None,
     to_date=None,
     articles_limit: int = 50,
     include_content: bool = True,
+    gridfs_bucket: str = None,
 ):
     """
     Load historical quote data from Alpaca API into a MongoDB collection.
@@ -110,7 +111,7 @@ def news_from_alpacaAPI(
     )
 
     # Initialize GridFS
-    fs = GridFS(db)
+    fs = GridFS(db, collection=gridfs_bucket)
 
     print("looping through tickers")
     for ticker in tickers:

@@ -169,6 +169,7 @@ def load_news():
     if collection_name is None:
         collection_name = "rawNewsColl"
     sources = data.get("sources")
+    gridfs_bucket = data.get("gridfs_bucket")
 
     if not tickers:
         return jsonify({"error": "Ticker symbol is required"}), 400
@@ -186,6 +187,7 @@ def load_news():
                 to_date=to_date,
                 collection_name=collection_name,
                 source=source,
+                gridfs_bucket=gridfs_bucket,
             )
             loader.load_news_data()
             successful_sources.append(source)

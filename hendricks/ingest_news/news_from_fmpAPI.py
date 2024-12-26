@@ -30,6 +30,7 @@ logger.setLevel(logging.WARNING)  # Suppress pymongo debug messages
 def news_from_fmpAPI(
     tickers=None,
     collection_name="rawNewsColl",
+    gridfs_bucket=None,
     creds_file_path=None,
     from_date=None,
     to_date=None,
@@ -87,7 +88,7 @@ def news_from_fmpAPI(
     to_date = to_date.strftime("%Y-%m-%d")
 
     # Initialize GridFS
-    fs = GridFS(db)
+    fs = GridFS(db, collection=gridfs_bucket)
 
     for ticker in tickers:
         a = True

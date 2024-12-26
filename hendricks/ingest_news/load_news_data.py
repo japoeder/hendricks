@@ -21,12 +21,14 @@ class NewsLoader:
         to_date: str = None,
         collection_name: str = None,
         source: str = None,
+        gridfs_bucket: str = None,
     ):
         self.tickers = tickers
         self.from_date = from_date
         self.to_date = to_date
         self.collection_name = collection_name
         self.source = source
+        self.gridfs_bucket = gridfs_bucket
 
     def load_news_data(self):
         """Load news data into MongoDB."""
@@ -55,6 +57,7 @@ class NewsLoader:
                         ),  # Convert back to string
                         articles_limit=articles_limit,
                         collection_name=self.collection_name,
+                        gridfs_bucket=self.gridfs_bucket,
                     )
                     loop_mon_beg = loop_mon_end
                     loop_mon_end = loop_mon_beg + pd.DateOffset(months=1)
@@ -66,6 +69,7 @@ class NewsLoader:
                     to_date=self.to_date,
                     articles_limit=articles_limit,
                     collection_name=self.collection_name,
+                    gridfs_bucket=self.gridfs_bucket,
                 )
         elif self.source == "fmp":
             print(f"Fetching data from FMP API for {self.tickers}")
@@ -90,6 +94,7 @@ class NewsLoader:
                         ),  # Convert back to string
                         articles_limit=articles_limit,
                         collection_name=self.collection_name,
+                        gridfs_bucket=self.gridfs_bucket,
                     )
                     loop_mon_beg = loop_mon_end
                     loop_mon_end = loop_mon_beg + pd.DateOffset(months=1)
@@ -101,6 +106,7 @@ class NewsLoader:
                     to_date=self.to_date,
                     articles_limit=articles_limit,
                     collection_name=self.collection_name,
+                    gridfs_bucket=self.gridfs_bucket,
                 )
         else:
             raise ValueError("Please provide a valid newssource")
