@@ -27,7 +27,7 @@ logger.setLevel(logging.WARNING)  # Suppress pymongo debug messages
 
 def quote_from_fmpAPI(
     tickers=None,
-    collection_name="rawPriceColl",
+    collection_name=None,
     creds_file_path=None,
     from_date=None,
     to_date=None,

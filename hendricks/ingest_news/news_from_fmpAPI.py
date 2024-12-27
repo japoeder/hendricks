@@ -29,7 +29,7 @@ logger.setLevel(logging.WARNING)  # Suppress pymongo debug messages
 
 def news_from_fmpAPI(
     tickers=None,
-    collection_name="rawNewsColl",
+    collection_name=None,
     gridfs_bucket=None,
     creds_file_path=None,
     from_date=None,
