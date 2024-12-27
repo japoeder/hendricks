@@ -83,6 +83,13 @@ def quote_from_fmpAPI(
         if response.status_code == 200:
             quotes = response.json()
 
+            # Skip processing if no data returned
+            if not quotes:
+                logger.info(
+                    f"No data returned for {ticker} between {from_date} and {to_date}"
+                )
+                continue
+
             # Process quotes to rename 'date' to 'timestamp'
             for quote in quotes:
                 quote["timestamp"] = quote.pop("date")  # Rename 'date' to 'timestamp'
