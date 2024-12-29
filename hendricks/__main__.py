@@ -15,6 +15,7 @@ from flask import Flask, request, jsonify
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from hendricks.ingest_quotes.load_quote_data import DataLoader  # pylint: disable=C0413
+from hendricks.ingest_finData.load_fin_data import FinLoader  # pylint: disable=C0413
 from hendricks.ingest_news.load_news_data import NewsLoader  # pylint: disable=C0413
 from hendricks.stream_quotes.stream_ticker_data import (
     DataStreamer,
@@ -135,6 +136,64 @@ def load_quotes():
                 minute_adjustment=minute_adjustment,
             )
             loader.load_quote_data()
+            successful_tickers.append(ticker)
+        except Exception as e:
+            logging.error(f"Error loading ticker {ticker}: {e}")
+            failed_tickers.append({"ticker": ticker, "error": str(e)})
+            continue  # Continue with next ticker even if this one fails
+
+    # Return detailed status
+    return (
+        jsonify(
+            {
+                "status": "completed",
+                "successful_tickers": successful_tickers,
+                "failed_tickers": failed_tickers,
+                "collection": collection_name,
+            }
+        ),
+        202,
+    )
+
+
+@app.route("/hendricks/load_fin_data", methods=["POST"])
+@requires_api_key
+def load_fin_data():
+    """Endpoint to load a new stock ticker into the database."""
+    data = request.json
+    logging.info(f"Received data: {data}")
+
+    tickers = data.get("tickers")
+    from_date = data.get("from_date")
+    to_date = data.get("to_date")
+
+    collection_name = data.get("collection_name")
+    endpoint = data.get("endpoint")
+
+    source = data.get("source")
+    if source is None:
+        source = "fmp"
+
+    if not tickers:
+        return jsonify({"error": "Ticker symbol is required"}), 400
+    if not endpoint:
+        return jsonify({"error": "Endpoint is required"}), 400
+
+    failed_tickers = []
+    successful_tickers = []
+
+    # Process each ticker individually
+    for ticker in tickers:
+        try:
+            loader = FinLoader(
+                tickers=[ticker],  # Process one ticker at a time
+                from_date=from_date,
+                to_date=to_date,
+                collection_name=collection_name,
+                source=source,
+                endpoint="employee_count",
+            )
+            loader.load_fin_data()
             successful_tickers.append(ticker)
         except Exception as e:
             logging.error(f"Error loading ticker {ticker}: {e}")
