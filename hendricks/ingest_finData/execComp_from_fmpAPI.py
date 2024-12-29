@@ -137,7 +137,7 @@ def execComp_from_fmpAPI(
 
                 # Streamlined main document
                 document = {
-                    "unique_id": row["source"],
+                    "unique_id": row["url"],
                     "timestamp": timestamp,
                     "ticker": row["ticker"],
                     ##########################################
