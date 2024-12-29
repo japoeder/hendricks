@@ -48,7 +48,7 @@ class FinLoader:
         """Load ticker data into MongoDB day by day."""
         # current_date = self.from_date
 
-        print(f"Processing data for {self.tickers}")
+        print(f"Processing data for {self.tickers} on endpoint {self.endpoint}")
 
         if self.source == "fmp":
             if self.endpoint == "employee_count":
