@@ -191,7 +191,7 @@ def load_fin_data():
                 to_date=to_date,
                 collection_name=collection_name,
                 source=source,
-                endpoint="employee_count",
+                endpoint=endpoint,
             )
             loader.load_fin_data()
             successful_tickers.append(ticker)
