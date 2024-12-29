@@ -41,7 +41,7 @@ def execComp_from_fmpAPI(
     ep_base = "https://financialmodelingprep.com/api/v4/governance"
     ep = "executive_compensation"
     ep_ticker_alias = "symbol"
-    ep_timestamp_field = "acceptanceDate"
+    ep_timestamp_field = "acceptedDate"
 
     if creds_file_path is None:
         creds_file_path = get_path("creds")
