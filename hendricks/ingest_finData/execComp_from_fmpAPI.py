@@ -68,13 +68,13 @@ def execComp_from_fmpAPI(
     # Create indexes for common query patterns
     collection.create_index([("timestamp", 1)])  # For date range queries
     collection.create_index([("ticker", 1)])  # For ticker queries
-    collection.create_index([("source", 1)])  # For source filtering
+    collection.create_index([("unique_id", 1)])  # For source filtering
 
     collection.create_index(
         [("ticker", 1), ("timestamp", -1)]
     )  # For ticker + time sorting
     collection.create_index(
-        [("source", 1), ("timestamp", -1)]
+        [("unique_id", 1), ("timestamp", -1)]
     )  # For source + time sorting
 
     # Uniqueness constraint
