@@ -27,7 +27,7 @@ logger = logging.getLogger("pymongo")
 logger.setLevel(logging.WARNING)  # Suppress pymongo debug messages
 
 
-def empCount_from_fmpAPI(
+def execComp_from_fmpAPI(
     tickers=None,
     collection_name=None,
     creds_file_path=None,
@@ -37,6 +37,11 @@ def empCount_from_fmpAPI(
     """
     Load historical quote data from Alpaca API into a MongoDB collection.
     """
+
+    ep_base = "https://financialmodelingprep.com/api/v4/governance"
+    ep = "executive_compensation"
+    ep_ticker_alias = "symbol"
+    ep_timestamp_field = "acceptanceDate"
 
     if creds_file_path is None:
         creds_file_path = get_path("creds")
@@ -84,10 +89,10 @@ def empCount_from_fmpAPI(
     # to_date = to_date.strftime("%Y-%m-%d")
 
     for ticker in tickers:
-        BASE_URL = "https://financialmodelingprep.com/api/v4/historical"
+        BASE_URL = ep_base
 
         url = request_url_constructor(
-            endpoint="employee_count",
+            endpoint=ep,
             base_url=BASE_URL,
             ticker=ticker,
             api_key=API_KEY,
@@ -114,18 +119,18 @@ def empCount_from_fmpAPI(
             logger.info(f"DataFrame shape: {res_df.shape}")
             logger.info(f"DataFrame columns: {res_df.columns.tolist()}")
 
-            # Rename barset 'symbol' to 'ticker'
-            res_df.rename(columns={"symbol": "ticker"}, inplace=True)
+            # Rename 'symbol' to 'ticker'
+            res_df.rename(columns={ep_ticker_alias: "ticker"}, inplace=True)
 
             # Sort results by timestamp in descending order
-            res_df.sort_values(by="acceptanceTime", ascending=False, inplace=True)
+            res_df.sort_values(by=ep_timestamp_field, ascending=False, inplace=True)
 
             # Process news items in bulk
             bulk_operations = []
             for _, row in res_df.iterrows():
-                # Create timestamp col in res_df from acceptanceTime to UTC
+                # Create timestamp col in res_df from acceptanceDate to UTC
                 timestamp = (
-                    pd.to_datetime(row["acceptanceTime"])
+                    pd.to_datetime(row[ep_timestamp_field])
                     .tz_localize("America/New_York")
                     .tz_convert("UTC")
                 )
@@ -135,13 +140,25 @@ def empCount_from_fmpAPI(
                     "unique_id": row["source"],
                     "timestamp": timestamp,
                     "ticker": row["ticker"],
+                    ##########################################
+                    ##########################################
                     "cik": row["cik"],
-                    "acceptanceTime": row["acceptanceTime"],
-                    "periodOfReport": row["periodOfReport"],
                     "companyName": row["companyName"],
-                    "formType": row["formType"],
+                    "industryTitle": row["industryTitle"],
                     "filingDate": row["filingDate"],
-                    "employeeCount": row["employeeCount"],
+                    "acceptedDate": row["acceptedDate"],
+                    "nameAndPosition": row["nameAndPosition"],
+                    "year": row["year"],
+                    "salary": row["salary"],
+                    "bonus": row["bonus"],
+                    "stock_award": row["stock_award"],
+                    "option_award": row["option_award"],
+                    "incentive_plan_compensation": row["incentive_plan_compensation"],
+                    "all_other_compensation": row["all_other_compensation"],
+                    "total": row["total"],
+                    "url": row["url"],
+                    ##########################################
+                    ##########################################
                     "source": "fmp",
                     "created_at": datetime.now(timezone.utc),
                 }
