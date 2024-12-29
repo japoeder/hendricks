@@ -194,4 +194,15 @@ def request_url_constructor(
             else:
                 compiled_url += f"&apikey={api_key}"
 
+        elif endpoint == "executive_compensation":
+            if ticker is None:
+                raise ValueError("ticker is required")
+            else:
+                compiled_url += f"/{endpoint}?symbol={ticker}"
+
+            if api_key is None:
+                raise ValueError("api_key is required")
+            else:
+                compiled_url += f"&apikey={api_key}"
+
     return compiled_url
