@@ -28,7 +28,7 @@ logger = logging.getLogger("pymongo")
 logger.setLevel(logging.WARNING)  # Suppress pymongo debug messages
 
 
-def execComp_from_fmpAPI(
+def grade_from_fmpAPI(
     tickers=None,
     collection_name=None,
     creds_file_path=None,
