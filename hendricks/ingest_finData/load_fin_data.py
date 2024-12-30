@@ -10,6 +10,7 @@ from pandas.tseries.offsets import CustomBusinessDay
 
 from hendricks.ingest_finData.empCount_from_fmpAPI import empCount_from_fmpAPI
 from hendricks.ingest_finData.execComp_from_fmpAPI import execComp_from_fmpAPI
+from hendricks.ingest_finData.grade_from_fmpAPI import grade_from_fmpAPI
 from hendricks._utils.get_path import get_path
 
 dotenv.load_dotenv()
@@ -63,6 +64,13 @@ class FinLoader:
                     f"Fetching executive compensation data from FMP API for {self.tickers}"
                 )
                 execComp_from_fmpAPI(
+                    tickers=self.tickers,
+                    collection_name=self.collection_name,
+                    creds_file_path=self.creds_file_path,
+                )
+            elif self.endpoint == "grade":
+                print(f"Fetching grade data from FMP API for {self.tickers}")
+                grade_from_fmpAPI(
                     tickers=self.tickers,
                     collection_name=self.collection_name,
                     creds_file_path=self.creds_file_path,
