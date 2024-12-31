@@ -111,7 +111,7 @@ class FinLoader:
             # Loop by month
             loop_mon_beg = from_date
             loop_mon_end = from_date + pd.DateOffset(months=1)
-            while loop_mon_end < to_date:
+            while loop_mon_end <= to_date:
                 handler_function(
                     tickers=self.tickers,
                     from_date=loop_mon_beg.strftime("%Y-%m-%d"),
@@ -121,6 +121,15 @@ class FinLoader:
 
                 loop_mon_beg = loop_mon_end
                 loop_mon_end = loop_mon_beg + pd.DateOffset(months=1)
+
+                # Handle the final partial month if it exists
+                if loop_mon_beg < to_date < loop_mon_end:
+                    handler_function(
+                        tickers=self.tickers,
+                        from_date=loop_mon_beg.strftime("%Y-%m-%d"),
+                        to_date=to_date.strftime("%Y-%m-%d"),
+                        collection_name=self.collection_name,
+                    )
         else:
             # For periods less than 30 days, make a single API call
             handler_function(
