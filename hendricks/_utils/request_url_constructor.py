@@ -216,4 +216,21 @@ def request_url_constructor(
             else:
                 compiled_url += f"?apikey={api_key}"
 
+        elif endpoint == "historical-market-capitalization":
+            if ticker is None:
+                raise ValueError("ticker is required")
+            else:
+                compiled_url += f"/{endpoint}/{ticker}?"
+
+            if api_key is None:
+                raise ValueError("api_key is required")
+            else:
+                compiled_url += f"&apikey={api_key}"
+
+            # Add optional parameters
+            if from_date is not None:
+                compiled_url += f"&from={from_date}"
+                if to_date is not None:
+                    compiled_url += f"&to={to_date}"
+
     return compiled_url
