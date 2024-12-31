@@ -11,6 +11,7 @@ from pandas.tseries.offsets import CustomBusinessDay
 from hendricks.ingest_finData.empCount_from_fmpAPI import empCount_from_fmpAPI
 from hendricks.ingest_finData.execComp_from_fmpAPI import execComp_from_fmpAPI
 from hendricks.ingest_finData.grade_from_fmpAPI import grade_from_fmpAPI
+from hendricks.ingest_finData.marketCap_from_fmpAPI import marketCap_from_fmpAPI
 from hendricks._utils.get_path import get_path
 
 dotenv.load_dotenv()
@@ -45,7 +46,7 @@ class FinLoader:
         # Create US business day calendar
         self.us_bd = CustomBusinessDay(calendar=USFederalHolidayCalendar())
 
-    def load_fin_data(self):
+    def load_agg_fin_data(self):
         """Load ticker data into MongoDB day by day."""
         # current_date = self.from_date
 
@@ -82,4 +83,52 @@ class FinLoader:
 
         print(f"Completed processing for {self.tickers}")
 
+        return None
+
+    def load_daily_fin_data(self):
+        """Load ticker data into MongoDB day by day."""
+        print(f"Processing data for {self.tickers} on endpoint {self.endpoint}")
+
+        if self.source != "fmp":
+            raise ValueError("Unsupported source")
+
+        # Map endpoints to their corresponding functions
+        endpoint_handlers = {
+            "historical-market-capitalization": marketCap_from_fmpAPI,
+            # Add new endpoints here with their corresponding functions
+            # "some-other-endpoint": other_endpoint_function,
+        }
+
+        if self.endpoint not in endpoint_handlers:
+            raise ValueError(f"Unsupported endpoint: {self.endpoint}")
+
+        handler_function = endpoint_handlers[self.endpoint]
+        from_date = pd.to_datetime(self.from_date)
+        to_date = pd.to_datetime(self.to_date)
+
+        # If from_date and to_date are more than 30 days, loop by month
+        if (to_date - from_date).days > 30:
+            # Loop by month
+            loop_mon_beg = from_date
+            loop_mon_end = from_date + pd.DateOffset(months=1)
+            while loop_mon_end < to_date:
+                handler_function(
+                    tickers=self.tickers,
+                    from_date=loop_mon_beg.strftime("%Y-%m-%d"),
+                    to_date=loop_mon_end.strftime("%Y-%m-%d"),
+                    collection_name=self.collection_name,
+                )
+
+                loop_mon_beg = loop_mon_end
+                loop_mon_end = loop_mon_beg + pd.DateOffset(months=1)
+        else:
+            # For periods less than 30 days, make a single API call
+            handler_function(
+                tickers=self.tickers,
+                from_date=self.from_date,
+                to_date=self.to_date,
+                collection_name=self.collection_name,
+            )
+
+        print(f"Completed processing for {self.tickers}")
         return None

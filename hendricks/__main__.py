@@ -170,6 +170,8 @@ def load_fin_data():
     collection_name = data.get("collection_name")
     endpoint = data.get("endpoint")
 
+    daily_flag = data.get("daily_flag")
+
     source = data.get("source")
     if source is None:
         source = "fmp"
@@ -193,7 +195,11 @@ def load_fin_data():
                 source=source,
                 endpoint=endpoint,
             )
-            loader.load_fin_data()
+            # * USING FROM_DATE TO CONTROL DAILY LOADING
+            if daily_flag:
+                loader.load_daily_fin_data()
+            else:
+                loader.load_agg_fin_data()
             successful_tickers.append(ticker)
         except Exception as e:
             logging.error(f"Error loading ticker {ticker}: {e}")
