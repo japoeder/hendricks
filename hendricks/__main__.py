@@ -166,6 +166,7 @@ def load_fin_data():
     tickers = data.get("tickers")
     from_date = data.get("from_date")
     to_date = data.get("to_date")
+    sources = data.get("sources")
 
     collection_name = data.get("collection_name")
     endpoint = data.get("endpoint")
@@ -179,9 +180,8 @@ def load_fin_data():
     logging.info(f"Endpoint: {endpoint}")
     logging.info(f"Daily FMP flag: {daily_fmp_flag}")
 
-    source = data.get("source")
-    if source is None:
-        source = "fmp"
+    if sources is None:
+        sources = ["fmp"]
 
     if not tickers:
         return jsonify({"error": "Ticker symbol is required"}), 400
@@ -193,27 +193,28 @@ def load_fin_data():
 
     # Process each ticker individually
     for ticker in tickers:
-        try:
-            loader = FinLoader(
-                tickers=[ticker],  # Process one ticker at a time
-                from_date=from_date,
-                to_date=to_date,
-                collection_name=collection_name,
-                source=source,
-                endpoint=endpoint,
-            )
-            # * USING FROM_DATE TO CONTROL DAILY LOADING
-            if daily_fmp_flag:
-                logging.info(f"Running load_daily_fin_data for {ticker}")
-                loader.load_daily_fin_data()
-            else:
-                logging.info(f"Running load_agg_fin_data for {ticker}")
-                loader.load_agg_fin_data()
-            successful_tickers.append(ticker)
-        except Exception as e:
-            logging.error(f"Error loading ticker {ticker}: {e}")
-            failed_tickers.append({"ticker": ticker, "error": str(e)})
-            continue  # Continue with next ticker even if this one fails
+        for source in sources:
+            try:
+                loader = FinLoader(
+                    tickers=[ticker],  # Process one ticker at a time
+                    from_date=from_date,
+                    to_date=to_date,
+                    collection_name=collection_name,
+                    source=source,
+                    endpoint=endpoint,
+                )
+                # * USING FROM_DATE TO CONTROL DAILY LOADING
+                if daily_fmp_flag:
+                    logging.info(f"Running load_daily_fin_data for {ticker}")
+                    loader.load_daily_fin_data()
+                else:
+                    logging.info(f"Running load_agg_fin_data for {ticker}")
+                    loader.load_agg_fin_data()
+                successful_tickers.append(ticker)
+            except Exception as e:
+                logging.error(f"Error loading ticker {ticker}: {e}")
+                failed_tickers.append({"ticker": ticker, "error": str(e)})
+                continue  # Continue with next ticker even if this one fails
 
     # Return detailed status
     return (
