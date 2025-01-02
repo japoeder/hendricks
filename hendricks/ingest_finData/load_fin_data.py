@@ -32,7 +32,7 @@ class FinLoader:
         batch_size: int = 7500,
         source: str = None,
         minute_adjustment: bool = True,
-        endpoint: dict = None,
+        fmp_endpoint: dict = None,
     ):
         self.tickers = tickers
         self.from_date = pd.to_datetime(from_date)
@@ -42,7 +42,7 @@ class FinLoader:
         self.creds_file_path = get_path("creds")
         self.source = source
         self.minute_adjustment = minute_adjustment
-        self.endpoint = endpoint
+        self.fmp_endpoint = fmp_endpoint
 
         # Create US business day calendar
         self.us_bd = CustomBusinessDay(calendar=USFederalHolidayCalendar())
@@ -51,17 +51,17 @@ class FinLoader:
         """Load ticker data into MongoDB day by day."""
         # current_date = self.from_date
 
-        print(f"Processing data for {self.tickers} on endpoint {self.endpoint}")
+        print(f"Processing data for {self.tickers} on endpoint {self.fmp_endpoint}")
 
         if self.source == "fmp":
-            if self.endpoint == "employee_count":
+            if self.fmp_endpoint == "employee_count":
                 print(f"Fetching employee count data from FMP API for {self.tickers}")
                 empCount_from_fmpAPI(
                     tickers=self.tickers,
                     collection_name=self.collection_name,
                     creds_file_path=self.creds_file_path,
                 )
-            elif self.endpoint == "executive_compensation":
+            elif self.fmp_endpoint == "executive_compensation":
                 print(
                     f"Fetching executive compensation data from FMP API for {self.tickers}"
                 )
@@ -70,7 +70,7 @@ class FinLoader:
                     collection_name=self.collection_name,
                     creds_file_path=self.creds_file_path,
                 )
-            elif self.endpoint == "grade":
+            elif self.fmp_endpoint == "grade":
                 print(f"Fetching grade data from FMP API for {self.tickers}")
                 grade_from_fmpAPI(
                     tickers=self.tickers,
@@ -88,7 +88,7 @@ class FinLoader:
 
     def load_daily_fin_data(self):
         """Load ticker data into MongoDB day by day."""
-        print(f"Processing data for {self.tickers} on endpoint {self.endpoint}")
+        print(f"Processing data for {self.tickers} on endpoint {self.fmp_endpoint}")
 
         if self.source != "fmp":
             raise ValueError("Unsupported source")
@@ -100,10 +100,10 @@ class FinLoader:
             # "some-other-endpoint": other_endpoint_function,
         }
 
-        if self.endpoint not in endpoint_handlers:
-            raise ValueError(f"Unsupported endpoint: {self.endpoint}")
+        if self.fmp_endpoint not in endpoint_handlers:
+            raise ValueError(f"Unsupported endpoint: {self.fmp_endpoint}")
 
-        handler_function = endpoint_handlers[self.endpoint]
+        handler_function = endpoint_handlers[self.fmp_endpoint]
         from_date = pd.to_datetime(self.from_date)
         to_date = pd.to_datetime(self.to_date)
 
