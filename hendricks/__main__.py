@@ -197,8 +197,10 @@ def load_fin_data():
             )
             # * USING FROM_DATE TO CONTROL DAILY LOADING
             if daily_flag:
+                logging.info(f"Running load_daily_fin_data for {ticker}")
                 loader.load_daily_fin_data()
             else:
+                logging.info(f"Running load_agg_fin_data for {ticker}")
                 loader.load_agg_fin_data()
             successful_tickers.append(ticker)
         except Exception as e:
