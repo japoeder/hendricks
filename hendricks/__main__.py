@@ -170,8 +170,7 @@ def load_fin_data():
     collection_name = data.get("collection_name")
     endpoint = data.get("endpoint")
 
-    daily_flag = data.get("daily_flag")
-    logging.info(f"Daily flag: {daily_flag}")
+    daily_fmp_flag = data.get("daily_fmp_flag")
 
     source = data.get("source")
     if source is None:
@@ -197,7 +196,7 @@ def load_fin_data():
                 endpoint=endpoint,
             )
             # * USING FROM_DATE TO CONTROL DAILY LOADING
-            if daily_flag:
+            if daily_fmp_flag:
                 logging.info(f"Running load_daily_fin_data for {ticker}")
                 loader.load_daily_fin_data()
             else:
