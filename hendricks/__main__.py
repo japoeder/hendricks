@@ -171,6 +171,7 @@ def load_fin_data():
     endpoint = data.get("endpoint")
 
     daily_flag = data.get("daily_flag")
+    logging.info(f"Daily flag: {daily_flag}")
 
     source = data.get("source")
     if source is None:
