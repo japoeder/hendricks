@@ -171,6 +171,7 @@ def load_fin_data():
     endpoint = data.get("endpoint")
 
     daily_fmp_flag = data.get("daily_fmp_flag")
+    logging.info(f"Daily FMP flag: {daily_fmp_flag}")
 
     source = data.get("source")
     if source is None:
