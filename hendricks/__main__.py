@@ -171,6 +171,12 @@ def load_fin_data():
     endpoint = data.get("endpoint")
 
     daily_fmp_flag = data.get("daily_fmp_flag")
+
+    logging.info(f"Tickers: {tickers}")
+    logging.info(f"From date: {from_date}")
+    logging.info(f"To date: {to_date}")
+    logging.info(f"Collection name: {collection_name}")
+    logging.info(f"Endpoint: {endpoint}")
     logging.info(f"Daily FMP flag: {daily_fmp_flag}")
 
     source = data.get("source")
