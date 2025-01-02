@@ -194,6 +194,9 @@ def load_fin_data():
     # Process each ticker individually
     for ticker in tickers:
         for source in sources:
+            logging.info(
+                f"Trying to instantiate FinLoader for {endpoint} for {ticker} from {source}"
+            )
             try:
                 loader = FinLoader(
                     tickers=[ticker],  # Process one ticker at a time
