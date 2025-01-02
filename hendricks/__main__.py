@@ -169,7 +169,7 @@ def load_fin_data():
     sources = data.get("sources")
 
     collection_name = data.get("collection_name")
-    endpoint = data.get("endpoint")
+    fmp_endpoint = data.get("fmp_endpoint")
 
     daily_fmp_flag = data.get("daily_fmp_flag")
 
@@ -177,7 +177,7 @@ def load_fin_data():
     logging.info(f"From date: {from_date}")
     logging.info(f"To date: {to_date}")
     logging.info(f"Collection name: {collection_name}")
-    logging.info(f"Endpoint: {endpoint}")
+    logging.info(f"FMP endpoint: {fmp_endpoint}")
     logging.info(f"Daily FMP flag: {daily_fmp_flag}")
 
     if sources is None:
@@ -185,8 +185,8 @@ def load_fin_data():
 
     if not tickers:
         return jsonify({"error": "Ticker symbol is required"}), 400
-    if not endpoint:
-        return jsonify({"error": "Endpoint is required"}), 400
+    if not fmp_endpoint:
+        return jsonify({"error": "FMP endpoint is required"}), 400
 
     failed_tickers = []
     successful_tickers = []
@@ -195,7 +195,7 @@ def load_fin_data():
     for ticker in tickers:
         for source in sources:
             logging.info(
-                f"Trying to instantiate FinLoader for {endpoint} for {ticker} from {source}"
+                f"Trying to instantiate FinLoader for {fmp_endpoint} for {ticker} from {source}"
             )
             try:
                 loader = FinLoader(
@@ -204,7 +204,7 @@ def load_fin_data():
                     to_date=to_date,
                     collection_name=collection_name,
                     source=source,
-                    endpoint=endpoint,
+                    fmp_endpoint=fmp_endpoint,
                 )
                 # * USING FROM_DATE TO CONTROL DAILY LOADING
                 if daily_fmp_flag:
