@@ -3,6 +3,7 @@ Load ticker data into MongoDB.
 """
 
 # from datetime import timedelta
+import logging
 import dotenv
 import pandas as pd
 from pandas.tseries.holiday import USFederalHolidayCalendar
@@ -112,6 +113,12 @@ class FinLoader:
             loop_mon_beg = from_date
             loop_mon_end = from_date + pd.DateOffset(months=1)
             while loop_mon_end <= to_date:
+                logging.info(f"handler_function: {handler_function}")
+                logging.info(f"tickers: {self.tickers}")
+                logging.info(f"from_date: {loop_mon_beg.strftime('%Y-%m-%d')}")
+                logging.info(f"to_date: {loop_mon_end.strftime('%Y-%m-%d')}")
+                logging.info(f"collection_name: {self.collection_name}")
+
                 handler_function(
                     tickers=self.tickers,
                     from_date=loop_mon_beg.strftime("%Y-%m-%d"),
