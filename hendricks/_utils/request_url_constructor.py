@@ -266,7 +266,7 @@ def request_url_constructor(
             "income-statement-growth",
             "balance-sheet-statement-growth",
             "financial-growth",
-            "enterprise-value",
+            "enterprise-values",
         ]:
             if ticker is None:
                 raise ValueError("ticker is required")

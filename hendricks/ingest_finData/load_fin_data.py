@@ -99,7 +99,7 @@ class FinLoader:
             "income-statement-growth": stmtAnalIncGr_from_fmpAPI,
             "balance-sheet-statement-growth": stmtAnalBSG_from_fmpAPI,
             "financial-growth": stmtAnalFinGr_from_fmpAPI,
-            "enterprise-value": stmtAnalEntVal_from_fmpAPI,
+            "enterprise-values": stmtAnalEntVal_from_fmpAPI,
             "score": stmtAnalFinScore_from_fmpAPI,
             "owner_earnings": stmtAnalOwnEarn_from_fmpAPI,
         }
