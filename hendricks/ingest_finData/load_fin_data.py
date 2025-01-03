@@ -13,6 +13,7 @@ from hendricks.ingest_finData.empCount_from_fmpAPI import empCount_from_fmpAPI
 from hendricks.ingest_finData.execComp_from_fmpAPI import execComp_from_fmpAPI
 from hendricks.ingest_finData.grade_from_fmpAPI import grade_from_fmpAPI
 from hendricks.ingest_finData.marketCap_from_fmpAPI import marketCap_from_fmpAPI
+from hendricks.ingest_finData.analystEst_from_fmpAPI import analystEst_from_fmpAPI
 from hendricks._utils.get_path import get_path
 
 dotenv.load_dotenv()
@@ -53,37 +54,28 @@ class FinLoader:
 
         print(f"Processing data for {self.tickers} on endpoint {self.fmp_endpoint}")
 
-        if self.source == "fmp":
-            if self.fmp_endpoint == "employee_count":
-                print(f"Fetching employee count data from FMP API for {self.tickers}")
-                empCount_from_fmpAPI(
-                    tickers=self.tickers,
-                    collection_name=self.collection_name,
-                    creds_file_path=self.creds_file_path,
-                )
-            elif self.fmp_endpoint == "executive_compensation":
-                print(
-                    f"Fetching executive compensation data from FMP API for {self.tickers}"
-                )
-                execComp_from_fmpAPI(
-                    tickers=self.tickers,
-                    collection_name=self.collection_name,
-                    creds_file_path=self.creds_file_path,
-                )
-            elif self.fmp_endpoint == "grade":
-                print(f"Fetching grade data from FMP API for {self.tickers}")
-                grade_from_fmpAPI(
-                    tickers=self.tickers,
-                    collection_name=self.collection_name,
-                    creds_file_path=self.creds_file_path,
-                )
-            else:
-                raise ValueError("Unsupported endpoint")
-        else:
+        if self.source != "fmp":
             raise ValueError("Unsupported source")
 
-        print(f"Completed processing for {self.tickers}")
+        # Map endpoints to their corresponding functions
+        endpoint_handlers = {
+            "employee_count": empCount_from_fmpAPI,
+            "executive_compensation": execComp_from_fmpAPI,
+            "grade": grade_from_fmpAPI,
+            "analyst-estimates": analystEst_from_fmpAPI,
+        }
 
+        if self.fmp_endpoint not in endpoint_handlers:
+            raise ValueError(f"Unsupported endpoint: {self.fmp_endpoint}")
+
+        handler_function = endpoint_handlers[self.fmp_endpoint]
+        handler_function(
+            tickers=self.tickers,
+            collection_name=self.collection_name,
+            creds_file_path=self.creds_file_path,
+        )
+
+        print(f"Completed processing for {self.tickers}")
         return None
 
     def load_daily_fin_data(self):
