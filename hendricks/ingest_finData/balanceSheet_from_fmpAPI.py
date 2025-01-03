@@ -136,9 +136,13 @@ def balanceSheet_from_fmpAPI(
                     f1 = ticker
                     f2 = timestamp
                     f3 = row["link"]
+                    f4 = period
+                    f5 = row["calendarYear"]
 
-                    # Create hash of f1, f2, f3, f4
-                    unique_id = hashlib.sha256(f"{f1}{f2}{f3}".encode()).hexdigest()
+                    # Create hash of f1, f2, f3, f4, f5
+                    unique_id = hashlib.sha256(
+                        f"{f1}{f2}{f3}{f4}{f5}".encode()
+                    ).hexdigest()
 
                     # Streamlined main document
                     document = {

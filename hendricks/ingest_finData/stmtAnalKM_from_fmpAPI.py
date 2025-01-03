@@ -28,7 +28,7 @@ logger = logging.getLogger("pymongo")
 logger.setLevel(logging.WARNING)  # Suppress pymongo debug messages
 
 
-def incomeStmt_from_fmpAPI(
+def stmtAnalKM_from_fmpAPI(
     tickers=None,
     collection_name=None,
     creds_file_path=None,
@@ -41,7 +41,7 @@ def incomeStmt_from_fmpAPI(
     """
 
     ep_ticker_alias = "symbol"
-    ep_timestamp_field = "acceptedDate"
+    ep_timestamp_field = "date"
 
     if creds_file_path is None:
         creds_file_path = get_path("creds")
@@ -135,14 +135,11 @@ def incomeStmt_from_fmpAPI(
                     # Create unique_id when there isn't a good option in response
                     f1 = ticker
                     f2 = timestamp
-                    f3 = row["link"]
-                    f4 = period
-                    f5 = row["calendarYear"]
+                    f3 = row["calendarYear"]
+                    f4 = row["period"]
 
-                    # Create hash of f1, f2, f3, f4, f5
-                    unique_id = hashlib.sha256(
-                        f"{f1}{f2}{f3}{f4}{f5}".encode()
-                    ).hexdigest()
+                    # Create hash of f1, f2, f3, f4
+                    unique_id = hashlib.sha256(f"{f1}{f2}{f3}{f4}".encode()).hexdigest()
 
                     # Streamlined main document
                     document = {
@@ -151,55 +148,71 @@ def incomeStmt_from_fmpAPI(
                         "ticker": row["ticker"],
                         ##########################################
                         ##########################################
-                        "date": row["date"],
-                        "reportedCurrency": row["reportedCurrency"],
-                        "cik": row["cik"],
-                        "fillingDate": row["fillingDate"],
-                        "acceptedDate": row["acceptedDate"],
                         "calendarYear": row["calendarYear"],
                         "period": row["period"],
-                        "revenue": row["revenue"],
-                        "costOfRevenue": row["costOfRevenue"],
-                        "grossProfit": row["grossProfit"],
-                        "grossProfitRatio": row["grossProfitRatio"],
-                        "researchAndDevelopmentExpenses": row[
-                            "researchAndDevelopmentExpenses"
+                        "revenuePerShare": row["revenuePerShare"],
+                        "netIncomePerShare": row["netIncomePerShare"],
+                        "operatingCashFlowPerShare": row["operatingCashFlowPerShare"],
+                        "freeCashFlowPerShare": row["freeCashFlowPerShare"],
+                        "cashPerShare": row["cashPerShare"],
+                        "bookValuePerShare": row["bookValuePerShare"],
+                        "tangibleBookValuePerShare": row["tangibleBookValuePerShare"],
+                        "shareholdersEquityPerShare": row["shareholdersEquityPerShare"],
+                        "interestDebtPerShare": row["interestDebtPerShare"],
+                        "marketCap": row["marketCap"],
+                        "enterpriseValue": row["enterpriseValue"],
+                        "peRatio": row["peRatio"],
+                        "priceToSalesRatio": row["priceToSalesRatio"],
+                        "pocfratio": row["pocfratio"],
+                        "pfcfRatio": row["pfcfRatio"],
+                        "pbRatio": row["pbRatio"],
+                        "ptbRatio": row["ptbRatio"],
+                        "evToSales": row["evToSales"],
+                        "enterpriseValueOverEBITDA": row["enterpriseValueOverEBITDA"],
+                        "evToOperatingCashFlow": row["evToOperatingCashFlow"],
+                        "evToFreeCashFlow": row["evToFreeCashFlow"],
+                        "earningsYield": row["earningsYield"],
+                        "freeCashFlowYield": row["freeCashFlowYield"],
+                        "debtToEquity": row["debtToEquity"],
+                        "debtToAssets": row["debtToAssets"],
+                        "netDebtToEBITDA": row["netDebtToEBITDA"],
+                        "currentRatio": row["currentRatio"],
+                        "interestCoverage": row["interestCoverage"],
+                        "incomeQuality": row["incomeQuality"],
+                        "dividendYield": row["dividendYield"],
+                        "payoutRatio": row["payoutRatio"],
+                        "salesGeneralAndAdministrativeToRevenue": row[
+                            "salesGeneralAndAdministrativeToRevenue"
                         ],
-                        "generalAndAdministrativeExpenses": row[
-                            "generalAndAdministrativeExpenses"
+                        "researchAndDdevelopementToRevenue": row[
+                            "researchAndDdevelopementToRevenue"
                         ],
-                        "sellingAndMarketingExpenses": row[
-                            "sellingAndMarketingExpenses"
+                        "intangiblesToTotalAssets": row["intangiblesToTotalAssets"],
+                        "capexToOperatingCashFlow": row["capexToOperatingCashFlow"],
+                        "capexToRevenue": row["capexToRevenue"],
+                        "capexToDepreciation": row["capexToDepreciation"],
+                        "stockBasedCompensationToRevenue": row[
+                            "stockBasedCompensationToRevenue"
                         ],
-                        "sellingGeneralAndAdministrativeExpenses": row[
-                            "sellingGeneralAndAdministrativeExpenses"
-                        ],
-                        "otherExpenses": row["otherExpenses"],
-                        "operatingExpenses": row["operatingExpenses"],
-                        "costAndExpenses": row["costAndExpenses"],
-                        "interestIncome": row["interestIncome"],
-                        "interestExpense": row["interestExpense"],
-                        "depreciationAndAmortization": row[
-                            "depreciationAndAmortization"
-                        ],
-                        "ebitda": row["ebitda"],
-                        "ebitdaratio": row["ebitdaratio"],
-                        "operatingIncome": row["operatingIncome"],
-                        "operatingIncomeRatio": row["operatingIncomeRatio"],
-                        "totalOtherIncomeExpensesNet": row[
-                            "totalOtherIncomeExpensesNet"
-                        ],
-                        "incomeBeforeTax": row["incomeBeforeTax"],
-                        "incomeBeforeTaxRatio": row["incomeBeforeTaxRatio"],
-                        "incomeTaxExpense": row["incomeTaxExpense"],
-                        "netIncome": row["netIncome"],
-                        "netIncomeRatio": row["netIncomeRatio"],
-                        "eps": row["eps"],
-                        "epsdiluted": row["epsdiluted"],
-                        "weightedAverageShsOut": row["weightedAverageShsOut"],
-                        "weightedAverageShsOutDil": row["weightedAverageShsOutDil"],
-                        "link": row["link"],
-                        "finalLink": row["finalLink"],
+                        "grahamNumber": row["grahamNumber"],
+                        "roic": row["roic"],
+                        "returnOnTangibleAssets": row["returnOnTangibleAssets"],
+                        "grahamNetNet": row["grahamNetNet"],
+                        "workingCapital": row["workingCapital"],
+                        "tangibleAssetValue": row["tangibleAssetValue"],
+                        "netCurrentAssetValue": row["netCurrentAssetValue"],
+                        "investedCapital": row["investedCapital"],
+                        "averageReceivables": row["averageReceivables"],
+                        "averagePayables": row["averagePayables"],
+                        "averageInventory": row["averageInventory"],
+                        "daysSalesOutstanding": row["daysSalesOutstanding"],
+                        "daysPayablesOutstanding": row["daysPayablesOutstanding"],
+                        "daysOfInventoryOnHand": row["daysOfInventoryOnHand"],
+                        "receivablesTurnover": row["receivablesTurnover"],
+                        "payablesTurnover": row["payablesTurnover"],
+                        "inventoryTurnover": row["inventoryTurnover"],
+                        "roe": row["roe"],
+                        "capexPerShare": row["capexPerShare"],
                         ##########################################
                         ##########################################
                         "source": "fmp",

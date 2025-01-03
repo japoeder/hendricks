@@ -256,21 +256,13 @@ def request_url_constructor(
             else:
                 compiled_url += f"?apikey={api_key}"
 
-        elif endpoint == "income-statement":
-            if ticker is None:
-                raise ValueError("ticker is required")
-            else:
-                compiled_url += f"/{endpoint}/{ticker}"
-
-            if period is not None:
-                compiled_url += f"?period={period}"
-
-            if api_key is None:
-                raise ValueError("api_key is required")
-            else:
-                compiled_url += f"&apikey={api_key}"
-
-        elif endpoint == "balance-sheet-statement":
+        elif endpoint in [
+            "income-statement",
+            "balance-sheet-statement",
+            "cash-flow-statement",
+            "key-metrics",
+            "ratios",
+        ]:
             if ticker is None:
                 raise ValueError("ticker is required")
             else:

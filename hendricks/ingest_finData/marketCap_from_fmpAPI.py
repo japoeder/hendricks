@@ -49,13 +49,6 @@ def marketCap_from_fmpAPI(
     # Load Alpaca API credentials from JSON file
     API_KEY, BASE_URL = load_credentials(creds_file_path, "fmp_api_findata")
 
-    # # Run time conversion
-    # TZ = pytz.timezone("America/New_York")
-
-    # # Convert from_date and to_date to timezone-aware datetime objects
-    # from_date = pd.Timestamp(from_date, tz=TZ).to_pydatetime()
-    # to_date = pd.Timestamp(to_date, tz=TZ).to_pydatetime()
-
     # Get the database connection
     db = mongo_conn()
 
