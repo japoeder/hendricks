@@ -28,7 +28,7 @@ logger = logging.getLogger("pymongo")
 logger.setLevel(logging.WARNING)  # Suppress pymongo debug messages
 
 
-def empCount_from_fmpAPI(
+def analystRec_from_fmpAPI(
     tickers=None,
     collection_name=None,
     creds_file_path=None,
@@ -40,11 +40,14 @@ def empCount_from_fmpAPI(
     Load historical quote data from Alpaca API into a MongoDB collection.
     """
 
+    ep_ticker_alias = "symbol"
+    ep_timestamp_field = "date"
+
     if creds_file_path is None:
         creds_file_path = get_path("creds")
 
     # Load Alpaca API credentials from JSON file
-    API_KEY, BASE_URL = load_credentials(creds_file_path, "fmp_api_hist")
+    API_KEY, BASE_URL = load_credentials(creds_file_path, "fmp_api_findata")
 
     # Get the database connection
     db = mongo_conn()
@@ -58,13 +61,13 @@ def empCount_from_fmpAPI(
     # Create indexes for common query patterns
     collection.create_index([("timestamp", 1)])  # For date range queries
     collection.create_index([("ticker", 1)])  # For ticker queries
-    collection.create_index([("source", 1)])  # For source filtering
+    collection.create_index([("unique_id", 1)])  # For source filtering
 
     collection.create_index(
         [("ticker", 1), ("timestamp", -1)]
     )  # For ticker + time sorting
     collection.create_index(
-        [("source", 1), ("timestamp", -1)]
+        [("unique_id", 1), ("timestamp", -1)]
     )  # For source + time sorting
 
     # Uniqueness constraint
@@ -81,6 +84,8 @@ def empCount_from_fmpAPI(
             ticker=ticker,
             api_key=API_KEY,
             source="fmp",
+            from_date=from_date,
+            to_date=to_date,
         )
 
         print(f"URL: {url}")
@@ -103,30 +108,30 @@ def empCount_from_fmpAPI(
             logger.info(f"DataFrame shape: {res_df.shape}")
             logger.info(f"DataFrame columns: {res_df.columns.tolist()}")
 
-            # Rename barset 'symbol' to 'ticker'
-            res_df.rename(columns={"symbol": "ticker"}, inplace=True)
+            # Rename 'symbol' to 'ticker'
+            res_df.rename(columns={ep_ticker_alias: "ticker"}, inplace=True)
 
             # Sort results by timestamp in descending order
-            res_df.sort_values(by="acceptanceTime", ascending=False, inplace=True)
+            res_df.sort_values(by=ep_timestamp_field, ascending=False, inplace=True)
 
             # Process news items in bulk
             bulk_operations = []
             for _, row in res_df.iterrows():
-                # Create timestamp col in res_df from acceptanceTime to UTC
+                # Create timestamp col in res_df from acceptanceDate to UTC
                 timestamp = (
-                    pd.to_datetime(row["acceptanceTime"])
+                    pd.to_datetime(row[ep_timestamp_field])
                     .tz_localize("America/New_York")
                     .tz_convert("UTC")
                 )
 
+                created_at = datetime.now(timezone.utc)
+
                 # Create unique_id when there isn't a good option in response
                 f1 = ticker
                 f2 = timestamp
-                f3 = row["periodOfReport"]
-                f4 = row["source"]
 
                 # Create hash of f1, f2, f3, f4
-                unique_id = hashlib.sha256(f"{f1}{f2}{f3}{f4}".encode()).hexdigest()
+                unique_id = hashlib.sha256(f"{f1}{f2}".encode()).hexdigest()
 
                 # Streamlined main document
                 document = {
@@ -135,18 +140,15 @@ def empCount_from_fmpAPI(
                     "ticker": row["ticker"],
                     ##########################################
                     ##########################################
-                    "cik": row["cik"],
-                    "acceptanceTime": row["acceptanceTime"],
-                    "periodOfReport": row["periodOfReport"],
-                    "companyName": row["companyName"],
-                    "formType": row["formType"],
-                    "filingDate": row["filingDate"],
-                    "employeeCount": row["employeeCount"],
-                    "url": row["source"],
+                    "analystRatingsbuy": row["analystRatingsbuy"],
+                    "analystRatingsHold": row["analystRatingsHold"],
+                    "analystRatingsSell": row["analystRatingsSell"],
+                    "analystRatingsStrongSell": row["analystRatingsStrongSell"],
+                    "analystRatingsStrongBuy": row["analystRatingsStrongBuy"],
                     ##########################################
                     ##########################################
                     "source": "fmp",
-                    "created_at": datetime.now(timezone.utc),
+                    "created_at": created_at,
                 }
 
                 # Create update operation

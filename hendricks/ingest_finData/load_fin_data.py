@@ -14,6 +14,10 @@ from hendricks.ingest_finData.execComp_from_fmpAPI import execComp_from_fmpAPI
 from hendricks.ingest_finData.grade_from_fmpAPI import grade_from_fmpAPI
 from hendricks.ingest_finData.marketCap_from_fmpAPI import marketCap_from_fmpAPI
 from hendricks.ingest_finData.analystEst_from_fmpAPI import analystEst_from_fmpAPI
+from hendricks.ingest_finData.analystRec_from_fmpAPI import analystRec_from_fmpAPI
+from hendricks.ingest_finData.incomeStmt_from_fmpAPI import incomeStmt_from_fmpAPI
+from hendricks.ingest_finData.balanceSheet_from_fmpAPI import balanceSheet_from_fmpAPI
+
 from hendricks._utils.get_path import get_path
 
 dotenv.load_dotenv()
@@ -63,6 +67,9 @@ class FinLoader:
             "executive_compensation": execComp_from_fmpAPI,
             "grade": grade_from_fmpAPI,
             "analyst-estimates": analystEst_from_fmpAPI,
+            "analyst-stock-recommendations": analystRec_from_fmpAPI,
+            "income-statement": incomeStmt_from_fmpAPI,
+            "balance-sheet-statement": balanceSheet_from_fmpAPI,
         }
 
         if self.fmp_endpoint not in endpoint_handlers:
@@ -73,6 +80,7 @@ class FinLoader:
             tickers=self.tickers,
             collection_name=self.collection_name,
             creds_file_path=self.creds_file_path,
+            ep=self.fmp_endpoint,
         )
 
         print(f"Completed processing for {self.tickers}")
@@ -116,6 +124,7 @@ class FinLoader:
                     from_date=loop_mon_beg.strftime("%Y-%m-%d"),
                     to_date=loop_mon_end.strftime("%Y-%m-%d"),
                     collection_name=self.collection_name,
+                    ep=self.fmp_endpoint,
                 )
 
                 loop_mon_beg = loop_mon_end
@@ -128,6 +137,7 @@ class FinLoader:
                         from_date=loop_mon_beg.strftime("%Y-%m-%d"),
                         to_date=to_date.strftime("%Y-%m-%d"),
                         collection_name=self.collection_name,
+                        ep=self.fmp_endpoint,
                     )
         else:
             # For periods less than 30 days, make a single API call
@@ -136,6 +146,7 @@ class FinLoader:
                 from_date=self.from_date,
                 to_date=self.to_date,
                 collection_name=self.collection_name,
+                ep=self.fmp_endpoint,
             )
 
         print(f"Completed processing for {self.tickers}")

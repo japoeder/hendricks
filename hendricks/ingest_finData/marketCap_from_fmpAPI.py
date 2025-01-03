@@ -34,13 +34,12 @@ def marketCap_from_fmpAPI(
     creds_file_path=None,
     from_date=None,
     to_date=None,
+    ep=None,
 ):
     """
     Load historical quote data from Alpaca API into a MongoDB collection.
     """
 
-    ep_base = "https://financialmodelingprep.com/api/v3"
-    ep = "historical-market-capitalization"
     ep_ticker_alias = "symbol"
     ep_timestamp_field = "date"
 
@@ -48,7 +47,7 @@ def marketCap_from_fmpAPI(
         creds_file_path = get_path("creds")
 
     # Load Alpaca API credentials from JSON file
-    API_KEY, BASE_URL = load_credentials(creds_file_path, "fmp_api")
+    API_KEY, BASE_URL = load_credentials(creds_file_path, "fmp_api_findata")
 
     # # Run time conversion
     # TZ = pytz.timezone("America/New_York")
@@ -85,13 +84,7 @@ def marketCap_from_fmpAPI(
         background=True,  # Allow other operations while building index
     )
 
-    # Convert from_date and to_date to 'yyyy-mm-dd' format
-    # from_date = from_date.strftime("%Y-%m-%d")
-    # to_date = to_date.strftime("%Y-%m-%d")
-
     for ticker in tickers:
-        BASE_URL = ep_base
-
         url = request_url_constructor(
             endpoint=ep,
             base_url=BASE_URL,
