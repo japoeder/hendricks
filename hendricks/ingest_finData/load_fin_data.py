@@ -17,7 +17,11 @@ from hendricks.ingest_finData.analystEst_from_fmpAPI import analystEst_from_fmpA
 from hendricks.ingest_finData.analystRec_from_fmpAPI import analystRec_from_fmpAPI
 from hendricks.ingest_finData.incomeStmt_from_fmpAPI import incomeStmt_from_fmpAPI
 from hendricks.ingest_finData.balanceSheet_from_fmpAPI import balanceSheet_from_fmpAPI
-
+from hendricks.ingest_finData.cashFlow_from_fmpAPI import cashFlow_from_fmpAPI
+from hendricks.ingest_finData.stmtAnalKM_from_fmpAPI import stmtAnalKM_from_fmpAPI
+from hendricks.ingest_finData.stmtAnalRatios_from_fmpAPI import (
+    stmtAnalRatios_from_fmpAPI,
+)
 from hendricks._utils.get_path import get_path
 
 dotenv.load_dotenv()
@@ -70,6 +74,9 @@ class FinLoader:
             "analyst-stock-recommendations": analystRec_from_fmpAPI,
             "income-statement": incomeStmt_from_fmpAPI,
             "balance-sheet-statement": balanceSheet_from_fmpAPI,
+            "cash-flow-statement": cashFlow_from_fmpAPI,
+            "key-metrics": stmtAnalKM_from_fmpAPI,
+            "ratios": stmtAnalRatios_from_fmpAPI,
         }
 
         if self.fmp_endpoint not in endpoint_handlers:

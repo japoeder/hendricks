@@ -28,7 +28,7 @@ logger = logging.getLogger("pymongo")
 logger.setLevel(logging.WARNING)  # Suppress pymongo debug messages
 
 
-def incomeStmt_from_fmpAPI(
+def cashFlow_from_fmpAPI(
     tickers=None,
     collection_name=None,
     creds_file_path=None,
@@ -158,46 +158,48 @@ def incomeStmt_from_fmpAPI(
                         "acceptedDate": row["acceptedDate"],
                         "calendarYear": row["calendarYear"],
                         "period": row["period"],
-                        "revenue": row["revenue"],
-                        "costOfRevenue": row["costOfRevenue"],
-                        "grossProfit": row["grossProfit"],
-                        "grossProfitRatio": row["grossProfitRatio"],
-                        "researchAndDevelopmentExpenses": row[
-                            "researchAndDevelopmentExpenses"
-                        ],
-                        "generalAndAdministrativeExpenses": row[
-                            "generalAndAdministrativeExpenses"
-                        ],
-                        "sellingAndMarketingExpenses": row[
-                            "sellingAndMarketingExpenses"
-                        ],
-                        "sellingGeneralAndAdministrativeExpenses": row[
-                            "sellingGeneralAndAdministrativeExpenses"
-                        ],
-                        "otherExpenses": row["otherExpenses"],
-                        "operatingExpenses": row["operatingExpenses"],
-                        "costAndExpenses": row["costAndExpenses"],
-                        "interestIncome": row["interestIncome"],
-                        "interestExpense": row["interestExpense"],
+                        "netIncome": row["netIncome"],
                         "depreciationAndAmortization": row[
                             "depreciationAndAmortization"
                         ],
-                        "ebitda": row["ebitda"],
-                        "ebitdaratio": row["ebitdaratio"],
-                        "operatingIncome": row["operatingIncome"],
-                        "operatingIncomeRatio": row["operatingIncomeRatio"],
-                        "totalOtherIncomeExpensesNet": row[
-                            "totalOtherIncomeExpensesNet"
+                        "deferredIncomeTax": row["deferredIncomeTax"],
+                        "stockBasedCompensation": row["stockBasedCompensation"],
+                        "changeInWorkingCapital": row["changeInWorkingCapital"],
+                        "accountsReceivables": row["accountsReceivables"],
+                        "inventory": row["inventory"],
+                        "accountsPayables": row["accountsPayables"],
+                        "otherWorkingCapital": row["otherWorkingCapital"],
+                        "otherNonCashItems": row["otherNonCashItems"],
+                        "netCashProvidedByOperatingActivities": row[
+                            "netCashProvidedByOperatingActivities"
                         ],
-                        "incomeBeforeTax": row["incomeBeforeTax"],
-                        "incomeBeforeTaxRatio": row["incomeBeforeTaxRatio"],
-                        "incomeTaxExpense": row["incomeTaxExpense"],
-                        "netIncome": row["netIncome"],
-                        "netIncomeRatio": row["netIncomeRatio"],
-                        "eps": row["eps"],
-                        "epsdiluted": row["epsdiluted"],
-                        "weightedAverageShsOut": row["weightedAverageShsOut"],
-                        "weightedAverageShsOutDil": row["weightedAverageShsOutDil"],
+                        "investmentsInPropertyPlantAndEquipment": row[
+                            "investmentsInPropertyPlantAndEquipment"
+                        ],
+                        "acquisitionsNet": row["acquisitionsNet"],
+                        "purchasesOfInvestments": row["purchasesOfInvestments"],
+                        "salesMaturitiesOfInvestments": row[
+                            "salesMaturitiesOfInvestments"
+                        ],
+                        "otherInvestingActivites": row["otherInvestingActivites"],
+                        "netCashUsedForInvestingActivites": row[
+                            "netCashUsedForInvestingActivites"
+                        ],
+                        "debtRepayment": row["debtRepayment"],
+                        "commonStockIssued": row["commonStockIssued"],
+                        "commonStockRepurchased": row["commonStockRepurchased"],
+                        "dividendsPaid": row["dividendsPaid"],
+                        "otherFinancingActivites": row["otherFinancingActivites"],
+                        "netCashUsedProvidedByFinancingActivities": row[
+                            "netCashUsedProvidedByFinancingActivities"
+                        ],
+                        "effectOfForexChangesOnCash": row["effectOfForexChangesOnCash"],
+                        "netChangeInCash": row["netChangeInCash"],
+                        "cashAtEndOfPeriod": row["cashAtEndOfPeriod"],
+                        "cashAtBeginningOfPeriod": row["cashAtBeginningOfPeriod"],
+                        "operatingCashFlow": row["operatingCashFlow"],
+                        "capitalExpenditure": row["capitalExpenditure"],
+                        "freeCashFlow": row["freeCashFlow"],
                         "link": row["link"],
                         "finalLink": row["finalLink"],
                         ##########################################
