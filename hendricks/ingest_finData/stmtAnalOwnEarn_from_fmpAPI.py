@@ -142,12 +142,11 @@ def stmtAnalOwnEarn_from_fmpAPI(
                     ##########################################
                     ##########################################
                     "date": row["date"],
-                    "stockPrice": row["stockPrice"],
-                    "numberOfShares": row["numberOfShares"],
-                    "marketCapitalization": row["marketCapitalization"],
-                    "minusCashAndCashEquivalents": row["minusCashAndCashEquivalents"],
-                    "addTotalDebt": row["addTotalDebt"],
-                    "enterpriseValue": row["enterpriseValue"],
+                    "averagePPE": row["averagePPE"],
+                    "maintenanceCapex": row["maintenanceCapex"],
+                    "ownersEarnings": row["ownersEarnings"],
+                    "growthCapex": row["growthCapex"],
+                    "ownersEarningsPerShare": row["ownersEarningsPerShare"],
                     ##########################################
                     ##########################################
                     "source": "fmp",

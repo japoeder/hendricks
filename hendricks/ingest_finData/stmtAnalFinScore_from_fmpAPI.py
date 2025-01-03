@@ -41,7 +41,7 @@ def stmtAnalFinScore_from_fmpAPI(
     """
 
     ep_ticker_alias = "symbol"
-    ep_timestamp_field = "date"
+    ep_timestamp_field = "today"
     cred_key = "fmp_api_findata_v4"
 
     if creds_file_path is None:
@@ -112,18 +112,22 @@ def stmtAnalFinScore_from_fmpAPI(
             # Rename 'symbol' to 'ticker'
             res_df.rename(columns={ep_ticker_alias: "ticker"}, inplace=True)
 
-            # Sort results by timestamp in descending order
-            res_df.sort_values(by=ep_timestamp_field, ascending=False, inplace=True)
+            if ep_timestamp_field != "today":
+                # Sort results by timestamp in descending order
+                res_df.sort_values(by=ep_timestamp_field, ascending=False, inplace=True)
 
             # Process news items in bulk
             bulk_operations = []
             for _, row in res_df.iterrows():
-                # Create timestamp col in res_df from acceptanceDate to UTC
-                timestamp = (
-                    pd.to_datetime(row[ep_timestamp_field])
-                    .tz_localize("America/New_York")
-                    .tz_convert("UTC")
-                )
+                if ep_timestamp_field != "today":
+                    # Create timestamp col in res_df from acceptanceDate to UTC
+                    timestamp = (
+                        pd.to_datetime(row[ep_timestamp_field])
+                        .tz_localize("America/New_York")
+                        .tz_convert("UTC")
+                    )
+                else:
+                    timestamp = datetime.now(timezone.utc)
 
                 created_at = datetime.now(timezone.utc)
 
@@ -141,13 +145,15 @@ def stmtAnalFinScore_from_fmpAPI(
                     "ticker": row["ticker"],
                     ##########################################
                     ##########################################
-                    "date": row["date"],
-                    "stockPrice": row["stockPrice"],
-                    "numberOfShares": row["numberOfShares"],
-                    "marketCapitalization": row["marketCapitalization"],
-                    "minusCashAndCashEquivalents": row["minusCashAndCashEquivalents"],
-                    "addTotalDebt": row["addTotalDebt"],
-                    "enterpriseValue": row["enterpriseValue"],
+                    "altmanZScore": row["altmanZScore"],
+                    "piotroskiScore": row["piotroskiScore"],
+                    "workingCapital": row["workingCapital"],
+                    "totalAssets": row["totalAssets"],
+                    "retainedEarnings": row["retainedEarnings"],
+                    "ebit": row["ebit"],
+                    "marketCap": row["marketCap"],
+                    "totalLiabilities": row["totalLiabilities"],
+                    "revenue": row["revenue"],
                     ##########################################
                     ##########################################
                     "source": "fmp",
