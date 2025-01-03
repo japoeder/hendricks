@@ -41,10 +41,28 @@ def load_credentials(file_path, data_type):
             news_creds["API_SECRET"],
         )
 
-    if data_type == "fmp_api":
+    if data_type == "fmp_api_findata":
         with open(file_path, "r", encoding="utf-8") as file:
             creds = json.load(file)
-        fmp_creds = creds["fmp_api"]
+        fmp_creds = creds["fmp_api_findata"]
+        return (
+            fmp_creds["API_KEY"],
+            fmp_creds["BASE_URL"],
+        )
+
+    if data_type == "fmp_api_gov":
+        with open(file_path, "r", encoding="utf-8") as file:
+            creds = json.load(file)
+        fmp_creds = creds["fmp_api_gov"]
+        return (
+            fmp_creds["API_KEY"],
+            fmp_creds["BASE_URL"],
+        )
+
+    if data_type == "fmp_api_hist":
+        with open(file_path, "r", encoding="utf-8") as file:
+            creds = json.load(file)
+        fmp_creds = creds["fmp_api_hist"]
         return (
             fmp_creds["API_KEY"],
             fmp_creds["BASE_URL"],
