@@ -28,7 +28,7 @@ logger = logging.getLogger("pymongo")
 logger.setLevel(logging.WARNING)  # Suppress pymongo debug messages
 
 
-def incomeStmt_from_fmpAPI(
+def stmtAnalIncGr_from_fmpAPI(
     tickers=None,
     collection_name=None,
     creds_file_path=None,
@@ -41,7 +41,7 @@ def incomeStmt_from_fmpAPI(
     """
 
     ep_ticker_alias = "symbol"
-    ep_timestamp_field = "acceptedDate"
+    ep_timestamp_field = "date"
     cred_key = "fmp_api_findata"
 
     if creds_file_path is None:
@@ -136,14 +136,11 @@ def incomeStmt_from_fmpAPI(
                     # Create unique_id when there isn't a good option in response
                     f1 = ticker
                     f2 = timestamp
-                    f3 = row["link"]
-                    f4 = period
-                    f5 = row["calendarYear"]
+                    f3 = row["calendarYear"]
+                    f4 = row["period"]
 
-                    # Create hash of f1, f2, f3, f4, f5
-                    unique_id = hashlib.sha256(
-                        f"{f1}{f2}{f3}{f4}{f5}".encode()
-                    ).hexdigest()
+                    # Create hash of f1, f2, f3, f4
+                    unique_id = hashlib.sha256(f"{f1}{f2}{f3}{f4}".encode()).hexdigest()
 
                     # Streamlined main document
                     document = {
@@ -153,54 +150,48 @@ def incomeStmt_from_fmpAPI(
                         ##########################################
                         ##########################################
                         "date": row["date"],
-                        "reportedCurrency": row["reportedCurrency"],
-                        "cik": row["cik"],
-                        "fillingDate": row["fillingDate"],
-                        "acceptedDate": row["acceptedDate"],
                         "calendarYear": row["calendarYear"],
                         "period": row["period"],
-                        "revenue": row["revenue"],
-                        "costOfRevenue": row["costOfRevenue"],
-                        "grossProfit": row["grossProfit"],
-                        "grossProfitRatio": row["grossProfitRatio"],
-                        "researchAndDevelopmentExpenses": row[
-                            "researchAndDevelopmentExpenses"
+                        "growthRevenue": row["growthRevenue"],
+                        "growthCostOfRevenue": row["growthCostOfRevenue"],
+                        "growthGrossProfit": row["growthGrossProfit"],
+                        "growthGrossProfitRatio": row["growthGrossProfitRatio"],
+                        "growthResearchAndDevelopmentExpenses": row[
+                            "growthResearchAndDevelopmentExpenses"
                         ],
-                        "generalAndAdministrativeExpenses": row[
-                            "generalAndAdministrativeExpenses"
+                        "growthGeneralAndAdministrativeExpenses": row[
+                            "growthGeneralAndAdministrativeExpenses"
                         ],
-                        "sellingAndMarketingExpenses": row[
-                            "sellingAndMarketingExpenses"
+                        "growthSellingAndMarketingExpenses": row[
+                            "growthSellingAndMarketingExpenses"
                         ],
-                        "sellingGeneralAndAdministrativeExpenses": row[
-                            "sellingGeneralAndAdministrativeExpenses"
+                        "growthOtherExpenses": row["growthOtherExpenses"],
+                        "growthOperatingExpenses": row["growthOperatingExpenses"],
+                        "growthCostAndExpenses": row["growthCostAndExpenses"],
+                        "growthInterestExpense": row["growthInterestExpense"],
+                        "growthDepreciationAndAmortization": row[
+                            "growthDepreciationAndAmortization"
                         ],
-                        "otherExpenses": row["otherExpenses"],
-                        "operatingExpenses": row["operatingExpenses"],
-                        "costAndExpenses": row["costAndExpenses"],
-                        "interestIncome": row["interestIncome"],
-                        "interestExpense": row["interestExpense"],
-                        "depreciationAndAmortization": row[
-                            "depreciationAndAmortization"
+                        "growthEBITDA": row["growthEBITDA"],
+                        "growthEBITDARatio": row["growthEBITDARatio"],
+                        "growthOperatingIncome": row["growthOperatingIncome"],
+                        "growthOperatingIncomeRatio": row["growthOperatingIncomeRatio"],
+                        "growthTotalOtherIncomeExpensesNet": row[
+                            "growthTotalOtherIncomeExpensesNet"
                         ],
-                        "ebitda": row["ebitda"],
-                        "ebitdaratio": row["ebitdaratio"],
-                        "operatingIncome": row["operatingIncome"],
-                        "operatingIncomeRatio": row["operatingIncomeRatio"],
-                        "totalOtherIncomeExpensesNet": row[
-                            "totalOtherIncomeExpensesNet"
+                        "growthIncomeBeforeTax": row["growthIncomeBeforeTax"],
+                        "growthIncomeBeforeTaxRatio": row["growthIncomeBeforeTaxRatio"],
+                        "growthIncomeTaxExpense": row["growthIncomeTaxExpense"],
+                        "growthNetIncome": row["growthNetIncome"],
+                        "growthNetIncomeRatio": row["growthNetIncomeRatio"],
+                        "growthEPS": row["growthEPS"],
+                        "growthEPSDiluted": row["growthEPSDiluted"],
+                        "growthWeightedAverageShsOut": row[
+                            "growthWeightedAverageShsOut"
                         ],
-                        "incomeBeforeTax": row["incomeBeforeTax"],
-                        "incomeBeforeTaxRatio": row["incomeBeforeTaxRatio"],
-                        "incomeTaxExpense": row["incomeTaxExpense"],
-                        "netIncome": row["netIncome"],
-                        "netIncomeRatio": row["netIncomeRatio"],
-                        "eps": row["eps"],
-                        "epsdiluted": row["epsdiluted"],
-                        "weightedAverageShsOut": row["weightedAverageShsOut"],
-                        "weightedAverageShsOutDil": row["weightedAverageShsOutDil"],
-                        "link": row["link"],
-                        "finalLink": row["finalLink"],
+                        "growthWeightedAverageShsOutDil": row[
+                            "growthWeightedAverageShsOutDil"
+                        ],
                         ##########################################
                         ##########################################
                         "source": "fmp",

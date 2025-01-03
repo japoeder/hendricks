@@ -28,7 +28,7 @@ logger = logging.getLogger("pymongo")
 logger.setLevel(logging.WARNING)  # Suppress pymongo debug messages
 
 
-def execComp_from_fmpAPI(
+def stmtAnalOwnEarn_from_fmpAPI(
     tickers=None,
     collection_name=None,
     creds_file_path=None,
@@ -41,8 +41,8 @@ def execComp_from_fmpAPI(
     """
 
     ep_ticker_alias = "symbol"
-    ep_timestamp_field = "acceptedDate"
-    cred_key = "fmp_api_gov"
+    ep_timestamp_field = "date"
+    cred_key = "fmp_api_findata_v4"
 
     if creds_file_path is None:
         creds_file_path = get_path("creds")
@@ -78,10 +78,6 @@ def execComp_from_fmpAPI(
         background=True,  # Allow other operations while building index
     )
 
-    # Convert from_date and to_date to 'yyyy-mm-dd' format
-    # from_date = from_date.strftime("%Y-%m-%d")
-    # to_date = to_date.strftime("%Y-%m-%d")
-
     for ticker in tickers:
         url = request_url_constructor(
             endpoint=ep,
@@ -89,6 +85,8 @@ def execComp_from_fmpAPI(
             ticker=ticker,
             api_key=API_KEY,
             source="fmp",
+            from_date=from_date,
+            to_date=to_date,
         )
 
         print(f"URL: {url}")
@@ -127,14 +125,14 @@ def execComp_from_fmpAPI(
                     .tz_convert("UTC")
                 )
 
+                created_at = datetime.now(timezone.utc)
+
                 # Create unique_id when there isn't a good option in response
                 f1 = ticker
                 f2 = timestamp
-                f3 = row["nameAndPosition"]
-                f4 = row["year"]
 
                 # Create hash of f1, f2, f3, f4
-                unique_id = hashlib.sha256(f"{f1}{f2}{f3}{f4}".encode()).hexdigest()
+                unique_id = hashlib.sha256(f"{f1}{f2}".encode()).hexdigest()
 
                 # Streamlined main document
                 document = {
@@ -143,25 +141,17 @@ def execComp_from_fmpAPI(
                     "ticker": row["ticker"],
                     ##########################################
                     ##########################################
-                    "cik": row["cik"],
-                    "companyName": row["companyName"],
-                    "industryTitle": row["industryTitle"],
-                    "filingDate": row["filingDate"],
-                    "acceptedDate": row["acceptedDate"],
-                    "nameAndPosition": row["nameAndPosition"],
-                    "year": row["year"],
-                    "salary": row["salary"],
-                    "bonus": row["bonus"],
-                    "stock_award": row["stock_award"],
-                    "option_award": row["option_award"],
-                    "incentive_plan_compensation": row["incentive_plan_compensation"],
-                    "all_other_compensation": row["all_other_compensation"],
-                    "total": row["total"],
-                    "url": row["url"],
+                    "date": row["date"],
+                    "stockPrice": row["stockPrice"],
+                    "numberOfShares": row["numberOfShares"],
+                    "marketCapitalization": row["marketCapitalization"],
+                    "minusCashAndCashEquivalents": row["minusCashAndCashEquivalents"],
+                    "addTotalDebt": row["addTotalDebt"],
+                    "enterpriseValue": row["enterpriseValue"],
                     ##########################################
                     ##########################################
                     "source": "fmp",
-                    "created_at": datetime.now(timezone.utc),
+                    "created_at": created_at,
                 }
 
                 # Create update operation
