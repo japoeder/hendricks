@@ -42,12 +42,13 @@ def balanceSheet_from_fmpAPI(
 
     ep_ticker_alias = "symbol"
     ep_timestamp_field = "acceptedDate"
+    cred_key = "fmp_api_findata"
 
     if creds_file_path is None:
         creds_file_path = get_path("creds")
 
     # Load Alpaca API credentials from JSON file
-    API_KEY, BASE_URL = load_credentials(creds_file_path, "fmp_api_findata")
+    API_KEY, BASE_URL = load_credentials(creds_file_path, cred_key)
 
     # Get the database connection
     db = mongo_conn()

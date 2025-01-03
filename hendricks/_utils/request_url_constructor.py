@@ -262,6 +262,11 @@ def request_url_constructor(
             "cash-flow-statement",
             "key-metrics",
             "ratios",
+            "cash-flow-statement-growth",
+            "income-statement-growth",
+            "balance-sheet-statement-growth",
+            "financial-growth",
+            "enterprise-value",
         ]:
             if ticker is None:
                 raise ValueError("ticker is required")
@@ -275,5 +280,16 @@ def request_url_constructor(
                 raise ValueError("api_key is required")
             else:
                 compiled_url += f"&apikey={api_key}"
+
+        elif endpoint in ["score", "owner-earnings"]:
+            if ticker is None:
+                raise ValueError("ticker is required")
+            else:
+                compiled_url += f"/{endpoint}?symbol={ticker}"
+
+            if api_key is None:
+                raise ValueError("api_key is required")
+            else:
+                compiled_url += f"?apikey={api_key}"
 
     return compiled_url
