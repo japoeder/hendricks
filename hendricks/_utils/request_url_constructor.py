@@ -237,11 +237,11 @@ def request_url_constructor(
             if ticker is None:
                 raise ValueError("ticker is required")
             else:
-                compiled_url += f"/{endpoint}/symbol={ticker}"
+                compiled_url += f"/{endpoint}/{ticker}"
 
             if api_key is None:
                 raise ValueError("api_key is required")
             else:
-                compiled_url += f"&apikey={api_key}"
+                compiled_url += f"?apikey={api_key}"
 
     return compiled_url
