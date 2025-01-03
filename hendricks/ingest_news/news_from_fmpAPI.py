@@ -171,7 +171,7 @@ def news_from_fmpAPI(
                     # Streamlined main document
                     document = {
                         "unique_id": row["url"],
-                        "timestamp": publishedDate,
+                        "timestamp": pd.Timestamp(publishedDate),
                         "ticker": row["ticker"],
                         "article_source": row["site"],
                         "headline": row["title"],
