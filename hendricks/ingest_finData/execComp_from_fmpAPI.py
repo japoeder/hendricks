@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 import logging
 
 # import pytz
+import hashlib
 import pandas as pd
 from dotenv import load_dotenv
 import requests
@@ -135,9 +136,18 @@ def execComp_from_fmpAPI(
                     .tz_convert("UTC")
                 )
 
+                # Create unique_id when there isn't a good option in response
+                f1 = ticker
+                f2 = timestamp
+                f3 = row["nameAndPosition"]
+                f4 = row["year"]
+
+                # Create hash of f1, f2, f3, f4
+                unique_id = hashlib.sha256(f"{f1}{f2}{f3}{f4}".encode()).hexdigest()
+
                 # Streamlined main document
                 document = {
-                    "unique_id": row["url"],
+                    "unique_id": unique_id,
                     "timestamp": timestamp,
                     "ticker": row["ticker"],
                     ##########################################
