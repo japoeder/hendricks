@@ -199,7 +199,8 @@ def news_from_alpacaAPI(
             # Streamlined main document
             document = {
                 "unique_id": row["url"],
-                "timestamp": timestamp,
+                # ensure timestamp is a datetime object
+                "timestamp": pd.Timestamp(timestamp),
                 "ticker": ticker,
                 # grab www.address.com and nothing after .com from url for article_source
                 "article_source": row["url"].split("www.")[-1].split(".com")[0],
