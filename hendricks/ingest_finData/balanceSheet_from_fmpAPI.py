@@ -148,7 +148,6 @@ def balanceSheet_from_fmpAPI(
                         ##########################################
                         ##########################################
                         "date": row["date"],
-                        "symbol": row["symbol"],
                         "reportedCurrency": row["reportedCurrency"],
                         "cik": row["cik"],
                         "fillingDate": row["fillingDate"],
