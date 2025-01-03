@@ -125,6 +125,7 @@ def request_url_constructor(
     interval: str = None,
     source: str = None,
     page: int = None,
+    period: str = None,
 ):
     """
     Construct the URL for the FMP API.
@@ -243,5 +244,44 @@ def request_url_constructor(
                 raise ValueError("api_key is required")
             else:
                 compiled_url += f"?apikey={api_key}"
+
+        elif endpoint == "analyst-stock-recommendations":
+            if ticker is None:
+                raise ValueError("ticker is required")
+            else:
+                compiled_url += f"/{endpoint}/{ticker}"
+
+            if api_key is None:
+                raise ValueError("api_key is required")
+            else:
+                compiled_url += f"?apikey={api_key}"
+
+        elif endpoint == "income-statement":
+            if ticker is None:
+                raise ValueError("ticker is required")
+            else:
+                compiled_url += f"/{endpoint}/{ticker}"
+
+            if period is not None:
+                compiled_url += f"?period={period}"
+
+            if api_key is None:
+                raise ValueError("api_key is required")
+            else:
+                compiled_url += f"&apikey={api_key}"
+
+        elif endpoint == "balance-sheet-statement":
+            if ticker is None:
+                raise ValueError("ticker is required")
+            else:
+                compiled_url += f"/{endpoint}/{ticker}"
+
+            if period is not None:
+                compiled_url += f"?period={period}"
+
+            if api_key is None:
+                raise ValueError("api_key is required")
+            else:
+                compiled_url += f"&apikey={api_key}"
 
     return compiled_url

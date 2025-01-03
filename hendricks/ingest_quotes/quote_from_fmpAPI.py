@@ -40,7 +40,7 @@ def quote_from_fmpAPI(
         creds_file_path = get_path("creds")
 
     # Load Alpaca API credentials from JSON file
-    API_KEY, BASE_URL = load_credentials(creds_file_path, "fmp_api")
+    API_KEY, BASE_URL = load_credentials(creds_file_path, "fmp_api_findata")
 
     # Run time conversion
     TZ = pytz.timezone("America/New_York")
