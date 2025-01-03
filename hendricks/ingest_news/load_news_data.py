@@ -46,7 +46,7 @@ class NewsLoader:
                 # Loop by month
                 loop_mon_beg = from_date
                 loop_mon_end = from_date + pd.DateOffset(months=1)
-                while loop_mon_end < to_date:
+                while loop_mon_end <= to_date:
                     news_from_alpacaAPI(
                         tickers=self.tickers,
                         from_date=loop_mon_beg.strftime(
@@ -61,6 +61,17 @@ class NewsLoader:
                     )
                     loop_mon_beg = loop_mon_end
                     loop_mon_end = loop_mon_beg + pd.DateOffset(months=1)
+
+                    # Handle the final partial month if it exists
+                    if loop_mon_beg < to_date < loop_mon_end:
+                        news_from_alpacaAPI(
+                            tickers=self.tickers,
+                            from_date=loop_mon_beg.strftime("%Y-%m-%d"),
+                            to_date=to_date.strftime("%Y-%m-%d"),
+                            articles_limit=articles_limit,
+                            collection_name=self.collection_name,
+                            gridfs_bucket=self.gridfs_bucket,
+                        )
             else:
                 print(f"Running else {z}")
                 news_from_alpacaAPI(
@@ -83,7 +94,7 @@ class NewsLoader:
                 # Loop by month
                 loop_mon_beg = from_date
                 loop_mon_end = from_date + pd.DateOffset(months=1)
-                while loop_mon_end < to_date:
+                while loop_mon_end <= to_date:
                     news_from_fmpAPI(
                         tickers=self.tickers,
                         from_date=loop_mon_beg.strftime(
@@ -98,6 +109,17 @@ class NewsLoader:
                     )
                     loop_mon_beg = loop_mon_end
                     loop_mon_end = loop_mon_beg + pd.DateOffset(months=1)
+
+                    # Handle the final partial month if it exists
+                    if loop_mon_beg < to_date < loop_mon_end:
+                        news_from_fmpAPI(
+                            tickers=self.tickers,
+                            from_date=loop_mon_beg.strftime("%Y-%m-%d"),
+                            to_date=to_date.strftime("%Y-%m-%d"),
+                            articles_limit=articles_limit,
+                            collection_name=self.collection_name,
+                            gridfs_bucket=self.gridfs_bucket,
+                        )
             else:
                 articles_limit = 1000
                 news_from_fmpAPI(
