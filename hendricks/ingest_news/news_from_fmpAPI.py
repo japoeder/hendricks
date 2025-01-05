@@ -19,7 +19,8 @@ from hendricks._utils.mongo_coll_verification import confirm_mongo_collect_exist
 from hendricks._utils.get_path import get_path
 from hendricks._utils.request_url_constructor import request_url_constructor
 from hendricks._utils.grab_html import grab_html
-from hendricks._utils.std_article_time import std_article_time
+
+# from hendricks._utils.std_article_time import std_article_time
 
 # Set up logging
 logging.basicConfig(level=logging.WARNING)  # Set to WARNING to suppress DEBUG messages
@@ -138,14 +139,14 @@ def news_from_fmpAPI(
                 for _, row in news.iterrows():
                     html_content = grab_html(row["url"])
 
-                    # Convert the publishedDate to UTC
-                    conversion_result = std_article_time(
-                        row["publishedDate"], row["site"]
-                    )
-                    if conversion_result[1] == "converted":
-                        std_publishedDate = conversion_result[0]
-                    else:
-                        std_publishedDate = row["publishedDate"]
+                    # # Convert the publishedDate to UTC
+                    # conversion_result = std_article_time(
+                    #     row["publishedDate"], row["site"]
+                    # )
+                    # if conversion_result[1] == "converted":
+                    #     std_publishedDate = conversion_result[0]
+                    # else:
+                    #     std_publishedDate = row["publishedDate"]
 
                     # Store large content in GridFS
                     content_data = {
@@ -155,9 +156,9 @@ def news_from_fmpAPI(
                         "html": html_content,
                         "article_tickers": [row["ticker"]],
                         "author": "N/A",
-                        "article_created_at": std_publishedDate,
-                        "article_updated_at": std_publishedDate,
-                        "timestamp_conversion_result": conversion_result[1],
+                        "article_created_at": row["publishedDate"],
+                        "article_updated_at": row["publishedDate"],
+                        # "timestamp_conversion_result": conversion_result[1],
                     }
 
                     # Store in GridFS with metadata
@@ -172,7 +173,7 @@ def news_from_fmpAPI(
                     document = {
                         "unique_id": row["url"],
                         "timestamp": pd.Timestamp(row["publishedDate"]),
-                        "std_timestamp": pd.Timestamp(std_publishedDate),
+                        # "std_timestamp": pd.Timestamp(std_publishedDate),
                         "ticker": row["ticker"],
                         "article_source": row["site"],
                         "headline": row["title"],
