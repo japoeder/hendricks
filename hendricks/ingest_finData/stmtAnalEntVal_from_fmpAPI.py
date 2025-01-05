@@ -136,11 +136,9 @@ def stmtAnalEntVal_from_fmpAPI(
                     # Create unique_id when there isn't a good option in response
                     f1 = ticker
                     f2 = timestamp
-                    f3 = row["calendarYear"]
-                    f4 = row["period"]
 
                     # Create hash of f1, f2, f3, f4
-                    unique_id = hashlib.sha256(f"{f1}{f2}{f3}{f4}".encode()).hexdigest()
+                    unique_id = hashlib.sha256(f"{f1}{f2}".encode()).hexdigest()
 
                     # Streamlined main document
                     document = {
