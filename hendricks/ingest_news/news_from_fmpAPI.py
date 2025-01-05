@@ -143,9 +143,9 @@ def news_from_fmpAPI(
                         row["publishedDate"], row["site"]
                     )
                     if conversion_result[1] == "converted":
-                        publishedDate = conversion_result[0]
+                        std_publishedDate = conversion_result[0]
                     else:
-                        publishedDate = row["publishedDate"]
+                        std_publishedDate = row["publishedDate"]
 
                     # Store large content in GridFS
                     content_data = {
@@ -155,8 +155,8 @@ def news_from_fmpAPI(
                         "html": html_content,
                         "article_tickers": [row["ticker"]],
                         "author": "N/A",
-                        "article_created_at": publishedDate,
-                        "article_updated_at": publishedDate,
+                        "article_created_at": std_publishedDate,
+                        "article_updated_at": std_publishedDate,
                         "timestamp_conversion_result": conversion_result[1],
                     }
 
@@ -171,7 +171,8 @@ def news_from_fmpAPI(
                     # Streamlined main document
                     document = {
                         "unique_id": row["url"],
-                        "timestamp": pd.Timestamp(publishedDate),
+                        "timestamp": pd.Timestamp(row["publishedDate"]),
+                        "std_timestamp": pd.Timestamp(std_publishedDate),
                         "ticker": row["ticker"],
                         "article_source": row["site"],
                         "headline": row["title"],
