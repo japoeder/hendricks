@@ -10,7 +10,7 @@ import hashlib
 import pandas as pd
 from dotenv import load_dotenv
 import requests
-from pymongo import UpdateOne
+from pymongo import InsertOne
 from pymongo.errors import BulkWriteError
 
 # from gridfs import GridFS
@@ -127,21 +127,8 @@ def analystEst_from_fmpAPI(
 
                 created_at = datetime.now(timezone.utc)
 
-                # Create unique_id when there isn't a good option in response
-                f1 = ticker
-                f2 = timestamp
-                f3 = created_at
-
-                # Create hash of f1, f2, f3, f4
-                unique_id = hashlib.sha256(f"{f1}{f2}{f3}".encode()).hexdigest()
-
-                # Streamlined main document
-                document = {
-                    "unique_id": unique_id,
-                    "timestamp": timestamp,
-                    "ticker": row["ticker"],
-                    ##########################################
-                    ##########################################
+                # Create a hash of the actual estimate values to detect changes
+                estimate_values = {
                     "estimatedRevenueLow": row["estimatedRevenueLow"],
                     "estimatedRevenueHigh": row["estimatedRevenueHigh"],
                     "estimatedRevenueAvg": row["estimatedRevenueAvg"],
@@ -164,23 +151,49 @@ def analystEst_from_fmpAPI(
                         "numberAnalystEstimatedRevenue"
                     ],
                     "numberAnalystsEstimatedEps": row["numberAnalystsEstimatedEps"],
+                }
+                estimates_hash = hashlib.sha256(
+                    str(estimate_values).encode()
+                ).hexdigest()
+
+                # Create unique_id when there isn't a good option in response
+                f1 = ticker
+                f2 = timestamp
+                f3 = created_at
+
+                # Create hash of f1, f2, f3, f4
+                unique_id = hashlib.sha256(f"{f1}{f2}{f3}".encode()).hexdigest()
+
+                # Streamlined main document
+                document = {
+                    "unique_id": unique_id,
+                    "timestamp": timestamp,
+                    "ticker": row["ticker"],
+                    ##########################################
+                    ##########################################
+                    # Unpack the estimates_hash
+                    estimates_hash ** "estimates_hash": estimates_hash,
                     ##########################################
                     ##########################################
                     "source": "fmp",
                     "created_at": created_at,
                 }
 
-                # Create update operation
-                bulk_operations.append(
-                    UpdateOne(
-                        {
-                            "unique_id": document["unique_id"],
-                            "ticker": document["ticker"],
-                        },
-                        {"$set": document},
-                        upsert=True,
-                    )
+                # Check if this exact estimate already exists
+                existing_record = collection.find_one(
+                    {
+                        "ticker": ticker,
+                        "timestamp": timestamp,
+                        "estimates_hash": estimates_hash,
+                    }
                 )
+
+                # If the record exists, skip it otherwise insert it
+                if existing_record:
+                    continue
+                else:
+                    # Create update operation
+                    bulk_operations.append(InsertOne(document))
 
             # Execute bulk operations if any exist
             if bulk_operations:

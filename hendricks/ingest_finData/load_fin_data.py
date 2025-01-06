@@ -84,6 +84,7 @@ class FinLoader:
             raise ValueError("Unsupported source")
 
         # Map endpoints to their corresponding functions
+        # In general time isn't identified in endpoint
         endpoint_handlers = {
             "employee_count": empCount_from_fmpAPI,
             "executive_compensation": execComp_from_fmpAPI,
@@ -126,6 +127,7 @@ class FinLoader:
             raise ValueError("Unsupported source")
 
         # Map endpoints to their corresponding functions
+        # Time is identified and used in endpoint
         endpoint_handlers = {
             "historical-market-capitalization": marketCap_from_fmpAPI,
             # Add new endpoints here with their corresponding functions

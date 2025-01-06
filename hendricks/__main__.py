@@ -171,6 +171,7 @@ def load_fin_data():
     collection_name = data.get("collection_name")
     fmp_endpoint = data.get("fmp_endpoint")
 
+    # Daily flag is for processing daily data by day
     daily_fmp_flag = data.get("daily_fmp_flag")
 
     logging.info(f"Tickers: {tickers}")
