@@ -28,7 +28,7 @@ logger = logging.getLogger("pymongo")
 logger.setLevel(logging.WARNING)  # Suppress pymongo debug messages
 
 
-def stmtAnalFinScore_from_fmpAPI(
+def valAdvDiscCF_from_fmpAPI(
     tickers=None,
     collection_name=None,
     creds_file_path=None,
@@ -41,7 +41,7 @@ def stmtAnalFinScore_from_fmpAPI(
     """
 
     ep_ticker_alias = "symbol"
-    ep_timestamp_field = "today"
+    ep_timestamp_field = "year"
     cred_key = "fmp_api_findata_v4"
 
     if creds_file_path is None:
@@ -112,37 +112,78 @@ def stmtAnalFinScore_from_fmpAPI(
             # Rename 'symbol' to 'ticker'
             res_df.rename(columns={ep_ticker_alias: "ticker"}, inplace=True)
 
+            # Sort results by timestamp in descending order
             if ep_timestamp_field != "today":
-                # Sort results by timestamp in descending order
                 res_df.sort_values(by=ep_timestamp_field, ascending=False, inplace=True)
 
             # Process news items in bulk
             bulk_operations = []
             for _, row in res_df.iterrows():
-                if ep_timestamp_field != "today":
-                    # Create timestamp col in res_df from acceptanceDate to UTC
-                    # TODO: UPDATE IF NECESSARY AFTER HEARING FROM CUSTOMER SVC.
+                # Create timestamp col in res_df from acceptanceDate to UTC
+                # TODO: UPDATE IF NECESSARY AFTER HEARING FROM CUSTOMER SVC.
+                if ep_timestamp_field == "today":
+                    timestamp = datetime.now(timezone.utc)
+                elif ep_timestamp_field == "year":
+                    # Jan 1st of the year
+                    timestamp = datetime(int(row["year"]), 1, 1, tzinfo=timezone.utc)
+                else:
+                    # Handle any other timestamp field
                     timestamp = (
                         pd.to_datetime(row[ep_timestamp_field])
                         .tz_localize("America/New_York")
                         .tz_convert("UTC")
                     )
-                else:
-                    timestamp = datetime.now(timezone.utc)
 
                 created_at = datetime.now(timezone.utc)
 
                 # Create a hash of the actual estimate values to detect changes
                 estimate_values = {
-                    "altmanZScore": row["altmanZScore"],
-                    "piotroskiScore": row["piotroskiScore"],
-                    "workingCapital": row["workingCapital"],
-                    "totalAssets": row["totalAssets"],
-                    "retainedEarnings": row["retainedEarnings"],
-                    "ebit": row["ebit"],
-                    "marketCap": row["marketCap"],
-                    "totalLiabilities": row["totalLiabilities"],
+                    "year": row["year"],
                     "revenue": row["revenue"],
+                    "revenuePercentage": row["revenuePercentage"],
+                    "ebitda": row["ebitda"],
+                    "ebitdaPercentage": row["ebitdaPercentage"],
+                    "ebit": row["ebit"],
+                    "ebitPercentage": row["ebitPercentage"],
+                    "depreciation": row["depreciation"],
+                    "depreciationPercentage": row["depreciationPercentage"],
+                    "totalCash": row["totalCash"],
+                    "totalCashPercentage": row["totalCashPercentage"],
+                    "receivables": row["receivables"],
+                    "receivablesPercentage": row["receivablesPercentage"],
+                    "inventories": row["inventories"],
+                    "inventoriesPercentage": row["inventoriesPercentage"],
+                    "payable": row["payable"],
+                    "payablePercentage": row["payablePercentage"],
+                    "capitalExpenditure": row["capitalExpenditure"],
+                    "capitalExpenditurePercentage": row["capitalExpenditurePercentage"],
+                    "price": row["price"],
+                    "beta": row["beta"],
+                    "dilutedSharesOutstanding": row["dilutedSharesOutstanding"],
+                    "costofDebt": row["costofDebt"],
+                    "taxRate": row["taxRate"],
+                    "afterTaxCostOfDebt": row["afterTaxCostOfDebt"],
+                    "riskFreeRate": row["riskFreeRate"],
+                    "marketRiskPremium": row["marketRiskPremium"],
+                    "costOfEquity": row["costOfEquity"],
+                    "totalDebt": row["totalDebt"],
+                    "totalEquity": row["totalEquity"],
+                    "totalCapital": row["totalCapital"],
+                    "debtWeighting": row["debtWeighting"],
+                    "equityWeighting": row["equityWeighting"],
+                    "wacc": row["wacc"],
+                    "taxRateCash": row["taxRateCash"],
+                    "ebiat": row["ebiat"],
+                    "ufcf": row["ufcf"],
+                    "sumPvUfcf": row["sumPvUfcf"],
+                    "longTermGrowthRate": row["longTermGrowthRate"],
+                    "terminalValue": row["terminalValue"],
+                    "presentTerminalValue": row["presentTerminalValue"],
+                    "enterpriseValue": row["enterpriseValue"],
+                    "netDebt": row["netDebt"],
+                    "equityValue": row["equityValue"],
+                    "equityValuePerShare": row["equityValuePerShare"],
+                    "freeCashFlowT1": row["freeCashFlowT1"],
                 }
                 estimates_hash = hashlib.sha256(
                     str(estimate_values).encode()
@@ -163,6 +204,7 @@ def stmtAnalFinScore_from_fmpAPI(
                     "ticker": row["ticker"],
                     ##########################################
                     ##########################################
+                    # Unpack the estimates_hash
                     **estimate_values,
                     "estimates_hash": estimates_hash,
                     ##########################################
@@ -175,6 +217,7 @@ def stmtAnalFinScore_from_fmpAPI(
                 existing_record = collection.find_one(
                     {
                         "ticker": ticker,
+                        "year": row["year"],
                         "estimates_hash": estimates_hash,
                     }
                 )

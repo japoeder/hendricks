@@ -134,16 +134,12 @@ def incomeStmt_from_fmpAPI(
                     created_at = datetime.now(timezone.utc)
 
                     # Create unique_id when there isn't a good option in response
-                    f1 = ticker
-                    f2 = timestamp
-                    f3 = row["link"]
-                    f4 = period
-                    f5 = row["calendarYear"]
+                    f1 = row["date"]
+                    f2 = period
+                    f3 = row["calendarYear"]
 
                     # Create hash of f1, f2, f3, f4, f5
-                    unique_id = hashlib.sha256(
-                        f"{f1}{f2}{f3}{f4}{f5}".encode()
-                    ).hexdigest()
+                    unique_id = hashlib.sha256(f"{f1}{f2}{f3}".encode()).hexdigest()
 
                     # Streamlined main document
                     document = {

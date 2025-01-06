@@ -113,17 +113,26 @@ def analystEst_from_fmpAPI(
             res_df.rename(columns={ep_ticker_alias: "ticker"}, inplace=True)
 
             # Sort results by timestamp in descending order
-            res_df.sort_values(by=ep_timestamp_field, ascending=False, inplace=True)
+            if ep_timestamp_field != "today":
+                res_df.sort_values(by=ep_timestamp_field, ascending=False, inplace=True)
 
             # Process news items in bulk
             bulk_operations = []
             for _, row in res_df.iterrows():
                 # Create timestamp col in res_df from acceptanceDate to UTC
-                timestamp = (
-                    pd.to_datetime(row[ep_timestamp_field])
-                    .tz_localize("America/New_York")
-                    .tz_convert("UTC")
-                )
+                # TODO: UPDATE IF NECESSARY AFTER HEARING FROM CUSTOMER SVC.
+                if ep_timestamp_field == "today":
+                    timestamp = datetime.now(timezone.utc)
+                elif ep_timestamp_field == "year":
+                    # Jan 1st of the year
+                    timestamp = datetime(int(row["year"]), 1, 1, tzinfo=timezone.utc)
+                else:
+                    # Handle any other timestamp field
+                    timestamp = (
+                        pd.to_datetime(row[ep_timestamp_field])
+                        .tz_localize("America/New_York")
+                        .tz_convert("UTC")
+                    )
 
                 created_at = datetime.now(timezone.utc)
 
@@ -172,7 +181,8 @@ def analystEst_from_fmpAPI(
                     ##########################################
                     ##########################################
                     # Unpack the estimates_hash
-                    estimates_hash ** "estimates_hash": estimates_hash,
+                    **estimate_values,
+                    "estimates_hash": estimates_hash,
                     ##########################################
                     ##########################################
                     "source": "fmp",

@@ -281,7 +281,11 @@ def request_url_constructor(
             else:
                 compiled_url += f"&apikey={api_key}"
 
-        elif endpoint in ["score", "owner_earnings"]:
+        elif endpoint in [
+            "score",
+            "owner_earnings",
+            "advanced_discounted_cash_flow",
+        ]:
             if ticker is None:
                 raise ValueError("ticker is required")
             else:

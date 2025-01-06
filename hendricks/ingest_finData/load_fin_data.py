@@ -39,6 +39,7 @@ from hendricks.ingest_finData.stmtAnalFinGr_from_fmpAPI import (
 from hendricks.ingest_finData.stmtAnalOwnEarn_from_fmpAPI import (
     stmtAnalOwnEarn_from_fmpAPI,
 )
+from hendricks.ingest_finData.valAdvDiscCF_from_fmpAPI import valAdvDiscCF_from_fmpAPI
 
 from hendricks._utils.get_path import get_path
 
@@ -103,6 +104,7 @@ class FinLoader:
             "enterprise-values": stmtAnalEntVal_from_fmpAPI,
             "score": stmtAnalFinScore_from_fmpAPI,
             "owner_earnings": stmtAnalOwnEarn_from_fmpAPI,
+            "advanced_discounted_cash_flow": valAdvDiscCF_from_fmpAPI,
         }
 
         if self.fmp_endpoint not in endpoint_handlers:
