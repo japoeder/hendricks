@@ -2,7 +2,9 @@
 Load historical quote data from Alpaca API into a MongoDB collection.
 """
 
-from datetime import datetime, timezone
+from datetime import datetime
+
+# from datetime import timezone
 import logging
 
 # import pytz
@@ -122,22 +124,25 @@ def valAdvDiscCF_from_fmpAPI(
                 # Create timestamp col in res_df from acceptanceDate to UTC
                 # TODO: UPDATE IF NECESSARY AFTER HEARING FROM CUSTOMER SVC.
                 if ep_timestamp_field == "today":
-                    timestamp = datetime.now(timezone.utc)
+                    # timestamp = datetime.now(timezone.utc)
+                    timestamp = datetime.now()
                 elif ep_timestamp_field == "year":
                     # Jan 1st of the year
-                    timestamp = datetime(int(row["year"]), 1, 1, tzinfo=timezone.utc)
+                    # timestamp = datetime(int(row["year"]), 1, 1, tzinfo=timezone.utc)
+                    timestamp = datetime(int(row["year"]), 1, 1)
                 else:
                     # Handle any other timestamp field
                     timestamp = (
                         pd.to_datetime(row[ep_timestamp_field])
-                        .tz_localize("America/New_York")
-                        .tz_convert("UTC")
+                        # .tz_localize("America/New_York")
+                        # .tz_convert("UTC")
                     )
 
-                created_at = datetime.now(timezone.utc)
+                # created_at = datetime.now(timezone.utc)
+                created_at = datetime.now()
 
                 # Create a hash of the actual estimate values to detect changes
-                estimate_values = {
+                feature_values = {
                     "year": row["year"],
                     "revenue": row["revenue"],
                     "revenuePercentage": row["revenuePercentage"],
@@ -185,9 +190,7 @@ def valAdvDiscCF_from_fmpAPI(
                     "equityValuePerShare": row["equityValuePerShare"],
                     "freeCashFlowT1": row["freeCashFlowT1"],
                 }
-                estimates_hash = hashlib.sha256(
-                    str(estimate_values).encode()
-                ).hexdigest()
+                feature_hash = hashlib.sha256(str(feature_values).encode()).hexdigest()
 
                 # Create unique_id when there isn't a good option in response
                 f1 = ticker
@@ -204,9 +207,9 @@ def valAdvDiscCF_from_fmpAPI(
                     "ticker": row["ticker"],
                     ##########################################
                     ##########################################
-                    # Unpack the estimates_hash
-                    **estimate_values,
-                    "estimates_hash": estimates_hash,
+                    # Unpack the feature_hash
+                    **feature_values,
+                    "feature_hash": feature_hash,
                     ##########################################
                     ##########################################
                     "source": "fmp",
@@ -218,7 +221,7 @@ def valAdvDiscCF_from_fmpAPI(
                     {
                         "ticker": ticker,
                         "year": row["year"],
-                        "estimates_hash": estimates_hash,
+                        "feature_hash": feature_hash,
                     }
                 )
 

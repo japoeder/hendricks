@@ -30,7 +30,7 @@ logger = logging.getLogger("pymongo")
 logger.setLevel(logging.WARNING)  # Suppress pymongo debug messages
 
 
-def stmtAnalFinScore_from_fmpAPI(
+def ptConsensus_from_fmpAPI(
     tickers=None,
     collection_name=None,
     creds_file_path=None,
@@ -143,15 +143,10 @@ def stmtAnalFinScore_from_fmpAPI(
 
                 # Create a hash of the actual estimate values to detect changes
                 feature_values = {
-                    "altmanZScore": row["altmanZScore"],
-                    "piotroskiScore": row["piotroskiScore"],
-                    "workingCapital": row["workingCapital"],
-                    "totalAssets": row["totalAssets"],
-                    "retainedEarnings": row["retainedEarnings"],
-                    "ebit": row["ebit"],
-                    "marketCap": row["marketCap"],
-                    "totalLiabilities": row["totalLiabilities"],
-                    "revenue": row["revenue"],
+                    "targetHigh": row["targetHigh"],
+                    "targetLow": row["targetLow"],
+                    "targetConsensus": row["targetConsensus"],
+                    "targetMedian": row["targetMedian"],
                 }
                 feature_hash = hashlib.sha256(str(feature_values).encode()).hexdigest()
 

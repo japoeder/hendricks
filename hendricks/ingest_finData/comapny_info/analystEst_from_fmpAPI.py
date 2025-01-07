@@ -142,7 +142,7 @@ def analystEst_from_fmpAPI(
                 created_at = datetime.now()
 
                 # Create a hash of the actual estimate values to detect changes
-                estimate_values = {
+                feature_values = {
                     "estimatedRevenueLow": row["estimatedRevenueLow"],
                     "estimatedRevenueHigh": row["estimatedRevenueHigh"],
                     "estimatedRevenueAvg": row["estimatedRevenueAvg"],
@@ -166,9 +166,7 @@ def analystEst_from_fmpAPI(
                     ],
                     "numberAnalystsEstimatedEps": row["numberAnalystsEstimatedEps"],
                 }
-                estimates_hash = hashlib.sha256(
-                    str(estimate_values).encode()
-                ).hexdigest()
+                feature_hash = hashlib.sha256(str(feature_values).encode()).hexdigest()
 
                 # Create unique_id when there isn't a good option in response
                 f1 = ticker
@@ -185,9 +183,9 @@ def analystEst_from_fmpAPI(
                     "ticker": row["ticker"],
                     ##########################################
                     ##########################################
-                    # Unpack the estimates_hash
-                    **estimate_values,
-                    "estimates_hash": estimates_hash,
+                    # Unpack the feature_hash
+                    **feature_values,
+                    "feature_hash": feature_hash,
                     ##########################################
                     ##########################################
                     "source": "fmp",
@@ -199,7 +197,7 @@ def analystEst_from_fmpAPI(
                     {
                         "ticker": ticker,
                         "timestamp": timestamp,
-                        "estimates_hash": estimates_hash,
+                        "feature_hash": feature_hash,
                     }
                 )
 

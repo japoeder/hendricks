@@ -9,63 +9,8 @@ import pandas as pd
 from pandas.tseries.holiday import USFederalHolidayCalendar
 from pandas.tseries.offsets import CustomBusinessDay
 
-from hendricks.ingest_finData.comapny_info.empCount_from_fmpAPI import (
-    empCount_from_fmpAPI,
-)
-from hendricks.ingest_finData.comapny_info.execComp_from_fmpAPI import (
-    execComp_from_fmpAPI,
-)
-from hendricks.ingest_finData.comapny_info.grade_from_fmpAPI import grade_from_fmpAPI
-from hendricks.ingest_finData.comapny_info.marketCap_from_fmpAPI import (
-    marketCap_from_fmpAPI,
-)
-from hendricks.ingest_finData.comapny_info.analystEst_from_fmpAPI import (
-    analystEst_from_fmpAPI,
-)
-from hendricks.ingest_finData.comapny_info.analystRec_from_fmpAPI import (
-    analystRec_from_fmpAPI,
-)
-from hendricks.ingest_finData.financial_statements.incomeStmt_from_fmpAPI import (
-    incomeStmt_from_fmpAPI,
-)
-from hendricks.ingest_finData.financial_statements.balanceSheet_from_fmpAPI import (
-    balanceSheet_from_fmpAPI,
-)
-from hendricks.ingest_finData.financial_statements.cashFlow_from_fmpAPI import (
-    cashFlow_from_fmpAPI,
-)
-from hendricks.ingest_finData.statement_analysis.stmtAnalKM_from_fmpAPI import (
-    stmtAnalKM_from_fmpAPI,
-)
-from hendricks.ingest_finData.statement_analysis.stmtAnalRatios_from_fmpAPI import (
-    stmtAnalRatios_from_fmpAPI,
-)
-from hendricks.ingest_finData.statement_analysis.stmtAnalCFG_from_fmpAPI import (
-    stmtAnalCFG_from_fmpAPI,
-)
-from hendricks.ingest_finData.statement_analysis.stmtAnalIncGr_from_fmpAPI import (
-    stmtAnalIncGr_from_fmpAPI,
-)
-from hendricks.ingest_finData.statement_analysis.stmtAnalBSG_from_fmpAPI import (
-    stmtAnalBSG_from_fmpAPI,
-)
-from hendricks.ingest_finData.statement_analysis.stmtAnalEntVal_from_fmpAPI import (
-    stmtAnalEntVal_from_fmpAPI,
-)
-from hendricks.ingest_finData.statement_analysis.stmtAnalFinScore_from_fmpAPI import (
-    stmtAnalFinScore_from_fmpAPI,
-)
-from hendricks.ingest_finData.statement_analysis.stmtAnalFinGr_from_fmpAPI import (
-    stmtAnalFinGr_from_fmpAPI,
-)
-from hendricks.ingest_finData.statement_analysis.stmtAnalOwnEarn_from_fmpAPI import (
-    stmtAnalOwnEarn_from_fmpAPI,
-)
-from hendricks.ingest_finData.valuation.valAdvDiscCF_from_fmpAPI import (
-    valAdvDiscCF_from_fmpAPI,
-)
-
 from hendricks._utils.get_path import get_path
+from hendricks.ingest_finData.lfd_enum import FMPEndpoint
 
 dotenv.load_dotenv()
 
@@ -108,33 +53,13 @@ class FinLoader:
         if self.source != "fmp":
             raise ValueError("Unsupported source")
 
-        # Map endpoints to their corresponding functions
-        # In general time isn't identified in endpoint
-        endpoint_handlers = {
-            "employee_count": empCount_from_fmpAPI,
-            "executive_compensation": execComp_from_fmpAPI,
-            "grade": grade_from_fmpAPI,
-            "analyst-estimates": analystEst_from_fmpAPI,
-            "analyst-stock-recommendations": analystRec_from_fmpAPI,
-            "income-statement": incomeStmt_from_fmpAPI,
-            "balance-sheet-statement": balanceSheet_from_fmpAPI,
-            "cash-flow-statement": cashFlow_from_fmpAPI,
-            "key-metrics": stmtAnalKM_from_fmpAPI,
-            "ratios": stmtAnalRatios_from_fmpAPI,
-            "cash-flow-statement-growth": stmtAnalCFG_from_fmpAPI,
-            "income-statement-growth": stmtAnalIncGr_from_fmpAPI,
-            "balance-sheet-statement-growth": stmtAnalBSG_from_fmpAPI,
-            "financial-growth": stmtAnalFinGr_from_fmpAPI,
-            "enterprise-values": stmtAnalEntVal_from_fmpAPI,
-            "score": stmtAnalFinScore_from_fmpAPI,
-            "owner_earnings": stmtAnalOwnEarn_from_fmpAPI,
-            "advanced_discounted_cash_flow": valAdvDiscCF_from_fmpAPI,
-        }
+        endpoint = FMPEndpoint.get_by_endpoint(self.fmp_endpoint)
+        if endpoint.is_daily:
+            raise ValueError(
+                f"Endpoint {self.fmp_endpoint} requires daily loading. Use load_daily_fin_data instead."
+            )
 
-        if self.fmp_endpoint not in endpoint_handlers:
-            raise ValueError(f"Unsupported endpoint: {self.fmp_endpoint}")
-
-        handler_function = endpoint_handlers[self.fmp_endpoint]
+        handler_function = endpoint.function
         handler_function(
             tickers=self.tickers,
             collection_name=self.collection_name,
@@ -152,18 +77,13 @@ class FinLoader:
         if self.source != "fmp":
             raise ValueError("Unsupported source")
 
-        # Map endpoints to their corresponding functions
-        # Time is identified and used in endpoint
-        endpoint_handlers = {
-            "historical-market-capitalization": marketCap_from_fmpAPI,
-            # Add new endpoints here with their corresponding functions
-            # "some-other-endpoint": other_endpoint_function,
-        }
+        endpoint = FMPEndpoint.get_by_endpoint(self.fmp_endpoint)
+        if not endpoint.is_daily:
+            raise ValueError(
+                f"Endpoint {self.fmp_endpoint} requires aggregate loading. Use load_agg_fin_data instead."
+            )
 
-        if self.fmp_endpoint not in endpoint_handlers:
-            raise ValueError(f"Unsupported endpoint: {self.fmp_endpoint}")
-
-        handler_function = endpoint_handlers[self.fmp_endpoint]
+        handler_function = endpoint.function
         from_date = pd.to_datetime(self.from_date)
         to_date = pd.to_datetime(self.to_date)
 

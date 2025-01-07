@@ -12,7 +12,7 @@ import hashlib
 import pandas as pd
 from dotenv import load_dotenv
 import requests
-from pymongo import InsertOne
+from pymongo import UpdateOne
 from pymongo.errors import BulkWriteError
 
 # from gridfs import GridFS
@@ -30,7 +30,7 @@ logger = logging.getLogger("pymongo")
 logger.setLevel(logging.WARNING)  # Suppress pymongo debug messages
 
 
-def stmtAnalFinScore_from_fmpAPI(
+def ptHistPrTargets_from_fmpAPI(
     tickers=None,
     collection_name=None,
     creds_file_path=None,
@@ -43,7 +43,7 @@ def stmtAnalFinScore_from_fmpAPI(
     """
 
     ep_ticker_alias = "symbol"
-    ep_timestamp_field = "today"
+    ep_timestamp_field = "publishedDate"
     cred_key = "fmp_api_findata_v4"
 
     if creds_file_path is None:
@@ -114,8 +114,8 @@ def stmtAnalFinScore_from_fmpAPI(
             # Rename 'symbol' to 'ticker'
             res_df.rename(columns={ep_ticker_alias: "ticker"}, inplace=True)
 
+            # Sort results by timestamp in descending order
             if ep_timestamp_field != "today":
-                # Sort results by timestamp in descending order
                 res_df.sort_values(by=ep_timestamp_field, ascending=False, inplace=True)
 
             # Process news items in bulk
@@ -143,25 +143,28 @@ def stmtAnalFinScore_from_fmpAPI(
 
                 # Create a hash of the actual estimate values to detect changes
                 feature_values = {
-                    "altmanZScore": row["altmanZScore"],
-                    "piotroskiScore": row["piotroskiScore"],
-                    "workingCapital": row["workingCapital"],
-                    "totalAssets": row["totalAssets"],
-                    "retainedEarnings": row["retainedEarnings"],
-                    "ebit": row["ebit"],
-                    "marketCap": row["marketCap"],
-                    "totalLiabilities": row["totalLiabilities"],
-                    "revenue": row["revenue"],
+                    "publishedDate": row["publishedDate"],
+                    "newsURL": row["newsURL"],
+                    "newsTitle": row["newsTitle"],
+                    "analystName": row["analystName"],
+                    "priceTarget": row["priceTarget"],
+                    "adjPriceTarget": row["adjPriceTarget"],
+                    "priceWhenPosted": row["priceWhenPosted"],
+                    "newsPublisher": row["newsPublisher"],
+                    "newsBaseURL": "streetinsider.com",
+                    "analystCompany": "Jefferies",
                 }
                 feature_hash = hashlib.sha256(str(feature_values).encode()).hexdigest()
 
                 # Create unique_id when there isn't a good option in response
                 f1 = ticker
                 f2 = timestamp
-                f3 = created_at
+                f3 = row["newsURL"]
+                f4 = row["analystName"]  # Add analyst name to unique ID
+                f5 = row["analystCompany"]  # Add analyst company to unique ID
 
-                # Create hash of f1, f2, f3, f4
-                unique_id = hashlib.sha256(f"{f1}{f2}{f3}".encode()).hexdigest()
+                # Create hash of f1, f2, f3, f4, f5
+                unique_id = hashlib.sha256(f"{f1}{f2}{f3}{f4}{f5}".encode()).hexdigest()
 
                 # Streamlined main document
                 document = {
@@ -170,6 +173,7 @@ def stmtAnalFinScore_from_fmpAPI(
                     "ticker": row["ticker"],
                     ##########################################
                     ##########################################
+                    # Unpack the feature_hash
                     **feature_values,
                     "feature_hash": feature_hash,
                     ##########################################
@@ -178,20 +182,17 @@ def stmtAnalFinScore_from_fmpAPI(
                     "created_at": created_at,
                 }
 
-                # Check if this exact estimate already exists
-                existing_record = collection.find_one(
-                    {
-                        "ticker": ticker,
-                        "feature_hash": feature_hash,
-                    }
+                # Create update operation
+                bulk_operations.append(
+                    UpdateOne(
+                        {
+                            "unique_id": document["unique_id"],
+                            "feature_hash": document["feature_hash"],
+                        },
+                        {"$set": document},
+                        upsert=True,
+                    )
                 )
-
-                # If the record exists, skip it otherwise insert it
-                if existing_record:
-                    continue
-                else:
-                    # Create update operation
-                    bulk_operations.append(InsertOne(document))
 
             # Execute bulk operations if any exist
             if bulk_operations:

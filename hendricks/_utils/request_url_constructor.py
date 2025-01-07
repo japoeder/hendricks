@@ -184,44 +184,25 @@ def request_url_constructor(
                 if to_date is not None:
                     compiled_url += f"&to={to_date}"
 
-        elif endpoint == "employee_count":
+        elif endpoint in [
+            "executive_compensation",
+            "employee_count",
+        ]:
             if ticker is None:
                 raise ValueError("ticker is required")
             else:
-                compiled_url += f"/{endpoint}?symbol={ticker}"
+                compiled_url += f"{endpoint}?symbol={ticker}"
 
             if api_key is None:
                 raise ValueError("api_key is required")
             else:
                 compiled_url += f"&apikey={api_key}"
-
-        elif endpoint == "executive_compensation":
-            if ticker is None:
-                raise ValueError("ticker is required")
-            else:
-                compiled_url += f"/{endpoint}?symbol={ticker}"
-
-            if api_key is None:
-                raise ValueError("api_key is required")
-            else:
-                compiled_url += f"&apikey={api_key}"
-
-        elif endpoint == "grade":
-            if ticker is None:
-                raise ValueError("ticker is required")
-            else:
-                compiled_url += f"/{endpoint}/{ticker}"
-
-            if api_key is None:
-                raise ValueError("api_key is required")
-            else:
-                compiled_url += f"?apikey={api_key}"
 
         elif endpoint == "historical-market-capitalization":
             if ticker is None:
                 raise ValueError("ticker is required")
             else:
-                compiled_url += f"/{endpoint}/{ticker}?"
+                compiled_url += f"{endpoint}/{ticker}?"
 
             if api_key is None:
                 raise ValueError("api_key is required")
@@ -234,22 +215,16 @@ def request_url_constructor(
                 if to_date is not None:
                     compiled_url += f"&to={to_date}"
 
-        elif endpoint == "analyst-estimates":
+        elif endpoint in [
+            "analyst-stock-recommendations",
+            "analyst-estimates",
+            "grade",
+            "historical-rating",
+        ]:
             if ticker is None:
                 raise ValueError("ticker is required")
             else:
-                compiled_url += f"/{endpoint}/{ticker}"
-
-            if api_key is None:
-                raise ValueError("api_key is required")
-            else:
-                compiled_url += f"?apikey={api_key}"
-
-        elif endpoint == "analyst-stock-recommendations":
-            if ticker is None:
-                raise ValueError("ticker is required")
-            else:
-                compiled_url += f"/{endpoint}/{ticker}"
+                compiled_url += f"{endpoint}/{ticker}"
 
             if api_key is None:
                 raise ValueError("api_key is required")
@@ -271,7 +246,7 @@ def request_url_constructor(
             if ticker is None:
                 raise ValueError("ticker is required")
             else:
-                compiled_url += f"/{endpoint}/{ticker}"
+                compiled_url += f"{endpoint}/{ticker}"
 
             if period is not None:
                 compiled_url += f"?period={period}"
@@ -285,11 +260,14 @@ def request_url_constructor(
             "score",
             "owner_earnings",
             "advanced_discounted_cash_flow",
+            "advanced_levered_discounted_cash_flow",
+            "price-target",
+            "price-target-consensus",
         ]:
             if ticker is None:
                 raise ValueError("ticker is required")
             else:
-                compiled_url += f"/{endpoint}?symbol={ticker}"
+                compiled_url += f"{endpoint}?symbol={ticker}"
 
             if api_key is None:
                 raise ValueError("api_key is required")

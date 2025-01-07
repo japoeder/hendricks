@@ -30,7 +30,7 @@ logger = logging.getLogger("pymongo")
 logger.setLevel(logging.WARNING)  # Suppress pymongo debug messages
 
 
-def stmtAnalFinScore_from_fmpAPI(
+def valLevDiscCF_from_fmpAPI(
     tickers=None,
     collection_name=None,
     creds_file_path=None,
@@ -43,7 +43,7 @@ def stmtAnalFinScore_from_fmpAPI(
     """
 
     ep_ticker_alias = "symbol"
-    ep_timestamp_field = "today"
+    ep_timestamp_field = "year"
     cred_key = "fmp_api_findata_v4"
 
     if creds_file_path is None:
@@ -114,8 +114,8 @@ def stmtAnalFinScore_from_fmpAPI(
             # Rename 'symbol' to 'ticker'
             res_df.rename(columns={ep_ticker_alias: "ticker"}, inplace=True)
 
+            # Sort results by timestamp in descending order
             if ep_timestamp_field != "today":
-                # Sort results by timestamp in descending order
                 res_df.sort_values(by=ep_timestamp_field, ascending=False, inplace=True)
 
             # Process news items in bulk
@@ -143,15 +143,39 @@ def stmtAnalFinScore_from_fmpAPI(
 
                 # Create a hash of the actual estimate values to detect changes
                 feature_values = {
-                    "altmanZScore": row["altmanZScore"],
-                    "piotroskiScore": row["piotroskiScore"],
-                    "workingCapital": row["workingCapital"],
-                    "totalAssets": row["totalAssets"],
-                    "retainedEarnings": row["retainedEarnings"],
-                    "ebit": row["ebit"],
-                    "marketCap": row["marketCap"],
-                    "totalLiabilities": row["totalLiabilities"],
+                    "year": row["year"],
                     "revenue": row["revenue"],
+                    "revenuePercentage": row["revenuePercentage"],
+                    "capitalExpenditure": row["capitalExpenditure"],
+                    "capitalExpenditurePercentage": row["capitalExpenditurePercentage"],
+                    "price": row["price"],
+                    "beta": row["beta"],
+                    "dilutedSharesOutstanding": row["dilutedSharesOutstanding"],
+                    "costofDebt": row["costofDebt"],
+                    "taxRate": row["taxRate"],
+                    "afterTaxCostOfDebt": row["afterTaxCostOfDebt"],
+                    "riskFreeRate": row["riskFreeRate"],
+                    "marketRiskPremium": row["marketRiskPremium"],
+                    "costOfEquity": row["costOfEquity"],
+                    "totalDebt": row["totalDebt"],
+                    "totalEquity": row["totalEquity"],
+                    "totalCapital": row["totalCapital"],
+                    "debtWeighting": row["debtWeighting"],
+                    "equityWeighting": row["equityWeighting"],
+                    "wacc": row["wacc"],
+                    "operatingCashFlow": row["operatingCashFlow"],
+                    "pvLfcf": row["pvLfcf"],
+                    "sumPvLfcf": row["sumPvLfcf"],
+                    "longTermGrowthRate": row["longTermGrowthRate"],
+                    "freeCashFlow": row["freeCashFlow"],
+                    "terminalValue": row["terminalValue"],
+                    "presentTerminalValue": row["presentTerminalValue"],
+                    "enterpriseValue": row["enterpriseValue"],
+                    "netDebt": row["netDebt"],
+                    "equityValue": row["equityValue"],
+                    "equityValuePerShare": row["equityValuePerShare"],
+                    "freeCashFlowT1": row["freeCashFlowT1"],
+                    "operatingCashFlowPercentage": row["operatingCashFlowPercentage"],
                 }
                 feature_hash = hashlib.sha256(str(feature_values).encode()).hexdigest()
 
@@ -170,6 +194,7 @@ def stmtAnalFinScore_from_fmpAPI(
                     "ticker": row["ticker"],
                     ##########################################
                     ##########################################
+                    # Unpack the feature_hash
                     **feature_values,
                     "feature_hash": feature_hash,
                     ##########################################
@@ -182,6 +207,7 @@ def stmtAnalFinScore_from_fmpAPI(
                 existing_record = collection.find_one(
                     {
                         "ticker": ticker,
+                        "year": row["year"],
                         "feature_hash": feature_hash,
                     }
                 )
