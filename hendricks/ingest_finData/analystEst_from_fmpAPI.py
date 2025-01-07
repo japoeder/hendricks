@@ -2,7 +2,9 @@
 Load historical quote data from Alpaca API into a MongoDB collection.
 """
 
-from datetime import datetime, timezone
+from datetime import datetime
+
+# from datetime import timezone
 import logging
 
 # import pytz
@@ -122,19 +124,22 @@ def analystEst_from_fmpAPI(
                 # Create timestamp col in res_df from acceptanceDate to UTC
                 # TODO: UPDATE IF NECESSARY AFTER HEARING FROM CUSTOMER SVC.
                 if ep_timestamp_field == "today":
-                    timestamp = datetime.now(timezone.utc)
+                    # timestamp = datetime.now(timezone.utc)
+                    timestamp = datetime.now()
                 elif ep_timestamp_field == "year":
                     # Jan 1st of the year
-                    timestamp = datetime(int(row["year"]), 1, 1, tzinfo=timezone.utc)
+                    # timestamp = datetime(int(row["year"]), 1, 1, tzinfo=timezone.utc)
+                    timestamp = datetime(int(row["year"]), 1, 1)
                 else:
                     # Handle any other timestamp field
                     timestamp = (
                         pd.to_datetime(row[ep_timestamp_field])
-                        .tz_localize("America/New_York")
-                        .tz_convert("UTC")
+                        # .tz_localize("America/New_York")
+                        # .tz_convert("UTC")
                     )
 
-                created_at = datetime.now(timezone.utc)
+                # created_at = datetime.now(timezone.utc)
+                created_at = datetime.now()
 
                 # Create a hash of the actual estimate values to detect changes
                 estimate_values = {

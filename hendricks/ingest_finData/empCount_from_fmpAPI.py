@@ -2,7 +2,9 @@
 Load historical quote data from Alpaca API into a MongoDB collection.
 """
 
-from datetime import datetime, timezone
+from datetime import datetime
+
+# from datetime import timezone
 import logging
 
 # import pytz
@@ -40,6 +42,8 @@ def empCount_from_fmpAPI(
     Load historical quote data from Alpaca API into a MongoDB collection.
     """
 
+    ep_ticker_alias = "symbol"
+    ep_timestamp_field = "acceptanceTime"
     cred_key = "fmp_api_hist"
 
     if creds_file_path is None:
@@ -106,20 +110,33 @@ def empCount_from_fmpAPI(
             logger.info(f"DataFrame columns: {res_df.columns.tolist()}")
 
             # Rename barset 'symbol' to 'ticker'
-            res_df.rename(columns={"symbol": "ticker"}, inplace=True)
+            res_df.rename(columns={ep_ticker_alias: "ticker"}, inplace=True)
 
             # Sort results by timestamp in descending order
-            res_df.sort_values(by="acceptanceTime", ascending=False, inplace=True)
+            res_df.sort_values(by=ep_timestamp_field, ascending=False, inplace=True)
 
             # Process news items in bulk
             bulk_operations = []
             for _, row in res_df.iterrows():
-                # Create timestamp col in res_df from acceptanceTime to UTC
-                timestamp = (
-                    pd.to_datetime(row["acceptanceTime"])
-                    .tz_localize("America/New_York")
-                    .tz_convert("UTC")
-                )
+                # Create timestamp col in res_df from acceptanceDate to UTC
+                # TODO: UPDATE IF NECESSARY AFTER HEARING FROM CUSTOMER SVC.
+                if ep_timestamp_field == "today":
+                    # timestamp = datetime.now(timezone.utc)
+                    timestamp = datetime.now()
+                elif ep_timestamp_field == "year":
+                    # Jan 1st of the year
+                    # timestamp = datetime(int(row["year"]), 1, 1, tzinfo=timezone.utc)
+                    timestamp = datetime(int(row["year"]), 1, 1)
+                else:
+                    # Handle any other timestamp field
+                    timestamp = (
+                        pd.to_datetime(row[ep_timestamp_field])
+                        # .tz_localize("America/New_York")
+                        # .tz_convert("UTC")
+                    )
+
+                # created_at = datetime.now(timezone.utc)
+                created_at = datetime.now()
 
                 # Create unique_id when there isn't a good option in response
                 f1 = ticker
@@ -148,7 +165,7 @@ def empCount_from_fmpAPI(
                     ##########################################
                     ##########################################
                     "source": "fmp",
-                    "created_at": datetime.now(timezone.utc),
+                    "created_at": created_at,
                 }
 
                 # Create update operation

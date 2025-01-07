@@ -2,7 +2,9 @@
 Load historical quote data from Alpaca API into a MongoDB collection.
 """
 
-from datetime import datetime, timezone
+from datetime import datetime
+
+# from datetime import timezone
 import logging
 
 # import pytz
@@ -125,7 +127,8 @@ def stmtAnalOwnEarn_from_fmpAPI(
                     .tz_convert("UTC")
                 )
 
-                created_at = datetime.now(timezone.utc)
+                # created_at = datetime.now(timezone.utc)
+                created_at = datetime.now()
 
                 # Create unique_id when there isn't a good option in response
                 f1 = ticker
