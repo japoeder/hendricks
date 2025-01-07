@@ -9,37 +9,61 @@ import pandas as pd
 from pandas.tseries.holiday import USFederalHolidayCalendar
 from pandas.tseries.offsets import CustomBusinessDay
 
-from hendricks.ingest_finData.empCount_from_fmpAPI import empCount_from_fmpAPI
-from hendricks.ingest_finData.execComp_from_fmpAPI import execComp_from_fmpAPI
-from hendricks.ingest_finData.grade_from_fmpAPI import grade_from_fmpAPI
-from hendricks.ingest_finData.marketCap_from_fmpAPI import marketCap_from_fmpAPI
-from hendricks.ingest_finData.analystEst_from_fmpAPI import analystEst_from_fmpAPI
-from hendricks.ingest_finData.analystRec_from_fmpAPI import analystRec_from_fmpAPI
-from hendricks.ingest_finData.incomeStmt_from_fmpAPI import incomeStmt_from_fmpAPI
-from hendricks.ingest_finData.balanceSheet_from_fmpAPI import balanceSheet_from_fmpAPI
-from hendricks.ingest_finData.cashFlow_from_fmpAPI import cashFlow_from_fmpAPI
-from hendricks.ingest_finData.stmtAnalKM_from_fmpAPI import stmtAnalKM_from_fmpAPI
-from hendricks.ingest_finData.stmtAnalRatios_from_fmpAPI import (
+from hendricks.ingest_finData.comapny_info.empCount_from_fmpAPI import (
+    empCount_from_fmpAPI,
+)
+from hendricks.ingest_finData.comapny_info.execComp_from_fmpAPI import (
+    execComp_from_fmpAPI,
+)
+from hendricks.ingest_finData.comapny_info.grade_from_fmpAPI import grade_from_fmpAPI
+from hendricks.ingest_finData.comapny_info.marketCap_from_fmpAPI import (
+    marketCap_from_fmpAPI,
+)
+from hendricks.ingest_finData.comapny_info.analystEst_from_fmpAPI import (
+    analystEst_from_fmpAPI,
+)
+from hendricks.ingest_finData.comapny_info.analystRec_from_fmpAPI import (
+    analystRec_from_fmpAPI,
+)
+from hendricks.ingest_finData.financial_statements.incomeStmt_from_fmpAPI import (
+    incomeStmt_from_fmpAPI,
+)
+from hendricks.ingest_finData.financial_statements.balanceSheet_from_fmpAPI import (
+    balanceSheet_from_fmpAPI,
+)
+from hendricks.ingest_finData.financial_statements.cashFlow_from_fmpAPI import (
+    cashFlow_from_fmpAPI,
+)
+from hendricks.ingest_finData.statement_analysis.stmtAnalKM_from_fmpAPI import (
+    stmtAnalKM_from_fmpAPI,
+)
+from hendricks.ingest_finData.statement_analysis.stmtAnalRatios_from_fmpAPI import (
     stmtAnalRatios_from_fmpAPI,
 )
-from hendricks.ingest_finData.stmtAnalCFG_from_fmpAPI import stmtAnalCFG_from_fmpAPI
-from hendricks.ingest_finData.stmtAnalIncGr_from_fmpAPI import (
+from hendricks.ingest_finData.statement_analysis.stmtAnalCFG_from_fmpAPI import (
+    stmtAnalCFG_from_fmpAPI,
+)
+from hendricks.ingest_finData.statement_analysis.stmtAnalIncGr_from_fmpAPI import (
     stmtAnalIncGr_from_fmpAPI,
 )
-from hendricks.ingest_finData.stmtAnalBSG_from_fmpAPI import stmtAnalBSG_from_fmpAPI
-from hendricks.ingest_finData.stmtAnalEntVal_from_fmpAPI import (
+from hendricks.ingest_finData.statement_analysis.stmtAnalBSG_from_fmpAPI import (
+    stmtAnalBSG_from_fmpAPI,
+)
+from hendricks.ingest_finData.statement_analysis.stmtAnalEntVal_from_fmpAPI import (
     stmtAnalEntVal_from_fmpAPI,
 )
-from hendricks.ingest_finData.stmtAnalFinScore_from_fmpAPI import (
+from hendricks.ingest_finData.statement_analysis.stmtAnalFinScore_from_fmpAPI import (
     stmtAnalFinScore_from_fmpAPI,
 )
-from hendricks.ingest_finData.stmtAnalFinGr_from_fmpAPI import (
+from hendricks.ingest_finData.statement_analysis.stmtAnalFinGr_from_fmpAPI import (
     stmtAnalFinGr_from_fmpAPI,
 )
-from hendricks.ingest_finData.stmtAnalOwnEarn_from_fmpAPI import (
+from hendricks.ingest_finData.statement_analysis.stmtAnalOwnEarn_from_fmpAPI import (
     stmtAnalOwnEarn_from_fmpAPI,
 )
-from hendricks.ingest_finData.valAdvDiscCF_from_fmpAPI import valAdvDiscCF_from_fmpAPI
+from hendricks.ingest_finData.valuation.valAdvDiscCF_from_fmpAPI import (
+    valAdvDiscCF_from_fmpAPI,
+)
 
 from hendricks._utils.get_path import get_path
 
