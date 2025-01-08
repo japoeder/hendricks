@@ -44,7 +44,7 @@ def empCount_from_fmpAPI(
 
     ep_ticker_alias = "symbol"
     ep_timestamp_field = "periodOfReport"
-    cred_key = "fmp_api_hist"
+    cred_key = "fmp_api_findata_v4"
 
     if creds_file_path is None:
         creds_file_path = get_path("creds")
