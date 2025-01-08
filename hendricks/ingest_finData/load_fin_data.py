@@ -25,6 +25,7 @@ class FinLoader:
         tickers: list = None,
         from_date: str = None,
         to_date: str = None,
+        target_qtr: int = None,
         collection_name: str = None,
         batch_size: int = 7500,
         source: str = None,
@@ -34,6 +35,7 @@ class FinLoader:
         self.tickers = tickers
         self.from_date = pd.to_datetime(from_date)
         self.to_date = pd.to_datetime(to_date) if to_date else pd.Timestamp.now()
+        self.target_qtr = target_qtr
         self.collection_name = collection_name
         self.batch_size = int(batch_size)
         self.creds_file_path = get_path("creds")
@@ -64,6 +66,8 @@ class FinLoader:
             tickers=self.tickers,
             collection_name=self.collection_name,
             creds_file_path=self.creds_file_path,
+            from_date=self.from_date,
+            to_date=self.to_date,
             ep=self.fmp_endpoint,
         )
 

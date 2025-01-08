@@ -30,7 +30,7 @@ logger = logging.getLogger("pymongo")
 logger.setLevel(logging.WARNING)  # Suppress pymongo debug messages
 
 
-def analystRec_from_fmpAPI(
+def earnSurprise_from_fmpAPI(
     tickers=None,
     collection_name=None,
     creds_file_path=None,
@@ -154,11 +154,9 @@ def analystRec_from_fmpAPI(
                     "ticker": row["ticker"],
                     ##########################################
                     ##########################################
-                    "analystRatingsbuy": row["analystRatingsbuy"],
-                    "analystRatingsHold": row["analystRatingsHold"],
-                    "analystRatingsSell": row["analystRatingsSell"],
-                    "analystRatingsStrongSell": row["analystRatingsStrongSell"],
-                    "analystRatingsStrongBuy": row["analystRatingsStrongBuy"],
+                    "date": row["date"],
+                    "actualEarningResult": row["actualEarningResult"],
+                    "estimatedEarning": row["estimatedEarning"],
                     ##########################################
                     ##########################################
                     "source": "fmp",

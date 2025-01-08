@@ -126,6 +126,8 @@ def request_url_constructor(
     source: str = None,
     page: int = None,
     period: str = None,
+    target_yr: int = None,
+    target_qtr: int = None,
 ):
     """
     Construct the URL for the FMP API.
@@ -209,17 +211,14 @@ def request_url_constructor(
             else:
                 compiled_url += f"&apikey={api_key}"
 
-            # Add optional parameters
-            if from_date is not None:
-                compiled_url += f"&from={from_date}"
-                if to_date is not None:
-                    compiled_url += f"&to={to_date}"
-
         elif endpoint in [
             "analyst-stock-recommendations",
             "analyst-estimates",
             "grade",
             "historical-rating",
+            "earnings-surprises",
+            "historical/earning_calendar",
+            "earnings-calls",
         ]:
             if ticker is None:
                 raise ValueError("ticker is required")
@@ -242,6 +241,7 @@ def request_url_constructor(
             "balance-sheet-statement-growth",
             "financial-growth",
             "enterprise-values",
+            "earning_call_transcript",
         ]:
             if ticker is None:
                 raise ValueError("ticker is required")
@@ -250,6 +250,12 @@ def request_url_constructor(
 
             if period is not None:
                 compiled_url += f"?period={period}"
+
+            if target_yr is not None:
+                compiled_url += f"?year={target_yr}"
+
+            if target_qtr is not None:
+                compiled_url += f"&quarter={target_qtr}"
 
             if api_key is None:
                 raise ValueError("api_key is required")
@@ -263,6 +269,8 @@ def request_url_constructor(
             "advanced_levered_discounted_cash_flow",
             "price-target",
             "price-target-consensus",
+            "upgrades-downgrades",
+            "upgrades-downgrades-consensus",
         ]:
             if ticker is None:
                 raise ValueError("ticker is required")

@@ -165,6 +165,34 @@ class FMPEndpoint(Enum):
         False,
     )
 
+    UD_CONSENSUS = (
+        "upgrades-downgrades-consensus",
+        "upgrades_downgrades.udConsensus_from_fmpAPI",
+        "udConsensus_from_fmpAPI",
+        False,
+    )
+
+    EARN_SURPRISE = (
+        "earnings-surprises",
+        "earnings.earnSurprise_from_fmpAPI",
+        "earnSurprise_from_fmpAPI",
+        False,
+    )
+
+    EARN_EST = (
+        "historical/earning_calendar",
+        "earnings.earnEst_from_fmpAPI",
+        "earnEst_from_fmpAPI",
+        False,
+    )
+
+    EARN_CALLS = (
+        "earning_call_transcript",
+        "earnings.earnCalls_from_fmpAPI",
+        "earnCalls_from_fmpAPI",
+        False,
+    )
+
     def __init__(
         self, endpoint: str, module_path: str, function_name: str, is_daily: bool
     ):
