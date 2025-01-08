@@ -187,8 +187,8 @@ def request_url_constructor(
                     compiled_url += f"&to={to_date}"
 
         elif endpoint in [
-            "executive_compensation",
-            "employee_count",
+            "governance/executive_compensation",
+            "historical/employee_count",
         ]:
             if ticker is None:
                 raise ValueError("ticker is required")

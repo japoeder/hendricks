@@ -14,13 +14,13 @@ class FMPEndpoint(Enum):
 
     # Company Info (Aggregate)
     EMPLOYEE_COUNT = (
-        "employee_count",
+        "historical/employee_count",
         "comapny_info.empCount_from_fmpAPI",
         "empCount_from_fmpAPI",
         False,
     )
     EXEC_COMP = (
-        "executive_compensation",
+        "governance/executive_compensation",
         "comapny_info.execComp_from_fmpAPI",
         "execComp_from_fmpAPI",
         False,
