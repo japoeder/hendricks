@@ -164,10 +164,7 @@ def marketCap_from_fmpAPI(
                 # Create update operation
                 bulk_operations.append(
                     UpdateOne(
-                        {
-                            "unique_id": document["unique_id"],
-                            "ticker": document["ticker"],
-                        },
+                        {"unique_id": document["unique_id"]},
                         {"$set": document},
                         upsert=True,
                     )

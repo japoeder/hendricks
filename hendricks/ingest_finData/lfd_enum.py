@@ -157,6 +157,14 @@ class FMPEndpoint(Enum):
         False,
     )
 
+    # Upgrades and Downgrades (Aggregate)
+    UD_HIST = (
+        "upgrades-downgrades",
+        "upgrades_downgrades.udHistory_from_fmpAPI",
+        "udHistory_from_fmpAPI",
+        False,
+    )
+
     def __init__(
         self, endpoint: str, module_path: str, function_name: str, is_daily: bool
     ):

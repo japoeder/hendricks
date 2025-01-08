@@ -43,7 +43,7 @@ def empCount_from_fmpAPI(
     """
 
     ep_ticker_alias = "symbol"
-    ep_timestamp_field = "acceptanceTime"
+    ep_timestamp_field = "periodOfReport"
     cred_key = "fmp_api_hist"
 
     if creds_file_path is None:
@@ -141,11 +141,9 @@ def empCount_from_fmpAPI(
                 # Create unique_id when there isn't a good option in response
                 f1 = ticker
                 f2 = timestamp
-                f3 = row["periodOfReport"]
-                f4 = row["source"]
 
                 # Create hash of f1, f2, f3, f4
-                unique_id = hashlib.sha256(f"{f1}{f2}{f3}{f4}".encode()).hexdigest()
+                unique_id = hashlib.sha256(f"{f1}{f2}".encode()).hexdigest()
 
                 # Streamlined main document
                 document = {
@@ -173,7 +171,6 @@ def empCount_from_fmpAPI(
                     UpdateOne(
                         {
                             "unique_id": document["unique_id"],
-                            "ticker": document["ticker"],
                         },
                         {"$set": document},
                         upsert=True,

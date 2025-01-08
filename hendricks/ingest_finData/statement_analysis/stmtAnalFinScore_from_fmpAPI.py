@@ -72,6 +72,7 @@ def stmtAnalFinScore_from_fmpAPI(
     collection.create_index(
         [("unique_id", 1), ("timestamp", -1)]
     )  # For source + time sorting
+    collection.create_index([("created_at", -1)])  # For source + time sorting
 
     # Uniqueness constraint
     collection.create_index(
@@ -178,16 +179,18 @@ def stmtAnalFinScore_from_fmpAPI(
                     "created_at": created_at,
                 }
 
-                # Check if this exact estimate already exists
+                # Find the most recent record for this ticker
                 existing_record = collection.find_one(
                     {
-                        "ticker": ticker,
-                        "feature_hash": feature_hash,
-                    }
+                        "ticker": row["ticker"],
+                    },
+                    sort=[
+                        ("created_at", -1)
+                    ],  # Sort by created_at in descending order (most recent first)
                 )
 
-                # If the record exists, skip it otherwise insert it
-                if existing_record:
+                # Compare feature hashes to see if there's been a change
+                if existing_record and existing_record["feature_hash"] == feature_hash:
                     continue
                 else:
                     # Create update operation

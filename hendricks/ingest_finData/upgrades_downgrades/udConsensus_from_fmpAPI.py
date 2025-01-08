@@ -12,7 +12,7 @@ import hashlib
 import pandas as pd
 from dotenv import load_dotenv
 import requests
-from pymongo import UpdateOne
+from pymongo import InsertOne
 from pymongo.errors import BulkWriteError
 
 # from gridfs import GridFS
@@ -30,7 +30,7 @@ logger = logging.getLogger("pymongo")
 logger.setLevel(logging.WARNING)  # Suppress pymongo debug messages
 
 
-def grade_from_fmpAPI(
+def udConsensus_from_fmpAPI(
     tickers=None,
     collection_name=None,
     creds_file_path=None,
@@ -43,8 +43,8 @@ def grade_from_fmpAPI(
     """
 
     ep_ticker_alias = "symbol"
-    ep_timestamp_field = "date"
-    cred_key = "fmp_api_findata"
+    ep_timestamp_field = "today"
+    cred_key = "fmp_api_findata_v4"
 
     if creds_file_path is None:
         creds_file_path = get_path("creds")
@@ -87,6 +87,8 @@ def grade_from_fmpAPI(
             ticker=ticker,
             api_key=API_KEY,
             source="fmp",
+            from_date=from_date,
+            to_date=to_date,
         )
 
         print(f"URL: {url}")
@@ -113,7 +115,8 @@ def grade_from_fmpAPI(
             res_df.rename(columns={ep_ticker_alias: "ticker"}, inplace=True)
 
             # Sort results by timestamp in descending order
-            res_df.sort_values(by=ep_timestamp_field, ascending=False, inplace=True)
+            if ep_timestamp_field != "today":
+                res_df.sort_values(by=ep_timestamp_field, ascending=False, inplace=True)
 
             # Process news items in bulk
             bulk_operations = []
@@ -138,12 +141,23 @@ def grade_from_fmpAPI(
                 # created_at = datetime.now(timezone.utc)
                 created_at = datetime.now()
 
+                # Create a hash of the actual estimate values to detect changes
+                feature_values = {
+                    "strongBuy": row["strongBuy"],
+                    "buy": row["buy"],
+                    "hold": row["hold"],
+                    "sell": row["sell"],
+                    "strongSell": row["strongSell"],
+                    "consensus": row["consensus"],
+                }
+                feature_hash = hashlib.sha256(str(feature_values).encode()).hexdigest()
+
                 # Create unique_id when there isn't a good option in response
                 f1 = ticker
                 f2 = timestamp
-                f3 = row["gradingCompany"]
+                f3 = created_at
 
-                # Create hash of f1, f2, f3
+                # Create hash of f1, f2, f3, f4
                 unique_id = hashlib.sha256(f"{f1}{f2}{f3}".encode()).hexdigest()
 
                 # Streamlined main document
@@ -153,26 +167,31 @@ def grade_from_fmpAPI(
                     "ticker": row["ticker"],
                     ##########################################
                     ##########################################
-                    "gradingCompany": row["gradingCompany"],
-                    "previousGrade": row["previousGrade"],
-                    "newGrade": row["newGrade"],
+                    # Unpack the feature_hash
+                    **feature_values,
+                    "feature_hash": feature_hash,
                     ##########################################
                     ##########################################
                     "source": "fmp",
                     "created_at": created_at,
                 }
 
-                # Create update operation
-                bulk_operations.append(
-                    UpdateOne(
-                        {
-                            "unique_id": document["unique_id"],
-                            "ticker": document["ticker"],
-                        },
-                        {"$set": document},
-                        upsert=True,
-                    )
+                # Find the most recent record for this ticker
+                existing_record = collection.find_one(
+                    {
+                        "ticker": row["ticker"],
+                    },
+                    sort=[
+                        ("created_at", -1)
+                    ],  # Sort by created_at in descending order (most recent first)
                 )
+
+                # Compare feature hashes to see if there's been a change
+                if existing_record and existing_record["feature_hash"] == feature_hash:
+                    continue
+                else:
+                    # Create update operation
+                    bulk_operations.append(InsertOne(document))
 
             # Execute bulk operations if any exist
             if bulk_operations:

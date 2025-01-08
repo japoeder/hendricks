@@ -222,8 +222,7 @@ def cashFlow_from_fmpAPI(
                     bulk_operations.append(
                         UpdateOne(
                             {
-                                "unique_id": document["unique_id"],
-                                "ticker": document["ticker"],
+                                "unique_id": unique_id,
                             },
                             {"$set": document},
                             upsert=True,

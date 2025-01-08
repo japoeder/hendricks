@@ -187,7 +187,6 @@ def ptHistPrTargets_from_fmpAPI(
                     UpdateOne(
                         {
                             "unique_id": document["unique_id"],
-                            "feature_hash": document["feature_hash"],
                         },
                         {"$set": document},
                         upsert=True,

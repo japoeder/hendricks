@@ -30,7 +30,7 @@ logger = logging.getLogger("pymongo")
 logger.setLevel(logging.WARNING)  # Suppress pymongo debug messages
 
 
-def grade_from_fmpAPI(
+def udHistory_from_fmpAPI(
     tickers=None,
     collection_name=None,
     creds_file_path=None,
@@ -43,8 +43,8 @@ def grade_from_fmpAPI(
     """
 
     ep_ticker_alias = "symbol"
-    ep_timestamp_field = "date"
-    cred_key = "fmp_api_findata"
+    ep_timestamp_field = "publishedDate"
+    cred_key = "fmp_api_findata_v4"
 
     if creds_file_path is None:
         creds_file_path = get_path("creds")
@@ -87,6 +87,8 @@ def grade_from_fmpAPI(
             ticker=ticker,
             api_key=API_KEY,
             source="fmp",
+            from_date=from_date,
+            to_date=to_date,
         )
 
         print(f"URL: {url}")
@@ -113,7 +115,8 @@ def grade_from_fmpAPI(
             res_df.rename(columns={ep_ticker_alias: "ticker"}, inplace=True)
 
             # Sort results by timestamp in descending order
-            res_df.sort_values(by=ep_timestamp_field, ascending=False, inplace=True)
+            if ep_timestamp_field != "today":
+                res_df.sort_values(by=ep_timestamp_field, ascending=False, inplace=True)
 
             # Process news items in bulk
             bulk_operations = []
@@ -138,12 +141,27 @@ def grade_from_fmpAPI(
                 # created_at = datetime.now(timezone.utc)
                 created_at = datetime.now()
 
+                # Create a hash of the actual estimate values to detect changes
+                feature_values = {
+                    "publishedDate": row["publishedDate"],
+                    "newsURL": row["newsURL"],
+                    "newsTitle": row["newsTitle"],
+                    "newsBaseURL": row["newsBaseURL"],
+                    "newsPublisher": row["newsPublisher"],
+                    "newGrade": row["newGrade"],
+                    "previousGrade": row["previousGrade"],
+                    "gradingCompany": row["gradingCompany"],
+                    "action": row["action"],
+                    "priceWhenPosted": row["priceWhenPosted"],
+                }
+                feature_hash = hashlib.sha256(str(feature_values).encode()).hexdigest()
+
                 # Create unique_id when there isn't a good option in response
                 f1 = ticker
                 f2 = timestamp
                 f3 = row["gradingCompany"]
 
-                # Create hash of f1, f2, f3
+                # Create hash of f1, f2, f3, f4, f5
                 unique_id = hashlib.sha256(f"{f1}{f2}{f3}".encode()).hexdigest()
 
                 # Streamlined main document
@@ -153,9 +171,9 @@ def grade_from_fmpAPI(
                     "ticker": row["ticker"],
                     ##########################################
                     ##########################################
-                    "gradingCompany": row["gradingCompany"],
-                    "previousGrade": row["previousGrade"],
-                    "newGrade": row["newGrade"],
+                    # Unpack the feature_hash
+                    **feature_values,
+                    "feature_hash": feature_hash,
                     ##########################################
                     ##########################################
                     "source": "fmp",
@@ -166,8 +184,7 @@ def grade_from_fmpAPI(
                 bulk_operations.append(
                     UpdateOne(
                         {
-                            "unique_id": document["unique_id"],
-                            "ticker": document["ticker"],
+                            "unique_id": unique_id,
                         },
                         {"$set": document},
                         upsert=True,

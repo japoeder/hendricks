@@ -180,7 +180,6 @@ def stmtAnalEntVal_from_fmpAPI(
                         UpdateOne(
                             {
                                 "unique_id": document["unique_id"],
-                                "ticker": document["ticker"],
                             },
                             {"$set": document},
                             upsert=True,
