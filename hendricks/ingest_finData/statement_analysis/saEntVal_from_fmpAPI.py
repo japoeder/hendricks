@@ -23,6 +23,7 @@ from hendricks._utils.mongo_conn import mongo_conn
 from hendricks._utils.mongo_coll_verification import confirm_mongo_collect_exists
 from hendricks._utils.get_path import get_path
 from hendricks._utils.request_url_constructor import request_url_constructor
+from hendricks._utils.propcase import propcase
 
 # Set up logging
 logging.basicConfig(level=logging.WARNING)  # Set to WARNING to suppress DEBUG messages
@@ -30,7 +31,7 @@ logger = logging.getLogger("pymongo")
 logger.setLevel(logging.WARNING)  # Suppress pymongo debug messages
 
 
-def stmtAnalCFG_from_fmpAPI(
+def saEntVal_from_fmpAPI(
     tickers=None,
     collection_name=None,
     creds_file_path=None,
@@ -54,11 +55,12 @@ def stmtAnalCFG_from_fmpAPI(
     # Get the database connection
     db = mongo_conn()
 
+    coll_grp = "sa"
     periods = ["annual", "quarter"]
 
     for ticker in tickers:
         for period in periods:
-            coll_name_pd = f"{collection_name.split('_')[0]}_{period}{collection_name.split('_')[1]}"
+            coll_name_pd = f"{collection_name.split('_')[0]}_{coll_grp}{propcase(period)}{collection_name.split('_')[1]}"
 
             # Ensure the collection exists
             confirm_mongo_collect_exists(coll_name_pd)
@@ -141,64 +143,14 @@ def stmtAnalCFG_from_fmpAPI(
 
                     # Create a hash of the actual estimate values to detect changes
                     feature_values = {
-                        "growthNetIncome": row["growthNetIncome"],
-                        "growthDepreciationAndAmortization": row[
-                            "growthDepreciationAndAmortization"
+                        "stockPrice": row["stockPrice"],
+                        "numberOfShares": row["numberOfShares"],
+                        "marketCapitalization": row["marketCapitalization"],
+                        "minusCashAndCashEquivalents": row[
+                            "minusCashAndCashEquivalents"
                         ],
-                        "growthDeferredIncomeTax": row["growthDeferredIncomeTax"],
-                        "growthStockBasedCompensation": row[
-                            "growthStockBasedCompensation"
-                        ],
-                        "growthChangeInWorkingCapital": row[
-                            "growthChangeInWorkingCapital"
-                        ],
-                        "growthAccountsReceivables": row["growthAccountsReceivables"],
-                        "growthInventory": row["growthInventory"],
-                        "growthAccountsPayables": row["growthAccountsPayables"],
-                        "growthOtherWorkingCapital": row["growthOtherWorkingCapital"],
-                        "growthOtherNonCashItems": row["growthOtherNonCashItems"],
-                        "growthNetCashProvidedByOperatingActivites": row[
-                            "growthNetCashProvidedByOperatingActivites"
-                        ],
-                        "growthInvestmentsInPropertyPlantAndEquipment": row[
-                            "growthInvestmentsInPropertyPlantAndEquipment"
-                        ],
-                        "growthAcquisitionsNet": row["growthAcquisitionsNet"],
-                        "growthPurchasesOfInvestments": row[
-                            "growthPurchasesOfInvestments"
-                        ],
-                        "growthSalesMaturitiesOfInvestments": row[
-                            "growthSalesMaturitiesOfInvestments"
-                        ],
-                        "growthOtherInvestingActivites": row[
-                            "growthOtherInvestingActivites"
-                        ],
-                        "growthNetCashUsedForInvestingActivites": row[
-                            "growthNetCashUsedForInvestingActivites"
-                        ],
-                        "growthDebtRepayment": row["growthDebtRepayment"],
-                        "growthCommonStockIssued": row["growthCommonStockIssued"],
-                        "growthCommonStockRepurchased": row[
-                            "growthCommonStockRepurchased"
-                        ],
-                        "growthDividendsPaid": row["growthDividendsPaid"],
-                        "growthOtherFinancingActivites": row[
-                            "growthOtherFinancingActivites"
-                        ],
-                        "growthNetCashUsedProvidedByFinancingActivities": row[
-                            "growthNetCashUsedProvidedByFinancingActivities"
-                        ],
-                        "growthEffectOfForexChangesOnCash": row[
-                            "growthEffectOfForexChangesOnCash"
-                        ],
-                        "growthNetChangeInCash": row["growthNetChangeInCash"],
-                        "growthCashAtEndOfPeriod": row["growthCashAtEndOfPeriod"],
-                        "growthCashAtBeginningOfPeriod": row[
-                            "growthCashAtBeginningOfPeriod"
-                        ],
-                        "growthOperatingCashFlow": row["growthOperatingCashFlow"],
-                        "growthCapitalExpenditure": row["growthCapitalExpenditure"],
-                        "growthFreeCashFlow": row["growthFreeCashFlow"],
+                        "addTotalDebt": row["addTotalDebt"],
+                        "enterpriseValue": row["enterpriseValue"],
                     }
                     feature_hash = hashlib.sha256(
                         str(feature_values).encode()
@@ -210,14 +162,10 @@ def stmtAnalCFG_from_fmpAPI(
                     # Create unique_id when there isn't a good option in response
                     f1 = ticker
                     f2 = timestamp
-                    f3 = row["calendarYear"]
-                    f4 = row["period"]
-                    f5 = created_at
+                    f3 = created_at
 
                     # Create hash of f1, f2, f3, f4
-                    unique_id = hashlib.sha256(
-                        f"{f1}{f2}{f3}{f4}{f5}".encode()
-                    ).hexdigest()
+                    unique_id = hashlib.sha256(f"{f1}{f2}{f3}".encode()).hexdigest()
 
                     # Streamlined main document
                     document = {
@@ -227,8 +175,6 @@ def stmtAnalCFG_from_fmpAPI(
                         ##########################################
                         ##########################################
                         "date": row["date"],
-                        "calendarYear": row["calendarYear"],
-                        "period": row["period"],
                         **feature_values,
                         "feature_hash": feature_hash,
                         ##########################################
@@ -241,8 +187,7 @@ def stmtAnalCFG_from_fmpAPI(
                         UpdateOne(
                             # Check records by date (and other record identifiers) and if feature_hash is different
                             {
-                                "calendarYear": row["calendarYear"],
-                                "period": row["period"],
+                                "date": row["date"],
                                 "feature_hash": {"$ne": feature_hash},
                             },
                             # If identifiers exists exists and feature_hash is different, update record

@@ -23,6 +23,7 @@ from hendricks._utils.mongo_conn import mongo_conn
 from hendricks._utils.mongo_coll_verification import confirm_mongo_collect_exists
 from hendricks._utils.get_path import get_path
 from hendricks._utils.request_url_constructor import request_url_constructor
+from hendricks._utils.propcase import propcase
 
 # Set up logging
 logging.basicConfig(level=logging.WARNING)  # Set to WARNING to suppress DEBUG messages
@@ -30,7 +31,7 @@ logger = logging.getLogger("pymongo")
 logger.setLevel(logging.WARNING)  # Suppress pymongo debug messages
 
 
-def stmtAnalRatios_from_fmpAPI(
+def saRatios_from_fmpAPI(
     tickers=None,
     collection_name=None,
     creds_file_path=None,
@@ -55,11 +56,12 @@ def stmtAnalRatios_from_fmpAPI(
     # Get the database connection
     db = mongo_conn()
 
+    coll_grp = "sa"
     periods = ["annual", "quarter"]
 
     for ticker in tickers:
         for period in periods:
-            coll_name_pd = f"{collection_name.split('_')[0]}_{period}{collection_name.split('_')[1]}"
+            coll_name_pd = f"{collection_name.split('_')[0]}_{coll_grp}{propcase(period)}{collection_name.split('_')[1]}"
 
             # Ensure the collection exists
             confirm_mongo_collect_exists(coll_name_pd)

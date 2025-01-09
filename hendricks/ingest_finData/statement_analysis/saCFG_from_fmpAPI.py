@@ -23,6 +23,7 @@ from hendricks._utils.mongo_conn import mongo_conn
 from hendricks._utils.mongo_coll_verification import confirm_mongo_collect_exists
 from hendricks._utils.get_path import get_path
 from hendricks._utils.request_url_constructor import request_url_constructor
+from hendricks._utils.propcase import propcase
 
 # Set up logging
 logging.basicConfig(level=logging.WARNING)  # Set to WARNING to suppress DEBUG messages
@@ -30,7 +31,7 @@ logger = logging.getLogger("pymongo")
 logger.setLevel(logging.WARNING)  # Suppress pymongo debug messages
 
 
-def stmtAnalBSG_from_fmpAPI(
+def saCFG_from_fmpAPI(
     tickers=None,
     collection_name=None,
     creds_file_path=None,
@@ -54,11 +55,12 @@ def stmtAnalBSG_from_fmpAPI(
     # Get the database connection
     db = mongo_conn()
 
+    coll_grp = "sa"
     periods = ["annual", "quarter"]
 
     for ticker in tickers:
         for period in periods:
-            coll_name_pd = f"{collection_name.split('_')[0]}_{period}{collection_name.split('_')[1]}"
+            coll_name_pd = f"{collection_name.split('_')[0]}_{coll_grp}{propcase(period)}{collection_name.split('_')[1]}"
 
             # Ensure the collection exists
             confirm_mongo_collect_exists(coll_name_pd)
@@ -141,74 +143,64 @@ def stmtAnalBSG_from_fmpAPI(
 
                     # Create a hash of the actual estimate values to detect changes
                     feature_values = {
-                        "growthCashAndCashEquivalents": row[
-                            "growthCashAndCashEquivalents"
+                        "growthNetIncome": row["growthNetIncome"],
+                        "growthDepreciationAndAmortization": row[
+                            "growthDepreciationAndAmortization"
                         ],
-                        "growthShortTermInvestments": row["growthShortTermInvestments"],
-                        "growthNetReceivables": row["growthNetReceivables"],
+                        "growthDeferredIncomeTax": row["growthDeferredIncomeTax"],
+                        "growthStockBasedCompensation": row[
+                            "growthStockBasedCompensation"
+                        ],
+                        "growthChangeInWorkingCapital": row[
+                            "growthChangeInWorkingCapital"
+                        ],
+                        "growthAccountsReceivables": row["growthAccountsReceivables"],
                         "growthInventory": row["growthInventory"],
-                        "growthOtherCurrentAssets": row["growthOtherCurrentAssets"],
-                        "growthTotalCurrentAssets": row["growthTotalCurrentAssets"],
-                        "growthPropertyPlantEquipmentNet": row[
-                            "growthPropertyPlantEquipmentNet"
+                        "growthAccountsPayables": row["growthAccountsPayables"],
+                        "growthOtherWorkingCapital": row["growthOtherWorkingCapital"],
+                        "growthOtherNonCashItems": row["growthOtherNonCashItems"],
+                        "growthNetCashProvidedByOperatingActivites": row[
+                            "growthNetCashProvidedByOperatingActivites"
                         ],
-                        "growthGoodwill": row["growthGoodwill"],
-                        "growthIntangibleAssets": row["growthIntangibleAssets"],
-                        "growthGoodwillAndIntangibleAssets": row[
-                            "growthGoodwillAndIntangibleAssets"
+                        "growthInvestmentsInPropertyPlantAndEquipment": row[
+                            "growthInvestmentsInPropertyPlantAndEquipment"
                         ],
-                        "growthLongTermInvestments": row["growthLongTermInvestments"],
-                        "growthTaxAssets": row["growthTaxAssets"],
-                        "growthOtherNonCurrentAssets": row[
-                            "growthOtherNonCurrentAssets"
+                        "growthAcquisitionsNet": row["growthAcquisitionsNet"],
+                        "growthPurchasesOfInvestments": row[
+                            "growthPurchasesOfInvestments"
                         ],
-                        "growthTotalNonCurrentAssets": row[
-                            "growthTotalNonCurrentAssets"
+                        "growthSalesMaturitiesOfInvestments": row[
+                            "growthSalesMaturitiesOfInvestments"
                         ],
-                        "growthOtherAssets": row["growthOtherAssets"],
-                        "growthTotalAssets": row["growthTotalAssets"],
-                        "growthAccountPayables": row["growthAccountPayables"],
-                        "growthShortTermDebt": row["growthShortTermDebt"],
-                        "growthTaxPayables": row["growthTaxPayables"],
-                        "growthDeferredRevenue": row["growthDeferredRevenue"],
-                        "growthOtherCurrentLiabilities": row[
-                            "growthOtherCurrentLiabilities"
+                        "growthOtherInvestingActivites": row[
+                            "growthOtherInvestingActivites"
                         ],
-                        "growthTotalCurrentLiabilities": row[
-                            "growthTotalCurrentLiabilities"
+                        "growthNetCashUsedForInvestingActivites": row[
+                            "growthNetCashUsedForInvestingActivites"
                         ],
-                        "growthLongTermDebt": row["growthLongTermDebt"],
-                        "growthDeferredRevenueNonCurrent": row[
-                            "growthDeferredRevenueNonCurrent"
+                        "growthDebtRepayment": row["growthDebtRepayment"],
+                        "growthCommonStockIssued": row["growthCommonStockIssued"],
+                        "growthCommonStockRepurchased": row[
+                            "growthCommonStockRepurchased"
                         ],
-                        "growthDeferrredTaxLiabilitiesNonCurrent": row[
-                            "growthDeferrredTaxLiabilitiesNonCurrent"
+                        "growthDividendsPaid": row["growthDividendsPaid"],
+                        "growthOtherFinancingActivites": row[
+                            "growthOtherFinancingActivites"
                         ],
-                        "growthOtherNonCurrentLiabilities": row[
-                            "growthOtherNonCurrentLiabilities"
+                        "growthNetCashUsedProvidedByFinancingActivities": row[
+                            "growthNetCashUsedProvidedByFinancingActivities"
                         ],
-                        "growthTotalNonCurrentLiabilities": row[
-                            "growthTotalNonCurrentLiabilities"
+                        "growthEffectOfForexChangesOnCash": row[
+                            "growthEffectOfForexChangesOnCash"
                         ],
-                        "growthOtherLiabilities": row["growthOtherLiabilities"],
-                        "growthTotalLiabilities": row["growthTotalLiabilities"],
-                        "growthCommonStock": row["growthCommonStock"],
-                        "growthRetainedEarnings": row["growthRetainedEarnings"],
-                        "growthAccumulatedOtherComprehensiveIncomeLoss": row[
-                            "growthAccumulatedOtherComprehensiveIncomeLoss"
+                        "growthNetChangeInCash": row["growthNetChangeInCash"],
+                        "growthCashAtEndOfPeriod": row["growthCashAtEndOfPeriod"],
+                        "growthCashAtBeginningOfPeriod": row[
+                            "growthCashAtBeginningOfPeriod"
                         ],
-                        "growthOthertotalStockholdersEquity": row[
-                            "growthOthertotalStockholdersEquity"
-                        ],
-                        "growthTotalStockholdersEquity": row[
-                            "growthTotalStockholdersEquity"
-                        ],
-                        "growthTotalLiabilitiesAndStockholdersEquity": row[
-                            "growthTotalLiabilitiesAndStockholdersEquity"
-                        ],
-                        "growthTotalInvestments": row["growthTotalInvestments"],
-                        "growthTotalDebt": row["growthTotalDebt"],
-                        "growthNetDebt": row["growthNetDebt"],
+                        "growthOperatingCashFlow": row["growthOperatingCashFlow"],
+                        "growthCapitalExpenditure": row["growthCapitalExpenditure"],
+                        "growthFreeCashFlow": row["growthFreeCashFlow"],
                     }
                     feature_hash = hashlib.sha256(
                         str(feature_values).encode()
@@ -233,7 +225,7 @@ def stmtAnalBSG_from_fmpAPI(
                     document = {
                         "unique_id": unique_id,
                         "timestamp": timestamp,
-                        "ticker": row["symbol"],
+                        "ticker": row["ticker"],
                         ##########################################
                         ##########################################
                         "date": row["date"],

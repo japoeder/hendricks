@@ -23,6 +23,7 @@ from hendricks._utils.mongo_conn import mongo_conn
 from hendricks._utils.mongo_coll_verification import confirm_mongo_collect_exists
 from hendricks._utils.get_path import get_path
 from hendricks._utils.request_url_constructor import request_url_constructor
+from hendricks._utils.propcase import propcase
 
 # Set up logging
 logging.basicConfig(level=logging.WARNING)  # Set to WARNING to suppress DEBUG messages
@@ -30,7 +31,7 @@ logger = logging.getLogger("pymongo")
 logger.setLevel(logging.WARNING)  # Suppress pymongo debug messages
 
 
-def stmtAnalKM_from_fmpAPI(
+def saFinGr_from_fmpAPI(
     tickers=None,
     collection_name=None,
     creds_file_path=None,
@@ -54,11 +55,12 @@ def stmtAnalKM_from_fmpAPI(
     # Get the database connection
     db = mongo_conn()
 
+    coll_grp = "sa"
     periods = ["annual", "quarter"]
 
     for ticker in tickers:
         for period in periods:
-            coll_name_pd = f"{collection_name.split('_')[0]}_{period}{collection_name.split('_')[1]}"
+            coll_name_pd = f"{collection_name.split('_')[0]}_{coll_grp}{propcase(period)}{collection_name.split('_')[1]}"
 
             # Ensure the collection exists
             confirm_mongo_collect_exists(coll_name_pd)
@@ -123,77 +125,88 @@ def stmtAnalKM_from_fmpAPI(
                 bulk_operations = []
                 for _, row in res_df.iterrows():
                     # Create timestamp col in res_df from acceptanceDate to UTC
-                    timestamp = (
-                        pd.to_datetime(row[ep_timestamp_field])
-                        .tz_localize("America/New_York")
-                        .tz_convert("UTC")
-                    )
+                    # TODO: UPDATE IF NECESSARY AFTER HEARING FROM CUSTOMER SVC.
+                    if ep_timestamp_field == "today":
+                        # timestamp = datetime.now(timezone.utc)
+                        timestamp = datetime.now()
+                    elif ep_timestamp_field == "year":
+                        # Jan 1st of the year
+                        # timestamp = datetime(int(row["year"]), 1, 1, tzinfo=timezone.utc)
+                        timestamp = datetime(int(row["year"]), 1, 1)
+                    else:
+                        # Handle any other timestamp field
+                        timestamp = (
+                            pd.to_datetime(row[ep_timestamp_field])
+                            # .tz_localize("America/New_York")
+                            # .tz_convert("UTC")
+                        )
 
                     # Create a hash of the actual estimate values to detect changes
                     feature_values = {
-                        "revenuePerShare": row["revenuePerShare"],
-                        "netIncomePerShare": row["netIncomePerShare"],
-                        "operatingCashFlowPerShare": row["operatingCashFlowPerShare"],
-                        "freeCashFlowPerShare": row["freeCashFlowPerShare"],
-                        "cashPerShare": row["cashPerShare"],
-                        "bookValuePerShare": row["bookValuePerShare"],
-                        "tangibleBookValuePerShare": row["tangibleBookValuePerShare"],
-                        "shareholdersEquityPerShare": row["shareholdersEquityPerShare"],
-                        "interestDebtPerShare": row["interestDebtPerShare"],
-                        "marketCap": row["marketCap"],
-                        "enterpriseValue": row["enterpriseValue"],
-                        "peRatio": row["peRatio"],
-                        "priceToSalesRatio": row["priceToSalesRatio"],
-                        "pocfratio": row["pocfratio"],
-                        "pfcfRatio": row["pfcfRatio"],
-                        "pbRatio": row["pbRatio"],
-                        "ptbRatio": row["ptbRatio"],
-                        "evToSales": row["evToSales"],
-                        "enterpriseValueOverEBITDA": row["enterpriseValueOverEBITDA"],
-                        "evToOperatingCashFlow": row["evToOperatingCashFlow"],
-                        "evToFreeCashFlow": row["evToFreeCashFlow"],
-                        "earningsYield": row["earningsYield"],
-                        "freeCashFlowYield": row["freeCashFlowYield"],
-                        "debtToEquity": row["debtToEquity"],
-                        "debtToAssets": row["debtToAssets"],
-                        "netDebtToEBITDA": row["netDebtToEBITDA"],
-                        "currentRatio": row["currentRatio"],
-                        "interestCoverage": row["interestCoverage"],
-                        "incomeQuality": row["incomeQuality"],
-                        "dividendYield": row["dividendYield"],
-                        "payoutRatio": row["payoutRatio"],
-                        "salesGeneralAndAdministrativeToRevenue": row[
-                            "salesGeneralAndAdministrativeToRevenue"
+                        "revenueGrowth": row["revenueGrowth"],
+                        "grossProfitGrowth": row["grossProfitGrowth"],
+                        "ebitgrowth": row["ebitgrowth"],
+                        "operatingIncomeGrowth": row["operatingIncomeGrowth"],
+                        "netIncomeGrowth": row["netIncomeGrowth"],
+                        "epsgrowth": row["epsgrowth"],
+                        "epsdilutedGrowth": row["epsdilutedGrowth"],
+                        "weightedAverageSharesGrowth": row[
+                            "weightedAverageSharesGrowth"
                         ],
-                        "researchAndDdevelopementToRevenue": row[
-                            "researchAndDdevelopementToRevenue"
+                        "weightedAverageSharesDilutedGrowth": row[
+                            "weightedAverageSharesDilutedGrowth"
                         ],
-                        "intangiblesToTotalAssets": row["intangiblesToTotalAssets"],
-                        "capexToOperatingCashFlow": row["capexToOperatingCashFlow"],
-                        "capexToRevenue": row["capexToRevenue"],
-                        "capexToDepreciation": row["capexToDepreciation"],
-                        "stockBasedCompensationToRevenue": row[
-                            "stockBasedCompensationToRevenue"
+                        "dividendsperShareGrowth": row["dividendsperShareGrowth"],
+                        "operatingCashFlowGrowth": row["operatingCashFlowGrowth"],
+                        "freeCashFlowGrowth": row["freeCashFlowGrowth"],
+                        "tenYRevenueGrowthPerShare": row["tenYRevenueGrowthPerShare"],
+                        "fiveYRevenueGrowthPerShare": row["fiveYRevenueGrowthPerShare"],
+                        "threeYRevenueGrowthPerShare": row[
+                            "threeYRevenueGrowthPerShare"
                         ],
-                        "grahamNumber": row["grahamNumber"],
-                        "roic": row["roic"],
-                        "returnOnTangibleAssets": row["returnOnTangibleAssets"],
-                        "grahamNetNet": row["grahamNetNet"],
-                        "workingCapital": row["workingCapital"],
-                        "tangibleAssetValue": row["tangibleAssetValue"],
-                        "netCurrentAssetValue": row["netCurrentAssetValue"],
-                        "investedCapital": row["investedCapital"],
-                        "averageReceivables": row["averageReceivables"],
-                        "averagePayables": row["averagePayables"],
-                        "averageInventory": row["averageInventory"],
-                        "daysSalesOutstanding": row["daysSalesOutstanding"],
-                        "daysPayablesOutstanding": row["daysPayablesOutstanding"],
-                        "daysOfInventoryOnHand": row["daysOfInventoryOnHand"],
-                        "receivablesTurnover": row["receivablesTurnover"],
-                        "payablesTurnover": row["payablesTurnover"],
-                        "inventoryTurnover": row["inventoryTurnover"],
-                        "roe": row["roe"],
-                        "capexPerShare": row["capexPerShare"],
+                        "tenYOperatingCFGrowthPerShare": row[
+                            "tenYOperatingCFGrowthPerShare"
+                        ],
+                        "fiveYOperatingCFGrowthPerShare": row[
+                            "fiveYOperatingCFGrowthPerShare"
+                        ],
+                        "threeYOperatingCFGrowthPerShare": row[
+                            "threeYOperatingCFGrowthPerShare"
+                        ],
+                        "tenYNetIncomeGrowthPerShare": row[
+                            "tenYNetIncomeGrowthPerShare"
+                        ],
+                        "fiveYNetIncomeGrowthPerShare": row[
+                            "fiveYNetIncomeGrowthPerShare"
+                        ],
+                        "threeYNetIncomeGrowthPerShare": row[
+                            "threeYNetIncomeGrowthPerShare"
+                        ],
+                        "tenYShareholdersEquityGrowthPerShare": row[
+                            "tenYShareholdersEquityGrowthPerShare"
+                        ],
+                        "fiveYShareholdersEquityGrowthPerShare": row[
+                            "fiveYShareholdersEquityGrowthPerShare"
+                        ],
+                        "threeYShareholdersEquityGrowthPerShare": row[
+                            "threeYShareholdersEquityGrowthPerShare"
+                        ],
+                        "tenYDividendperShareGrowthPerShare": row[
+                            "tenYDividendperShareGrowthPerShare"
+                        ],
+                        "fiveYDividendperShareGrowthPerShare": row[
+                            "fiveYDividendperShareGrowthPerShare"
+                        ],
+                        "threeYDividendperShareGrowthPerShare": row[
+                            "threeYDividendperShareGrowthPerShare"
+                        ],
+                        "receivablesGrowth": row["receivablesGrowth"],
+                        "inventoryGrowth": row["inventoryGrowth"],
+                        "assetGrowth": row["assetGrowth"],
+                        "bookValueperShareGrowth": row["bookValueperShareGrowth"],
+                        "debtGrowth": row["debtGrowth"],
+                        "rdexpenseGrowth": row["rdexpenseGrowth"],
+                        "sgaexpensesGrowth": row["sgaexpensesGrowth"],
                     }
                     feature_hash = hashlib.sha256(
                         str(feature_values).encode()
@@ -232,15 +245,17 @@ def stmtAnalKM_from_fmpAPI(
                         "created_at": created_at,
                     }
 
-                    # Create update operation
                     bulk_operations.append(
                         UpdateOne(
+                            # Check records by date (and other record identifiers) and if feature_hash is different
                             {
                                 "calendarYear": row["calendarYear"],
                                 "period": row["period"],
                                 "feature_hash": {"$ne": feature_hash},
                             },
+                            # If identifiers exists exists and feature_hash is different, update record
                             {"$set": document},
+                            # If identifiers don't exist, insert new record
                             upsert=True,
                         )
                     )

@@ -23,6 +23,7 @@ from hendricks._utils.mongo_conn import mongo_conn
 from hendricks._utils.mongo_coll_verification import confirm_mongo_collect_exists
 from hendricks._utils.get_path import get_path
 from hendricks._utils.request_url_constructor import request_url_constructor
+from hendricks._utils.propcase import propcase
 
 # Set up logging
 logging.basicConfig(level=logging.WARNING)  # Set to WARNING to suppress DEBUG messages
@@ -30,7 +31,7 @@ logger = logging.getLogger("pymongo")
 logger.setLevel(logging.WARNING)  # Suppress pymongo debug messages
 
 
-def stmtAnalEntVal_from_fmpAPI(
+def saBSG_from_fmpAPI(
     tickers=None,
     collection_name=None,
     creds_file_path=None,
@@ -54,11 +55,12 @@ def stmtAnalEntVal_from_fmpAPI(
     # Get the database connection
     db = mongo_conn()
 
+    coll_grp = "sa"
     periods = ["annual", "quarter"]
 
     for ticker in tickers:
         for period in periods:
-            coll_name_pd = f"{collection_name.split('_')[0]}_{period}{collection_name.split('_')[1]}"
+            coll_name_pd = f"{collection_name.split('_')[0]}_{coll_grp}{propcase(period)}{collection_name.split('_')[1]}"
 
             # Ensure the collection exists
             confirm_mongo_collect_exists(coll_name_pd)
@@ -141,14 +143,74 @@ def stmtAnalEntVal_from_fmpAPI(
 
                     # Create a hash of the actual estimate values to detect changes
                     feature_values = {
-                        "stockPrice": row["stockPrice"],
-                        "numberOfShares": row["numberOfShares"],
-                        "marketCapitalization": row["marketCapitalization"],
-                        "minusCashAndCashEquivalents": row[
-                            "minusCashAndCashEquivalents"
+                        "growthCashAndCashEquivalents": row[
+                            "growthCashAndCashEquivalents"
                         ],
-                        "addTotalDebt": row["addTotalDebt"],
-                        "enterpriseValue": row["enterpriseValue"],
+                        "growthShortTermInvestments": row["growthShortTermInvestments"],
+                        "growthNetReceivables": row["growthNetReceivables"],
+                        "growthInventory": row["growthInventory"],
+                        "growthOtherCurrentAssets": row["growthOtherCurrentAssets"],
+                        "growthTotalCurrentAssets": row["growthTotalCurrentAssets"],
+                        "growthPropertyPlantEquipmentNet": row[
+                            "growthPropertyPlantEquipmentNet"
+                        ],
+                        "growthGoodwill": row["growthGoodwill"],
+                        "growthIntangibleAssets": row["growthIntangibleAssets"],
+                        "growthGoodwillAndIntangibleAssets": row[
+                            "growthGoodwillAndIntangibleAssets"
+                        ],
+                        "growthLongTermInvestments": row["growthLongTermInvestments"],
+                        "growthTaxAssets": row["growthTaxAssets"],
+                        "growthOtherNonCurrentAssets": row[
+                            "growthOtherNonCurrentAssets"
+                        ],
+                        "growthTotalNonCurrentAssets": row[
+                            "growthTotalNonCurrentAssets"
+                        ],
+                        "growthOtherAssets": row["growthOtherAssets"],
+                        "growthTotalAssets": row["growthTotalAssets"],
+                        "growthAccountPayables": row["growthAccountPayables"],
+                        "growthShortTermDebt": row["growthShortTermDebt"],
+                        "growthTaxPayables": row["growthTaxPayables"],
+                        "growthDeferredRevenue": row["growthDeferredRevenue"],
+                        "growthOtherCurrentLiabilities": row[
+                            "growthOtherCurrentLiabilities"
+                        ],
+                        "growthTotalCurrentLiabilities": row[
+                            "growthTotalCurrentLiabilities"
+                        ],
+                        "growthLongTermDebt": row["growthLongTermDebt"],
+                        "growthDeferredRevenueNonCurrent": row[
+                            "growthDeferredRevenueNonCurrent"
+                        ],
+                        "growthDeferrredTaxLiabilitiesNonCurrent": row[
+                            "growthDeferrredTaxLiabilitiesNonCurrent"
+                        ],
+                        "growthOtherNonCurrentLiabilities": row[
+                            "growthOtherNonCurrentLiabilities"
+                        ],
+                        "growthTotalNonCurrentLiabilities": row[
+                            "growthTotalNonCurrentLiabilities"
+                        ],
+                        "growthOtherLiabilities": row["growthOtherLiabilities"],
+                        "growthTotalLiabilities": row["growthTotalLiabilities"],
+                        "growthCommonStock": row["growthCommonStock"],
+                        "growthRetainedEarnings": row["growthRetainedEarnings"],
+                        "growthAccumulatedOtherComprehensiveIncomeLoss": row[
+                            "growthAccumulatedOtherComprehensiveIncomeLoss"
+                        ],
+                        "growthOthertotalStockholdersEquity": row[
+                            "growthOthertotalStockholdersEquity"
+                        ],
+                        "growthTotalStockholdersEquity": row[
+                            "growthTotalStockholdersEquity"
+                        ],
+                        "growthTotalLiabilitiesAndStockholdersEquity": row[
+                            "growthTotalLiabilitiesAndStockholdersEquity"
+                        ],
+                        "growthTotalInvestments": row["growthTotalInvestments"],
+                        "growthTotalDebt": row["growthTotalDebt"],
+                        "growthNetDebt": row["growthNetDebt"],
                     }
                     feature_hash = hashlib.sha256(
                         str(feature_values).encode()
@@ -160,19 +222,25 @@ def stmtAnalEntVal_from_fmpAPI(
                     # Create unique_id when there isn't a good option in response
                     f1 = ticker
                     f2 = timestamp
-                    f3 = created_at
+                    f3 = row["calendarYear"]
+                    f4 = row["period"]
+                    f5 = created_at
 
                     # Create hash of f1, f2, f3, f4
-                    unique_id = hashlib.sha256(f"{f1}{f2}{f3}".encode()).hexdigest()
+                    unique_id = hashlib.sha256(
+                        f"{f1}{f2}{f3}{f4}{f5}".encode()
+                    ).hexdigest()
 
                     # Streamlined main document
                     document = {
                         "unique_id": unique_id,
                         "timestamp": timestamp,
-                        "ticker": row["ticker"],
+                        "ticker": row["symbol"],
                         ##########################################
                         ##########################################
                         "date": row["date"],
+                        "calendarYear": row["calendarYear"],
+                        "period": row["period"],
                         **feature_values,
                         "feature_hash": feature_hash,
                         ##########################################
@@ -185,7 +253,8 @@ def stmtAnalEntVal_from_fmpAPI(
                         UpdateOne(
                             # Check records by date (and other record identifiers) and if feature_hash is different
                             {
-                                "date": row["date"],
+                                "calendarYear": row["calendarYear"],
+                                "period": row["period"],
                                 "feature_hash": {"$ne": feature_hash},
                             },
                             # If identifiers exists exists and feature_hash is different, update record

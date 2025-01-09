@@ -30,7 +30,7 @@ logger = logging.getLogger("pymongo")
 logger.setLevel(logging.WARNING)  # Suppress pymongo debug messages
 
 
-def stmtAnalOwnEarn_from_fmpAPI(
+def saOwnEarn_from_fmpAPI(
     tickers=None,
     collection_name=None,
     creds_file_path=None,

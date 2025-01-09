@@ -42,8 +42,7 @@ def ciAnalystRec_from_fmpAPI(
     Load historical quote data from Alpaca API into a MongoDB collection.
     """
 
-    ep_ticker_alias = "symbol"
-    ep_timestamp_field = "created_at"
+    ep_timestamp_field = "today"
     cred_key = "fmp_api_findata"
 
     if creds_file_path is None:
@@ -110,9 +109,6 @@ def ciAnalystRec_from_fmpAPI(
             res_df = pd.DataFrame(res)
             logger.info(f"DataFrame shape: {res_df.shape}")
             logger.info(f"DataFrame columns: {res_df.columns.tolist()}")
-
-            # Rename 'symbol' to 'ticker'
-            res_df.rename(columns={ep_ticker_alias: "ticker"}, inplace=True)
 
             # Sort results by timestamp in descending order
             res_df.sort_values(by=ep_timestamp_field, ascending=False, inplace=True)
