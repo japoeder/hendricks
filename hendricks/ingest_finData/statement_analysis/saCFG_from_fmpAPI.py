@@ -225,7 +225,7 @@ def saCFG_from_fmpAPI(
                     document = {
                         "unique_id": unique_id,
                         "timestamp": timestamp,
-                        "ticker": row["ticker"],
+                        "ticker": row["symbol"],
                         ##########################################
                         ##########################################
                         "date": row["date"],

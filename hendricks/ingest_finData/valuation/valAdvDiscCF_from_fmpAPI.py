@@ -200,7 +200,7 @@ def valAdvDiscCF_from_fmpAPI(
                 document = {
                     "unique_id": unique_id,
                     "timestamp": timestamp,
-                    "ticker": row["ticker"],
+                    "ticker": row["symbol"],
                     ##########################################
                     ##########################################
                     # Unpack the feature_hash
@@ -215,30 +215,13 @@ def valAdvDiscCF_from_fmpAPI(
                 # Check if record exists with same feature_hash
                 existing_record = collection.find_one(
                     {
-                        "date": row["date"],
+                        "year": row["year"],
                         "feature_hash": feature_hash,  # Note: looking for matching hash
                     }
                 )
 
                 # If no matching record found (either doesn't exist or has different hash)
                 if not existing_record:
-                    bulk_operations.append(InsertOne(document))
-
-                # Find the most recent record for this ticker
-                last_new_record = collection.find_one(
-                    {
-                        "ticker": row["symbol"],
-                    },
-                    sort=[
-                        ("created_at", -1)
-                    ],  # Sort by created_at in descending order (most recent first)
-                )
-
-                # Compare feature hashes to see if there's been a change
-                if last_new_record and last_new_record["feature_hash"] == feature_hash:
-                    continue
-                else:
-                    # Create update operation
                     bulk_operations.append(InsertOne(document))
 
             # Execute bulk operations if any exist

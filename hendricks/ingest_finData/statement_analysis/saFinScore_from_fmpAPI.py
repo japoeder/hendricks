@@ -153,7 +153,7 @@ def saFinScore_from_fmpAPI(
                 feature_hash = hashlib.sha256(str(feature_values).encode()).hexdigest()
 
                 # Create unique_id when there isn't a good option in response
-                f1 = row["ticker"]
+                f1 = ticker
                 f2 = created_at
 
                 # Create hash of f1, f2, f3, f4
@@ -163,7 +163,7 @@ def saFinScore_from_fmpAPI(
                 document = {
                     "unique_id": unique_id,
                     "timestamp": timestamp,
-                    "ticker": row["ticker"],
+                    "ticker": row["symbol"],
                     ##########################################
                     ##########################################
                     **feature_values,
@@ -177,7 +177,7 @@ def saFinScore_from_fmpAPI(
                 # Find the most recent record for this ticker
                 last_new_record = collection.find_one(
                     {
-                        "ticker": row["ticker"],
+                        "ticker": row["symbol"],
                     },
                     sort=[
                         ("created_at", -1)

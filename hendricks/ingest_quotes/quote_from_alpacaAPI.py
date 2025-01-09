@@ -88,7 +88,7 @@ def quote_from_alpacaAPI(
 
     for _, row in barset.iterrows():
         document = {
-            "ticker": row["ticker"],
+            "ticker": row["symbol"],
             "timestamp": row["timestamp"],
             "open": row["open"],
             "low": row["low"],
@@ -101,7 +101,7 @@ def quote_from_alpacaAPI(
 
         # Check if the document exists
         existing_doc = collection.find_one(
-            {"timestamp": row["timestamp"], "ticker": row["ticker"]}
+            {"timestamp": row["timestamp"], "ticker": row["symbol"]}
         )
         if existing_doc:
             continue

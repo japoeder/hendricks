@@ -111,7 +111,8 @@ def ciAnalystRec_from_fmpAPI(
             logger.info(f"DataFrame columns: {res_df.columns.tolist()}")
 
             # Sort results by timestamp in descending order
-            res_df.sort_values(by=ep_timestamp_field, ascending=False, inplace=True)
+            if ep_timestamp_field != "today":
+                res_df.sort_values(by=ep_timestamp_field, ascending=False, inplace=True)
 
             # Process news items in bulk
             bulk_operations = []
@@ -158,7 +159,7 @@ def ciAnalystRec_from_fmpAPI(
                 document = {
                     "unique_id": unique_id,
                     "timestamp": timestamp,
-                    "ticker": row["ticker"],
+                    "ticker": row["symbol"],
                     ##########################################
                     ##########################################
                     "date": row["date"],
