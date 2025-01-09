@@ -30,20 +30,22 @@ logger = logging.getLogger("pymongo")
 logger.setLevel(logging.WARNING)  # Suppress pymongo debug messages
 
 
-def ciGrade_from_fmpAPI(
+def govSenTrade_from_fmpAPI(
     tickers=None,
     collection_name=None,
     creds_file_path=None,
     from_date=None,
     to_date=None,
     ep=None,
+    freq="1min",
+    freq_range=5,
 ):
     """
     Load historical quote data from Alpaca API into a MongoDB collection.
     """
 
-    ep_timestamp_field = "date"
-    cred_key = "fmp_api_findata"
+    ep_timestamp_field = "dateRecieved"
+    cred_key = "fmp_api_findata_v4"
 
     if creds_file_path is None:
         creds_file_path = get_path("creds")
@@ -86,6 +88,10 @@ def ciGrade_from_fmpAPI(
             ticker=ticker,
             api_key=API_KEY,
             source="fmp",
+            from_date=from_date,
+            to_date=to_date,
+            freq=freq,
+            freq_range=freq_range,
         )
 
         print(f"URL: {url}")
@@ -109,7 +115,8 @@ def ciGrade_from_fmpAPI(
             logger.info(f"DataFrame columns: {res_df.columns.tolist()}")
 
             # Sort results by timestamp in descending order
-            res_df.sort_values(by=ep_timestamp_field, ascending=False, inplace=True)
+            if ep_timestamp_field != "today":
+                res_df.sort_values(by=ep_timestamp_field, ascending=False, inplace=True)
 
             # Process news items in bulk
             bulk_operations = []
@@ -129,33 +136,47 @@ def ciGrade_from_fmpAPI(
                         # .tz_convert("UTC")
                     )
 
-                # Create a hash of the actual estimate values to detect changes
-                feature_values = {
-                    "previousGrade": row["previousGrade"],
-                    "newGrade": row["newGrade"],
-                }
-                feature_hash = hashlib.sha256(str(feature_values).encode()).hexdigest()
-
                 # created_at = datetime.now(timezone.utc)
                 created_at = datetime.now()
+
+                # Create a hash of the actual estimate values to detect changes
+                feature_values = {
+                    "amount": row["amount"],
+                }
+                feature_hash = hashlib.sha256(str(feature_values).encode()).hexdigest()
 
                 # Create unique_id when there isn't a good option in response
                 f1 = ticker
                 f2 = timestamp
-                f3 = row["gradingCompany"]
-                f4 = created_at
+                f3 = row["office"]
+                f4 = row["link"]
+                f5 = row["dateRecieved"]
+                f6 = row["transactionDate"]
+                f7 = created_at
 
-                # Create hash of f1, f2, f3
-                unique_id = hashlib.sha256(f"{f1}{f2}{f3}{f4}".encode()).hexdigest()
+                # Create hash of f1, f2, f3, f4
+                unique_id = hashlib.sha256(
+                    f"{f1}{f2}{f3}{f4}{f5}{f6}{f7}".encode()
+                ).hexdigest()
 
                 # Streamlined main document
                 document = {
                     "unique_id": unique_id,
                     "timestamp": timestamp,
-                    "ticker": row["symbol"],
+                    "ticker": ticker,
                     ##########################################
                     ##########################################
-                    "gradingCompany": row["gradingCompany"],
+                    "firstName": row["firstName"],
+                    "lastName": row["lastName"],
+                    "office": row["office"],
+                    "link": row["link"],
+                    "dateReceived": row["dateRecieved"],
+                    "transactionDate": row["transactionDate"],
+                    "owner": row["owner"],
+                    "assetDescription": row["assetDescription"],
+                    "comment": row["comment"],
+                    "symbol": row["symbol"],
+                    # Unpack the feature_hash
                     **feature_values,
                     "feature_hash": feature_hash,
                     ##########################################
@@ -168,8 +189,11 @@ def ciGrade_from_fmpAPI(
                     UpdateOne(
                         # Check records by date (and other record identifiers) and if feature_hash is different
                         {
-                            "date": row["date"],
-                            "gradingCompany": row["gradingCompany"],
+                            "ticker": ticker,
+                            "office": row["office"],
+                            "assetType": row["assetType"],
+                            "type": row["type"],
+                            "transactionDate": row["transactionDate"],
                             "feature_hash": {"$ne": feature_hash},
                         },
                         # If identifiers exists exists and feature_hash is different, update record

@@ -121,8 +121,6 @@ def tiSMA_from_fmpAPI(
             # Process news items in bulk
             bulk_operations = []
             for _, row in res_df.iterrows():
-                # Create timestamp col in res_df from acceptanceDate to UTC
-                # TODO: UPDATE IF NECESSARY AFTER HEARING FROM CUSTOMER SVC.
                 if ep_timestamp_field == "today":
                     # timestamp = datetime.now(timezone.utc)
                     timestamp = datetime.now()

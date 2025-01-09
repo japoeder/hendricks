@@ -257,6 +257,20 @@ class FMPEndpoint(Enum):
         False,
     )
 
+    FMP_SENATE_TRADE = (
+        "senate-trading",
+        "congressional.govSenTrade_from_fmpAPI",
+        "govSenTrade_from_fmpAPI",
+        False,
+    )
+
+    FMP_HOUSE_DISCLOSURE = (
+        "senate-disclosure",
+        "congressional.govHouseDisc_from_fmpAPI",
+        "govHouseDisc_from_fmpAPI",
+        False,
+    )
+
     def __init__(
         self, endpoint: str, module_path: str, function_name: str, is_daily: bool
     ):

@@ -273,6 +273,8 @@ def request_url_constructor(
             "price-target-consensus",
             "upgrades-downgrades",
             "upgrades-downgrades-consensus",
+            "senate-trading",
+            "senate-disclosure",
         ]:
             if ticker is None:
                 raise ValueError("ticker is required")
