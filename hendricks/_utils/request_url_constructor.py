@@ -128,6 +128,8 @@ def request_url_constructor(
     period: str = None,
     target_yr: int = None,
     target_qtr: int = None,
+    freq: str = "1min",
+    freq_range: int = None,
 ):
     """
     Construct the URL for the FMP API.
@@ -276,6 +278,42 @@ def request_url_constructor(
                 raise ValueError("ticker is required")
             else:
                 compiled_url += f"{endpoint}?symbol={ticker}"
+
+            if api_key is None:
+                raise ValueError("api_key is required")
+            else:
+                compiled_url += f"&apikey={api_key}"
+
+        elif endpoint in [
+            "sma",
+            "ema",
+            "wma",
+            "dema",
+            "tema",
+            "williams",
+            "rsi",
+            "adx",
+            "standardDeviation",
+        ]:
+            compiled_url += "/technical_indicator"
+
+            if freq is None:
+                raise ValueError("api_key is required")
+            else:
+                compiled_url += "/{freq}"
+
+            if ticker is None:
+                raise ValueError("ticker is required")
+            else:
+                compiled_url += "/{ticker}"
+
+            if endpoint is None:
+                raise ValueError("endpoint is required")
+            else:
+                compiled_url += f"?type={endpoint}"
+
+            if freq_range is not None:
+                compiled_url += f"&period={freq_range}"
 
             if api_key is None:
                 raise ValueError("api_key is required")

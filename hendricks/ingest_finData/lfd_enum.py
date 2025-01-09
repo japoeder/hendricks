@@ -193,6 +193,70 @@ class FMPEndpoint(Enum):
         False,
     )
 
+    # Technical Indicators
+    FMP_SMA = (
+        "sma",
+        "tech_indicator.tiSMA_from_fmpAPI",
+        "tiSMA_from_fmpAPI",
+        False,
+    )
+
+    FMP_EMA = (
+        "ema",
+        "tech_indicator.tiEMA_from_fmpAPI",
+        "tiEMA_from_fmpAPI",
+        False,
+    )
+
+    FMP_WMA = (
+        "wma",
+        "tech_indicator.tiWMA_from_fmpAPI",
+        "tiWMA_from_fmpAPI",
+        False,
+    )
+
+    FMP_DEMA = (
+        "dema",
+        "tech_indicator.tiDEMA_from_fmpAPI",
+        "tiDEMA_from_fmpAPI",
+        False,
+    )
+
+    FMP_TEMA = (
+        "tema",
+        "tech_indicator.tiTEMA_from_fmpAPI",
+        "tiTEMA_from_fmpAPI",
+        False,
+    )
+
+    FMP_WILL = (
+        "williams",
+        "tech_indicator.tiWILL_from_fmpAPI",
+        "tiWILL_from_fmpAPI",
+        False,
+    )
+
+    FMP_RSI = (
+        "rsi",
+        "tech_indicator.tiRSI_from_fmpAPI",
+        "tiRSI_from_fmpAPI",
+        False,
+    )
+
+    FMP_ADI = (
+        "adx",
+        "tech_indicator.tiADI_from_fmpAPI",
+        "tiADI_from_fmpAPI",
+        False,
+    )
+
+    FMP_STDEV = (
+        "standardDeviation",
+        "tech_indicator.tiSTDEV_from_fmpAPI",
+        "tiSTDEV_from_fmpAPI",
+        False,
+    )
+
     def __init__(
         self, endpoint: str, module_path: str, function_name: str, is_daily: bool
     ):
