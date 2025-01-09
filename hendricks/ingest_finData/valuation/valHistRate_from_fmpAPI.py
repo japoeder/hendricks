@@ -42,7 +42,6 @@ def valHistRate_from_fmpAPI(
     Load historical quote data from Alpaca API into a MongoDB collection.
     """
 
-    ep_ticker_alias = "symbol"
     ep_timestamp_field = "date"
     cred_key = "fmp_api_findata"
 
@@ -110,9 +109,6 @@ def valHistRate_from_fmpAPI(
             res_df = pd.DataFrame(res)
             logger.info(f"DataFrame shape: {res_df.shape}")
             logger.info(f"DataFrame columns: {res_df.columns.tolist()}")
-
-            # Rename 'symbol' to 'ticker'
-            res_df.rename(columns={ep_ticker_alias: "ticker"}, inplace=True)
 
             # Sort results by timestamp in descending order
             if ep_timestamp_field != "today":

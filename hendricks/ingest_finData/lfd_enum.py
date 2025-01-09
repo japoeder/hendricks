@@ -15,111 +15,111 @@ class FMPEndpoint(Enum):
     # Company Info (Aggregate)
     EMPLOYEE_COUNT = (
         "historical/employee_count",
-        "comapny_info.empCount_from_fmpAPI",
-        "empCount_from_fmpAPI",
+        "comapny_info.ciEmpCount_from_fmpAPI",
+        "ciEmpCount_from_fmpAPI",
         False,
     )
     EXEC_COMP = (
         "governance/executive_compensation",
-        "comapny_info.execComp_from_fmpAPI",
-        "execComp_from_fmpAPI",
+        "comapny_info.ciExecComp_from_fmpAPI",
+        "ciExecComp_from_fmpAPI",
         False,
     )
-    GRADE = ("grade", "comapny_info.grade_from_fmpAPI", "grade_from_fmpAPI", False)
+    GRADE = ("grade", "comapny_info.ciGrade_from_fmpAPI", "ciGrade_from_fmpAPI", False)
     ANALYST_EST = (
         "analyst-estimates",
-        "comapny_info.analystEst_from_fmpAPI",
-        "analystEst_from_fmpAPI",
+        "comapny_info.ciAnalystEst_from_fmpAPI",
+        "ciAnalystEst_from_fmpAPI",
         False,
     )
     ANALYST_REC = (
         "analyst-stock-recommendations",
-        "comapny_info.analystRec_from_fmpAPI",
-        "analystRec_from_fmpAPI",
+        "comapny_info.ciAnalystRec_from_fmpAPI",
+        "ciAnalystRec_from_fmpAPI",
         False,
     )
 
     # Company Info (Daily)
     MARKET_CAP = (
         "historical-market-capitalization",
-        "comapny_info.marketCap_from_fmpAPI",
-        "marketCap_from_fmpAPI",
+        "comapny_info.ciMarketCap_from_fmpAPI",
+        "ciMarketCap_from_fmpAPI",
         True,
     )
 
     # Financial Statements (Aggregate)
     INCOME_STMT = (
         "income-statement",
-        "financial_statements.incomeStmt_from_fmpAPI",
-        "incomeStmt_from_fmpAPI",
+        "financial_statements.fsIncomeStmt_from_fmpAPI",
+        "fsIncomeStmt_from_fmpAPI",
         False,
     )
     BALANCE_SHEET = (
         "balance-sheet-statement",
-        "financial_statements.balanceSheet_from_fmpAPI",
-        "balanceSheet_from_fmpAPI",
+        "financial_statements.fsBalanceSheet_from_fmpAPI",
+        "fsBalanceSheet_from_fmpAPI",
         False,
     )
     CASH_FLOW = (
         "cash-flow-statement",
-        "financial_statements.cashFlow_from_fmpAPI",
-        "cashFlow_from_fmpAPI",
+        "financial_statements.fsCashFlow_from_fmpAPI",
+        "fsCashFlow_from_fmpAPI",
         False,
     )
 
     # Statement Analysis (Aggregate)
     STMT_KM = (
         "key-metrics",
-        "statement_analysis.stmtAnalKM_from_fmpAPI",
-        "stmtAnalKM_from_fmpAPI",
+        "statement_analysis.saKM_from_fmpAPI",
+        "saKM_from_fmpAPI",
         False,
     )
     STMT_RATIOS = (
         "ratios",
-        "statement_analysis.stmtAnalRatios_from_fmpAPI",
-        "stmtAnalRatios_from_fmpAPI",
+        "statement_analysis.saRatios_from_fmpAPI",
+        "saRatios_from_fmpAPI",
         False,
     )
     STMT_CFG = (
         "cash-flow-statement-growth",
-        "statement_analysis.stmtAnalCFG_from_fmpAPI",
-        "stmtAnalCFG_from_fmpAPI",
+        "statement_analysis.saCFG_from_fmpAPI",
+        "saCFG_from_fmpAPI",
         False,
     )
     STMT_INC_GR = (
         "income-statement-growth",
-        "statement_analysis.stmtAnalIncGr_from_fmpAPI",
-        "stmtAnalIncGr_from_fmpAPI",
+        "statement_analysis.saIncGr_from_fmpAPI",
+        "saIncGr_from_fmpAPI",
         False,
     )
     STMT_BS_GR = (
         "balance-sheet-statement-growth",
-        "statement_analysis.stmtAnalBSG_from_fmpAPI",
-        "stmtAnalBSG_from_fmpAPI",
+        "statement_analysis.saBSG_from_fmpAPI",
+        "saBSG_from_fmpAPI",
         False,
     )
     STMT_FIN_GR = (
         "financial-growth",
-        "statement_analysis.stmtAnalFinGr_from_fmpAPI",
-        "stmtAnalFinGr_from_fmpAPI",
+        "statement_analysis.saFinGr_from_fmpAPI",
+        "saFinGr_from_fmpAPI",
         False,
     )
     STMT_ENT_VAL = (
         "enterprise-values",
-        "statement_analysis.stmtAnalEntVal_from_fmpAPI",
-        "stmtAnalEntVal_from_fmpAPI",
+        "statement_analysis.saEntVal_from_fmpAPI",
+        "saEntVal_from_fmpAPI",
         False,
     )
     STMT_FIN_SCORE = (
         "score",
-        "statement_analysis.stmtAnalFinScore_from_fmpAPI",
-        "stmtAnalFinScore_from_fmpAPI",
+        "statement_analysis.saFinScore_from_fmpAPI",
+        "saFinScore_from_fmpAPI",
         False,
     )
     STMT_OWN_EARN = (
         "owner_earnings",
-        "statement_analysis.stmtAnalOwnEarn_from_fmpAPI",
-        "stmtAnalOwnEarn_from_fmpAPI",
+        "statement_analysis.saOwnEarn_from_fmpAPI",
+        "saOwnEarn_from_fmpAPI",
         False,
     )
 
@@ -179,10 +179,10 @@ class FMPEndpoint(Enum):
         False,
     )
 
-    EARN_EST = (
+    EARN_HIST = (
         "historical/earning_calendar",
-        "earnings.earnEst_from_fmpAPI",
-        "earnEst_from_fmpAPI",
+        "earnings.earnHistorical_from_fmpAPI",
+        "earnHistorical_from_fmpAPI",
         False,
     )
 

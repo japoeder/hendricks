@@ -42,7 +42,6 @@ def ptConsensus_from_fmpAPI(
     Load historical quote data from Alpaca API into a MongoDB collection.
     """
 
-    ep_ticker_alias = "symbol"
     ep_timestamp_field = "today"
     cred_key = "fmp_api_findata_v4"
 
@@ -112,9 +111,6 @@ def ptConsensus_from_fmpAPI(
             logger.info(f"DataFrame shape: {res_df.shape}")
             logger.info(f"DataFrame columns: {res_df.columns.tolist()}")
 
-            # Rename 'symbol' to 'ticker'
-            res_df.rename(columns={ep_ticker_alias: "ticker"}, inplace=True)
-
             if ep_timestamp_field != "today":
                 # Sort results by timestamp in descending order
                 res_df.sort_values(by=ep_timestamp_field, ascending=False, inplace=True)
@@ -163,7 +159,7 @@ def ptConsensus_from_fmpAPI(
                 document = {
                     "unique_id": unique_id,
                     "timestamp": timestamp,
-                    "ticker": row["ticker"],
+                    "ticker": row["symbol"],
                     ##########################################
                     ##########################################
                     **feature_values,
@@ -175,9 +171,9 @@ def ptConsensus_from_fmpAPI(
                 }
 
                 # Find the most recent record for this ticker
-                existing_record = collection.find_one(
+                last_new_record = collection.find_one(
                     {
-                        "ticker": row["ticker"],
+                        "ticker": row["symbol"],
                     },
                     sort=[
                         ("created_at", -1)
@@ -185,7 +181,7 @@ def ptConsensus_from_fmpAPI(
                 )
 
                 # Compare feature hashes to see if there's been a change
-                if existing_record and existing_record["feature_hash"] == feature_hash:
+                if last_new_record and last_new_record["feature_hash"] == feature_hash:
                     continue
                 else:
                     # Create update operation

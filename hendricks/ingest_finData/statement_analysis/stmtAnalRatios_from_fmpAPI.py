@@ -133,28 +133,8 @@ def stmtAnalRatios_from_fmpAPI(
                         .tz_convert("UTC")
                     )
 
-                    # created_at = datetime.now(timezone.utc)
-                    created_at = datetime.now()
-
-                    # Create unique_id when there isn't a good option in response
-                    f1 = ticker
-                    f2 = timestamp
-                    f3 = row["calendarYear"]
-                    f4 = row["period"]
-
-                    # Create hash of f1, f2, f3, f4
-                    unique_id = hashlib.sha256(f"{f1}{f2}{f3}{f4}".encode()).hexdigest()
-
-                    # Streamlined main document
-                    document = {
-                        "unique_id": unique_id,
-                        "timestamp": timestamp,
-                        "ticker": row["ticker"],
-                        ##########################################
-                        ##########################################
-                        "date": row["date"],
-                        "calendarYear": row["calendarYear"],
-                        "period": row["period"],
+                    # Create a hash of the actual estimate values to detect changes
+                    feature_values = {
                         "currentRatio": row["currentRatio"],
                         "quickRatio": row["quickRatio"],
                         "cashRatio": row["cashRatio"],
@@ -221,19 +201,55 @@ def stmtAnalRatios_from_fmpAPI(
                         "dividendYield": row["dividendYield"],
                         "enterpriseValueMultiple": row["enterpriseValueMultiple"],
                         "priceFairValue": row["priceFairValue"],
+                    }
+                    feature_hash = hashlib.sha256(
+                        str(feature_values).encode()
+                    ).hexdigest()
+
+                    # created_at = datetime.now(timezone.utc)
+                    created_at = datetime.now()
+
+                    # Create unique_id when there isn't a good option in response
+                    f1 = ticker
+                    f2 = timestamp
+                    f3 = row["calendarYear"]
+                    f4 = row["period"]
+                    f5 = created_at
+
+                    # Create hash of f1, f2, f3, f4
+                    unique_id = hashlib.sha256(
+                        f"{f1}{f2}{f3}{f4}{f5}".encode()
+                    ).hexdigest()
+
+                    # Streamlined main document
+                    document = {
+                        "unique_id": unique_id,
+                        "timestamp": timestamp,
+                        "ticker": row["ticker"],
+                        ##########################################
+                        ##########################################
+                        "date": row["date"],
+                        "calendarYear": row["calendarYear"],
+                        "period": row["period"],
+                        **feature_values,
+                        "feature_hash": feature_hash,
                         ##########################################
                         ##########################################
                         "source": "fmp",
                         "created_at": created_at,
                     }
 
-                    # Create update operation
                     bulk_operations.append(
                         UpdateOne(
+                            # Check records by date (and other record identifiers) and if feature_hash is different
                             {
-                                "unique_id": unique_id,
+                                "calendarYear": row["calendarYear"],
+                                "period": row["period"],
+                                "feature_hash": {"$ne": feature_hash},
                             },
+                            # If identifiers exists exists and feature_hash is different, update record
                             {"$set": document},
+                            # If identifiers don't exist, insert new record
                             upsert=True,
                         )
                     )

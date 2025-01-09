@@ -30,7 +30,7 @@ logger = logging.getLogger("pymongo")
 logger.setLevel(logging.WARNING)  # Suppress pymongo debug messages
 
 
-def earnSurprise_from_fmpAPI(
+def earnHistorical_from_fmpAPI(
     tickers=None,
     collection_name=None,
     creds_file_path=None,
@@ -42,8 +42,7 @@ def earnSurprise_from_fmpAPI(
     Load historical quote data from Alpaca API into a MongoDB collection.
     """
 
-    ep_ticker_alias = "symbol"
-    ep_timestamp_field = "date"
+    ep_timestamp_field = "updatedFromDate"
     cred_key = "fmp_api_findata"
 
     if creds_file_path is None:
@@ -111,9 +110,6 @@ def earnSurprise_from_fmpAPI(
             logger.info(f"DataFrame shape: {res_df.shape}")
             logger.info(f"DataFrame columns: {res_df.columns.tolist()}")
 
-            # Rename 'symbol' to 'ticker'
-            res_df.rename(columns={ep_ticker_alias: "ticker"}, inplace=True)
-
             # Sort results by timestamp in descending order
             res_df.sort_values(by=ep_timestamp_field, ascending=False, inplace=True)
 
@@ -137,31 +133,42 @@ def earnSurprise_from_fmpAPI(
                         # .tz_convert("UTC")
                     )
 
-                # created_at = datetime.now(timezone.utc)
-                created_at = datetime.now()
-
-                # Create unique_id when there isn't a good option in response
-                f1 = ticker
-                f2 = timestamp
-
-                # Create hash of f1, f2, f3, f4
-                unique_id = hashlib.sha256(f"{f1}{f2}".encode()).hexdigest()
-
-                # Streamlined main document
-                document = {
-                    "unique_id": unique_id,
-                    "timestamp": timestamp,
-                    "ticker": row["ticker"],
-                    ##########################################
-                    ##########################################
-                    "date": row["date"],
+                # Create a hash of the actual estimate values to detect changes
+                feature_values = {
                     "eps": row["eps"],
                     "epsEstimated": row["epsEstimated"],
                     "time": row["time"],
                     "revenue": row["revenue"],
                     "revenueEstimated": row["revenueEstimated"],
+                }
+                feature_hash = hashlib.sha256(str(feature_values).encode()).hexdigest()
+
+                # created_at = datetime.now(timezone.utc)
+                created_at = datetime.now()
+
+                # Create unique_id when there isn't a good option in response
+                f1 = ticker
+                f2 = row["fiscalDateEnding"]
+                f3 = row["updatedFromDate"]
+                f4 = created_at
+
+                # Create hash of f1, f2, f3, f4
+                unique_id = hashlib.sha256(f"{f1}{f2}{f3}{f4}".encode()).hexdigest()
+
+                # Streamlined main document
+                document = {
+                    "unique_id": unique_id,
+                    "timestamp": timestamp,
+                    "ticker": row["symbol"],
+                    ##########################################
+                    ##########################################
+                    ##########################################
+                    "date": row["date"],
                     "updatedFromDate": row["updatedFromDate"],
                     "fiscalDateEnding": row["fiscalDateEnding"],
+                    # Unpack the feature_hash
+                    **feature_values,
+                    "feature_hash": feature_hash,
                     ##########################################
                     ##########################################
                     "source": "fmp",
@@ -172,7 +179,8 @@ def earnSurprise_from_fmpAPI(
                 bulk_operations.append(
                     UpdateOne(
                         {
-                            "unique_id": unique_id,
+                            "fiscalDateEnding": row["fiscalDateEnding"],
+                            "feature_hash": {"$ne": feature_hash},
                         },
                         {"$set": document},
                         upsert=True,

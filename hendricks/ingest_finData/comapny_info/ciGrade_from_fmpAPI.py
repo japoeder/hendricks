@@ -12,7 +12,7 @@ import hashlib
 import pandas as pd
 from dotenv import load_dotenv
 import requests
-from pymongo import InsertOne
+from pymongo import UpdateOne
 from pymongo.errors import BulkWriteError
 
 # from gridfs import GridFS
@@ -30,7 +30,7 @@ logger = logging.getLogger("pymongo")
 logger.setLevel(logging.WARNING)  # Suppress pymongo debug messages
 
 
-def analystEst_from_fmpAPI(
+def ciGrade_from_fmpAPI(
     tickers=None,
     collection_name=None,
     creds_file_path=None,
@@ -42,7 +42,6 @@ def analystEst_from_fmpAPI(
     Load historical quote data from Alpaca API into a MongoDB collection.
     """
 
-    ep_ticker_alias = "symbol"
     ep_timestamp_field = "date"
     cred_key = "fmp_api_findata"
 
@@ -87,8 +86,6 @@ def analystEst_from_fmpAPI(
             ticker=ticker,
             api_key=API_KEY,
             source="fmp",
-            from_date=from_date,
-            to_date=to_date,
         )
 
         print(f"URL: {url}")
@@ -111,12 +108,8 @@ def analystEst_from_fmpAPI(
             logger.info(f"DataFrame shape: {res_df.shape}")
             logger.info(f"DataFrame columns: {res_df.columns.tolist()}")
 
-            # Rename 'symbol' to 'ticker'
-            res_df.rename(columns={ep_ticker_alias: "ticker"}, inplace=True)
-
             # Sort results by timestamp in descending order
-            if ep_timestamp_field != "today":
-                res_df.sort_values(by=ep_timestamp_field, ascending=False, inplace=True)
+            res_df.sort_values(by=ep_timestamp_field, ascending=False, inplace=True)
 
             # Process news items in bulk
             bulk_operations = []
@@ -138,52 +131,33 @@ def analystEst_from_fmpAPI(
                         # .tz_convert("UTC")
                     )
 
-                # created_at = datetime.now(timezone.utc)
-                created_at = datetime.now()
-
                 # Create a hash of the actual estimate values to detect changes
                 feature_values = {
-                    "estimatedRevenueLow": row["estimatedRevenueLow"],
-                    "estimatedRevenueHigh": row["estimatedRevenueHigh"],
-                    "estimatedRevenueAvg": row["estimatedRevenueAvg"],
-                    "estimatedEbitdaLow": row["estimatedEbitdaLow"],
-                    "estimatedEbitdaHigh": row["estimatedEbitdaHigh"],
-                    "estimatedEbitdaAvg": row["estimatedEbitdaAvg"],
-                    "estimatedEbitLow": row["estimatedEbitLow"],
-                    "estimatedEbitHigh": row["estimatedEbitHigh"],
-                    "estimatedEbitAvg": row["estimatedEbitAvg"],
-                    "estimatedNetIncomeLow": row["estimatedNetIncomeLow"],
-                    "estimatedNetIncomeHigh": row["estimatedNetIncomeHigh"],
-                    "estimatedNetIncomeAvg": row["estimatedNetIncomeAvg"],
-                    "estimatedSgaExpenseLow": row["estimatedSgaExpenseLow"],
-                    "estimatedSgaExpenseHigh": row["estimatedSgaExpenseHigh"],
-                    "estimatedSgaExpenseAvg": row["estimatedSgaExpenseAvg"],
-                    "estimatedEpsAvg": row["estimatedEpsAvg"],
-                    "estimatedEpsHigh": row["estimatedEpsHigh"],
-                    "estimatedEpsLow": row["estimatedEpsLow"],
-                    "numberAnalystEstimatedRevenue": row[
-                        "numberAnalystEstimatedRevenue"
-                    ],
-                    "numberAnalystsEstimatedEps": row["numberAnalystsEstimatedEps"],
+                    "previousGrade": row["previousGrade"],
+                    "newGrade": row["newGrade"],
                 }
                 feature_hash = hashlib.sha256(str(feature_values).encode()).hexdigest()
+
+                # created_at = datetime.now(timezone.utc)
+                created_at = datetime.now()
 
                 # Create unique_id when there isn't a good option in response
                 f1 = ticker
                 f2 = timestamp
-                f3 = created_at
+                f3 = row["gradingCompany"]
+                f4 = created_at
 
-                # Create hash of f1, f2, f3, f4
-                unique_id = hashlib.sha256(f"{f1}{f2}{f3}".encode()).hexdigest()
+                # Create hash of f1, f2, f3
+                unique_id = hashlib.sha256(f"{f1}{f2}{f3}{f4}".encode()).hexdigest()
 
                 # Streamlined main document
                 document = {
                     "unique_id": unique_id,
                     "timestamp": timestamp,
-                    "ticker": row["ticker"],
+                    "ticker": row["symbol"],
                     ##########################################
                     ##########################################
-                    # Unpack the feature_hash
+                    "gradingCompany": row["gradingCompany"],
                     **feature_values,
                     "feature_hash": feature_hash,
                     ##########################################
@@ -192,21 +166,20 @@ def analystEst_from_fmpAPI(
                     "created_at": created_at,
                 }
 
-                # Check if this exact estimate already exists
-                existing_record = collection.find_one(
-                    {
-                        "ticker": ticker,
-                        "timestamp": timestamp,
-                        "feature_hash": feature_hash,
-                    }
+                bulk_operations.append(
+                    UpdateOne(
+                        # Check records by date (and other record identifiers) and if feature_hash is different
+                        {
+                            "date": row["date"],
+                            "gradingCompany": row["gradingCompany"],
+                            "feature_hash": {"$ne": feature_hash},
+                        },
+                        # If identifiers exists exists and feature_hash is different, update record
+                        {"$set": document},
+                        # If identifiers don't exist, insert new record
+                        upsert=True,
+                    )
                 )
-
-                # If the record exists, skip it otherwise insert it
-                if existing_record:
-                    continue
-                else:
-                    # Create update operation
-                    bulk_operations.append(InsertOne(document))
 
             # Execute bulk operations if any exist
             if bulk_operations:

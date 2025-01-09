@@ -30,7 +30,7 @@ logger = logging.getLogger("pymongo")
 logger.setLevel(logging.WARNING)  # Suppress pymongo debug messages
 
 
-def grade_from_fmpAPI(
+def ciAnalystRec_from_fmpAPI(
     tickers=None,
     collection_name=None,
     creds_file_path=None,
@@ -43,7 +43,7 @@ def grade_from_fmpAPI(
     """
 
     ep_ticker_alias = "symbol"
-    ep_timestamp_field = "date"
+    ep_timestamp_field = "created_at"
     cred_key = "fmp_api_findata"
 
     if creds_file_path is None:
@@ -87,6 +87,8 @@ def grade_from_fmpAPI(
             ticker=ticker,
             api_key=API_KEY,
             source="fmp",
+            from_date=from_date,
+            to_date=to_date,
         )
 
         print(f"URL: {url}")
@@ -135,15 +137,25 @@ def grade_from_fmpAPI(
                         # .tz_convert("UTC")
                     )
 
+                # Create a hash of the actual estimate values to detect changes
+                feature_values = {
+                    "analystRatingsbuy": row["analystRatingsbuy"],
+                    "analystRatingsHold": row["analystRatingsHold"],
+                    "analystRatingsSell": row["analystRatingsSell"],
+                    "analystRatingsStrongSell": row["analystRatingsStrongSell"],
+                    "analystRatingsStrongBuy": row["analystRatingsStrongBuy"],
+                }
+                feature_hash = hashlib.sha256(str(feature_values).encode()).hexdigest()
+
                 # created_at = datetime.now(timezone.utc)
                 created_at = datetime.now()
 
                 # Create unique_id when there isn't a good option in response
                 f1 = ticker
                 f2 = timestamp
-                f3 = row["gradingCompany"]
+                f3 = created_at
 
-                # Create hash of f1, f2, f3
+                # Create hash of f1, f2, f3, f4
                 unique_id = hashlib.sha256(f"{f1}{f2}{f3}".encode()).hexdigest()
 
                 # Streamlined main document
@@ -153,23 +165,22 @@ def grade_from_fmpAPI(
                     "ticker": row["ticker"],
                     ##########################################
                     ##########################################
-                    "gradingCompany": row["gradingCompany"],
-                    "previousGrade": row["previousGrade"],
-                    "newGrade": row["newGrade"],
+                    "date": row["date"],
+                    **feature_values,
+                    "feature_hash": feature_hash,
                     ##########################################
                     ##########################################
                     "source": "fmp",
                     "created_at": created_at,
                 }
 
-                # Create update operation
                 bulk_operations.append(
                     UpdateOne(
-                        {
-                            "unique_id": document["unique_id"],
-                            "ticker": document["ticker"],
-                        },
+                        # Check records by date (and other record identifiers) and if feature_hash is different
+                        {"date": row["date"], "feature_hash": {"$ne": feature_hash}},
+                        # If identifiers exists exists and feature_hash is different, update record
                         {"$set": document},
+                        # If identifiers don't exist, insert new record
                         upsert=True,
                     )
                 )

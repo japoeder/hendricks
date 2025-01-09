@@ -42,7 +42,6 @@ def stmtAnalOwnEarn_from_fmpAPI(
     Load historical quote data from Alpaca API into a MongoDB collection.
     """
 
-    ep_ticker_alias = "symbol"
     ep_timestamp_field = "date"
     cred_key = "fmp_api_findata_v4"
 
@@ -111,9 +110,6 @@ def stmtAnalOwnEarn_from_fmpAPI(
             logger.info(f"DataFrame shape: {res_df.shape}")
             logger.info(f"DataFrame columns: {res_df.columns.tolist()}")
 
-            # Rename 'symbol' to 'ticker'
-            res_df.rename(columns={ep_ticker_alias: "ticker"}, inplace=True)
-
             # Sort results by timestamp in descending order
             res_df.sort_values(by=ep_timestamp_field, ascending=False, inplace=True)
 
@@ -127,15 +123,26 @@ def stmtAnalOwnEarn_from_fmpAPI(
                     .tz_convert("UTC")
                 )
 
+                # Create a hash of the actual estimate values to detect changes
+                feature_values = {
+                    "averagePPE": row["averagePPE"],
+                    "maintenanceCapex": row["maintenanceCapex"],
+                    "ownersEarnings": row["ownersEarnings"],
+                    "growthCapex": row["growthCapex"],
+                    "ownersEarningsPerShare": row["ownersEarningsPerShare"],
+                }
+                feature_hash = hashlib.sha256(str(feature_values).encode()).hexdigest()
+
                 # created_at = datetime.now(timezone.utc)
                 created_at = datetime.now()
 
                 # Create unique_id when there isn't a good option in response
                 f1 = ticker
                 f2 = timestamp
+                f3 = created_at
 
                 # Create hash of f1, f2, f3, f4
-                unique_id = hashlib.sha256(f"{f1}{f2}".encode()).hexdigest()
+                unique_id = hashlib.sha256(f"{f1}{f2}{f3}".encode()).hexdigest()
 
                 # Streamlined main document
                 document = {
@@ -145,11 +152,8 @@ def stmtAnalOwnEarn_from_fmpAPI(
                     ##########################################
                     ##########################################
                     "date": row["date"],
-                    "averagePPE": row["averagePPE"],
-                    "maintenanceCapex": row["maintenanceCapex"],
-                    "ownersEarnings": row["ownersEarnings"],
-                    "growthCapex": row["growthCapex"],
-                    "ownersEarningsPerShare": row["ownersEarningsPerShare"],
+                    **feature_values,
+                    "feature_hash": feature_hash,
                     ##########################################
                     ##########################################
                     "source": "fmp",
@@ -159,9 +163,7 @@ def stmtAnalOwnEarn_from_fmpAPI(
                 # Create update operation
                 bulk_operations.append(
                     UpdateOne(
-                        {
-                            "unique_id": unique_id,
-                        },
+                        {"date": row["date"], "feature_hash": {"$ne": feature_hash}},
                         {"$set": document},
                         upsert=True,
                     )

@@ -42,7 +42,6 @@ def valAdvDiscCF_from_fmpAPI(
     Load historical quote data from Alpaca API into a MongoDB collection.
     """
 
-    ep_ticker_alias = "symbol"
     ep_timestamp_field = "year"
     cred_key = "fmp_api_findata_v4"
 
@@ -110,9 +109,6 @@ def valAdvDiscCF_from_fmpAPI(
             res_df = pd.DataFrame(res)
             logger.info(f"DataFrame shape: {res_df.shape}")
             logger.info(f"DataFrame columns: {res_df.columns.tolist()}")
-
-            # Rename 'symbol' to 'ticker'
-            res_df.rename(columns={ep_ticker_alias: "ticker"}, inplace=True)
 
             # Sort results by timestamp in descending order
             if ep_timestamp_field != "today":
@@ -216,17 +212,30 @@ def valAdvDiscCF_from_fmpAPI(
                     "created_at": created_at,
                 }
 
-                # Check if this exact estimate already exists
+                # Check if record exists with same feature_hash
                 existing_record = collection.find_one(
                     {
-                        "ticker": ticker,
-                        "year": row["year"],
-                        "feature_hash": feature_hash,
+                        "date": row["date"],
+                        "feature_hash": feature_hash,  # Note: looking for matching hash
                     }
                 )
 
-                # If the record exists, skip it otherwise insert it
-                if existing_record:
+                # If no matching record found (either doesn't exist or has different hash)
+                if not existing_record:
+                    bulk_operations.append(InsertOne(document))
+
+                # Find the most recent record for this ticker
+                last_new_record = collection.find_one(
+                    {
+                        "ticker": row["symbol"],
+                    },
+                    sort=[
+                        ("created_at", -1)
+                    ],  # Sort by created_at in descending order (most recent first)
+                )
+
+                # Compare feature hashes to see if there's been a change
+                if last_new_record and last_new_record["feature_hash"] == feature_hash:
                     continue
                 else:
                     # Create update operation

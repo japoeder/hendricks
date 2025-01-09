@@ -143,16 +143,8 @@ def ptHistPrTargets_from_fmpAPI(
 
                 # Create a hash of the actual estimate values to detect changes
                 feature_values = {
-                    "publishedDate": row["publishedDate"],
-                    "newsURL": row["newsURL"],
-                    "newsTitle": row["newsTitle"],
-                    "analystName": row["analystName"],
                     "priceTarget": row["priceTarget"],
                     "adjPriceTarget": row["adjPriceTarget"],
-                    "priceWhenPosted": row["priceWhenPosted"],
-                    "newsPublisher": row["newsPublisher"],
-                    "newsBaseURL": "streetinsider.com",
-                    "analystCompany": "Jefferies",
                 }
                 feature_hash = hashlib.sha256(str(feature_values).encode()).hexdigest()
 
@@ -173,6 +165,14 @@ def ptHistPrTargets_from_fmpAPI(
                     "ticker": row["ticker"],
                     ##########################################
                     ##########################################
+                    "publishedDate": row["publishedDate"],
+                    "newsURL": row["newsURL"],
+                    "newsTitle": row["newsTitle"],
+                    "analystName": row["analystName"],
+                    "priceWhenPosted": row["priceWhenPosted"],
+                    "newsPublisher": row["newsPublisher"],
+                    "newsBaseURL": "streetinsider.com",
+                    "analystCompany": "Jefferies",
                     # Unpack the feature_hash
                     **feature_values,
                     "feature_hash": feature_hash,
@@ -182,13 +182,17 @@ def ptHistPrTargets_from_fmpAPI(
                     "created_at": created_at,
                 }
 
-                # Create update operation
                 bulk_operations.append(
                     UpdateOne(
+                        # Check records by date (and other record identifiers) and if feature_hash is different
                         {
-                            "unique_id": document["unique_id"],
+                            "analystName": row["analystName"],
+                            "publishedDate": row["publishedDate"],
+                            "feature_hash": {"$ne": feature_hash},
                         },
+                        # If identifiers exists exists and feature_hash is different, update record
                         {"$set": document},
+                        # If identifiers don't exist, insert new record
                         upsert=True,
                     )
                 )

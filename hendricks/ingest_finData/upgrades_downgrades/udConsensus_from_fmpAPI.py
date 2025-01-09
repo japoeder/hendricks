@@ -154,11 +154,10 @@ def udConsensus_from_fmpAPI(
 
                 # Create unique_id when there isn't a good option in response
                 f1 = ticker
-                f2 = timestamp
-                f3 = created_at
+                f2 = created_at
 
-                # Create hash of f1, f2, f3, f4
-                unique_id = hashlib.sha256(f"{f1}{f2}{f3}".encode()).hexdigest()
+                # Create hash of f1, f2
+                unique_id = hashlib.sha256(f"{f1}{f2}".encode()).hexdigest()
 
                 # Streamlined main document
                 document = {
@@ -177,7 +176,7 @@ def udConsensus_from_fmpAPI(
                 }
 
                 # Find the most recent record for this ticker
-                existing_record = collection.find_one(
+                last_new_record = collection.find_one(
                     {
                         "ticker": row["ticker"],
                     },
@@ -187,7 +186,7 @@ def udConsensus_from_fmpAPI(
                 )
 
                 # Compare feature hashes to see if there's been a change
-                if existing_record and existing_record["feature_hash"] == feature_hash:
+                if last_new_record and last_new_record["feature_hash"] == feature_hash:
                     continue
                 else:
                     # Create update operation

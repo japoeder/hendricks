@@ -30,7 +30,7 @@ logger = logging.getLogger("pymongo")
 logger.setLevel(logging.WARNING)  # Suppress pymongo debug messages
 
 
-def execComp_from_fmpAPI(
+def ciExecComp_from_fmpAPI(
     tickers=None,
     collection_name=None,
     creds_file_path=None,
@@ -42,7 +42,6 @@ def execComp_from_fmpAPI(
     Load historical quote data from Alpaca API into a MongoDB collection.
     """
 
-    ep_ticker_alias = "symbol"
     ep_timestamp_field = "acceptedDate"
     cred_key = "fmp_api_findata_v4"
 
@@ -113,9 +112,6 @@ def execComp_from_fmpAPI(
             logger.info(f"DataFrame shape: {res_df.shape}")
             logger.info(f"DataFrame columns: {res_df.columns.tolist()}")
 
-            # Rename 'symbol' to 'ticker'
-            res_df.rename(columns={ep_ticker_alias: "ticker"}, inplace=True)
-
             # Sort results by timestamp in descending order
             res_df.sort_values(by=ep_timestamp_field, ascending=False, inplace=True)
 
@@ -139,6 +135,18 @@ def execComp_from_fmpAPI(
                         # .tz_convert("UTC")
                     )
 
+                # Create a hash of the actual estimate values to detect changes
+                feature_values = {
+                    "salary": row["salary"],
+                    "bonus": row["bonus"],
+                    "stock_award": row["stock_award"],
+                    "option_award": row["option_award"],
+                    "incentive_plan_compensation": row["incentive_plan_compensation"],
+                    "all_other_compensation": row["all_other_compensation"],
+                    "total": row["total"],
+                }
+                feature_hash = hashlib.sha256(str(feature_values).encode()).hexdigest()
+
                 # created_at = datetime.now(timezone.utc)
                 created_at = datetime.now()
 
@@ -147,15 +155,16 @@ def execComp_from_fmpAPI(
                 f2 = timestamp
                 f3 = row["nameAndPosition"]
                 f4 = row["year"]
+                f5 = created_at
 
                 # Create hash of f1, f2, f3, f4
-                unique_id = hashlib.sha256(f"{f1}{f2}{f3}{f4}".encode()).hexdigest()
+                unique_id = hashlib.sha256(f"{f1}{f2}{f3}{f4}{f5}".encode()).hexdigest()
 
                 # Streamlined main document
                 document = {
                     "unique_id": unique_id,
                     "timestamp": timestamp,
-                    "ticker": row["ticker"],
+                    "ticker": row["symbol"],
                     ##########################################
                     ##########################################
                     "cik": row["cik"],
@@ -165,13 +174,8 @@ def execComp_from_fmpAPI(
                     "acceptedDate": row["acceptedDate"],
                     "nameAndPosition": row["nameAndPosition"],
                     "year": row["year"],
-                    "salary": row["salary"],
-                    "bonus": row["bonus"],
-                    "stock_award": row["stock_award"],
-                    "option_award": row["option_award"],
-                    "incentive_plan_compensation": row["incentive_plan_compensation"],
-                    "all_other_compensation": row["all_other_compensation"],
-                    "total": row["total"],
+                    **feature_values,
+                    feature_hash: feature_hash,
                     "url": row["url"],
                     ##########################################
                     ##########################################
@@ -179,14 +183,17 @@ def execComp_from_fmpAPI(
                     "created_at": created_at,
                 }
 
-                # Create update operation
                 bulk_operations.append(
                     UpdateOne(
+                        # Check records by date (and other record identifiers) and if feature_hash is different
                         {
-                            "unique_id": document["unique_id"],
-                            "ticker": document["ticker"],
+                            "nameAndPosition": row["nameAndPosition"],
+                            "year": row["year"],
+                            "feature_hash": {"$ne": feature_hash},
                         },
+                        # If identifiers exists exists and feature_hash is different, update record
                         {"$set": document},
+                        # If identifiers don't exist, insert new record
                         upsert=True,
                     )
                 )

@@ -30,7 +30,7 @@ logger = logging.getLogger("pymongo")
 logger.setLevel(logging.WARNING)  # Suppress pymongo debug messages
 
 
-def balanceSheet_from_fmpAPI(
+def fsCashFlow_from_fmpAPI(
     tickers=None,
     collection_name=None,
     creds_file_path=None,
@@ -42,7 +42,6 @@ def balanceSheet_from_fmpAPI(
     Load historical quote data from Alpaca API into a MongoDB collection.
     """
 
-    ep_ticker_alias = "symbol"
     ep_timestamp_field = "acceptedDate"
     cred_key = "fmp_api_findata"
 
@@ -117,9 +116,6 @@ def balanceSheet_from_fmpAPI(
                 logger.info(f"DataFrame shape: {res_df.shape}")
                 logger.info(f"DataFrame columns: {res_df.columns.tolist()}")
 
-                # Rename 'symbol' to 'ticker'
-                res_df.rename(columns={ep_ticker_alias: "ticker"}, inplace=True)
-
                 # Sort results by timestamp in descending order
                 res_df.sort_values(by=ep_timestamp_field, ascending=False, inplace=True)
 
@@ -143,6 +139,55 @@ def balanceSheet_from_fmpAPI(
                             # .tz_convert("UTC")
                         )
 
+                    # Create a hash of the actual estimate values to detect changes
+                    feature_values = {
+                        "netIncome": row["netIncome"],
+                        "depreciationAndAmortization": row[
+                            "depreciationAndAmortization"
+                        ],
+                        "deferredIncomeTax": row["deferredIncomeTax"],
+                        "stockBasedCompensation": row["stockBasedCompensation"],
+                        "changeInWorkingCapital": row["changeInWorkingCapital"],
+                        "accountsReceivables": row["accountsReceivables"],
+                        "inventory": row["inventory"],
+                        "accountsPayables": row["accountsPayables"],
+                        "otherWorkingCapital": row["otherWorkingCapital"],
+                        "otherNonCashItems": row["otherNonCashItems"],
+                        "netCashProvidedByOperatingActivities": row[
+                            "netCashProvidedByOperatingActivities"
+                        ],
+                        "investmentsInPropertyPlantAndEquipment": row[
+                            "investmentsInPropertyPlantAndEquipment"
+                        ],
+                        "acquisitionsNet": row["acquisitionsNet"],
+                        "purchasesOfInvestments": row["purchasesOfInvestments"],
+                        "salesMaturitiesOfInvestments": row[
+                            "salesMaturitiesOfInvestments"
+                        ],
+                        "otherInvestingActivites": row["otherInvestingActivites"],
+                        "netCashUsedForInvestingActivites": row[
+                            "netCashUsedForInvestingActivites"
+                        ],
+                        "debtRepayment": row["debtRepayment"],
+                        "commonStockIssued": row["commonStockIssued"],
+                        "commonStockRepurchased": row["commonStockRepurchased"],
+                        "dividendsPaid": row["dividendsPaid"],
+                        "otherFinancingActivites": row["otherFinancingActivites"],
+                        "netCashUsedProvidedByFinancingActivities": row[
+                            "netCashUsedProvidedByFinancingActivities"
+                        ],
+                        "effectOfForexChangesOnCash": row["effectOfForexChangesOnCash"],
+                        "netChangeInCash": row["netChangeInCash"],
+                        "cashAtEndOfPeriod": row["cashAtEndOfPeriod"],
+                        "cashAtBeginningOfPeriod": row["cashAtBeginningOfPeriod"],
+                        "operatingCashFlow": row["operatingCashFlow"],
+                        "capitalExpenditure": row["capitalExpenditure"],
+                        "freeCashFlow": row["freeCashFlow"],
+                    }
+                    feature_hash = hashlib.sha256(
+                        str(feature_values).encode()
+                    ).hexdigest()
+
                     # created_at = datetime.now(timezone.utc)
                     created_at = datetime.now()
 
@@ -150,15 +195,19 @@ def balanceSheet_from_fmpAPI(
                     f1 = row["date"]
                     f2 = period
                     f3 = row["calendarYear"]
+                    f4 = row["acceptedDate"]
+                    f5 = created_at
 
                     # Create hash of f1, f2, f3, f4, f5
-                    unique_id = hashlib.sha256(f"{f1}{f2}{f3}".encode()).hexdigest()
+                    unique_id = hashlib.sha256(
+                        f"{f1}{f2}{f3}{f4}{f5}".encode()
+                    ).hexdigest()
 
                     # Streamlined main document
                     document = {
                         "unique_id": unique_id,
                         "timestamp": timestamp,
-                        "ticker": row["ticker"],
+                        "ticker": row["symbol"],
                         ##########################################
                         ##########################################
                         "date": row["date"],
@@ -168,64 +217,8 @@ def balanceSheet_from_fmpAPI(
                         "acceptedDate": row["acceptedDate"],
                         "calendarYear": row["calendarYear"],
                         "period": row["period"],
-                        "cashAndCashEquivalents": row["cashAndCashEquivalents"],
-                        "shortTermInvestments": row["shortTermInvestments"],
-                        "cashAndShortTermInvestments": row[
-                            "cashAndShortTermInvestments"
-                        ],
-                        "netReceivables": row["netReceivables"],
-                        "inventory": row["inventory"],
-                        "otherCurrentAssets": row["otherCurrentAssets"],
-                        "totalCurrentAssets": row["totalCurrentAssets"],
-                        "propertyPlantEquipmentNet": row["propertyPlantEquipmentNet"],
-                        "goodwill": row["goodwill"],
-                        "intangibleAssets": row["intangibleAssets"],
-                        "goodwillAndIntangibleAssets": row[
-                            "goodwillAndIntangibleAssets"
-                        ],
-                        "longTermInvestments": row["longTermInvestments"],
-                        "taxAssets": row["taxAssets"],
-                        "otherNonCurrentAssets": row["otherNonCurrentAssets"],
-                        "totalNonCurrentAssets": row["totalNonCurrentAssets"],
-                        "otherAssets": row["otherAssets"],
-                        "totalAssets": row["totalAssets"],
-                        "accountPayables": row["accountPayables"],
-                        "shortTermDebt": row["shortTermDebt"],
-                        "taxPayables": row["taxPayables"],
-                        "deferredRevenue": row["deferredRevenue"],
-                        "otherCurrentLiabilities": row["otherCurrentLiabilities"],
-                        "totalCurrentLiabilities": row["totalCurrentLiabilities"],
-                        "longTermDebt": row["longTermDebt"],
-                        "deferredRevenueNonCurrent": row["deferredRevenueNonCurrent"],
-                        "deferredTaxLiabilitiesNonCurrent": row[
-                            "deferredTaxLiabilitiesNonCurrent"
-                        ],
-                        "otherNonCurrentLiabilities": row["otherNonCurrentLiabilities"],
-                        "totalNonCurrentLiabilities": row["totalNonCurrentLiabilities"],
-                        "otherLiabilities": row["otherLiabilities"],
-                        "capitalLeaseObligations": row["capitalLeaseObligations"],
-                        "totalLiabilities": row["totalLiabilities"],
-                        "preferredStock": row["preferredStock"],
-                        "commonStock": row["commonStock"],
-                        "retainedEarnings": row["retainedEarnings"],
-                        "accumulatedOtherComprehensiveIncomeLoss": row[
-                            "accumulatedOtherComprehensiveIncomeLoss"
-                        ],
-                        "othertotalStockholdersEquity": row[
-                            "othertotalStockholdersEquity"
-                        ],
-                        "totalStockholdersEquity": row["totalStockholdersEquity"],
-                        "totalEquity": row["totalEquity"],
-                        "totalLiabilitiesAndStockholdersEquity": row[
-                            "totalLiabilitiesAndStockholdersEquity"
-                        ],
-                        "minorityInterest": row["minorityInterest"],
-                        "totalLiabilitiesAndTotalEquity": row[
-                            "totalLiabilitiesAndTotalEquity"
-                        ],
-                        "totalInvestments": row["totalInvestments"],
-                        "totalDebt": row["totalDebt"],
-                        "netDebt": row["netDebt"],
+                        **feature_values,
+                        "feature_hash": feature_hash,
                         "link": row["link"],
                         "finalLink": row["finalLink"],
                         ##########################################
@@ -234,13 +227,17 @@ def balanceSheet_from_fmpAPI(
                         "created_at": created_at,
                     }
 
-                    # Create update operation
                     bulk_operations.append(
                         UpdateOne(
+                            # Check records by date (and other record identifiers) and if feature_hash is different
                             {
-                                "unique_id": document["unique_id"],
+                                "calendarYear": row["calendarYear"],
+                                "period": row["period"],
+                                "feature_hash": {"$ne": feature_hash},
                             },
+                            # If identifiers exists exists and feature_hash is different, update record
                             {"$set": document},
+                            # If identifiers don't exist, insert new record
                             upsert=True,
                         )
                     )
