@@ -271,6 +271,20 @@ class FMPEndpoint(Enum):
         False,
     )
 
+    FMP_INDEX_QUOTES = (
+        "quotes/index",
+        "market_perf.mpIndexQuotes_from_fmpAPI",
+        "mpIndexQuotes_from_fmpAPI",
+        False,
+    )
+
+    FMP_SECTOR_PE_RATIO = (
+        "sector_price_earning_ratio",
+        "market_perf.mpSectorPERatio_from_fmpAPI",
+        "mpSectorPERatio_from_fmpAPI",
+        False,
+    )
+
     def __init__(
         self, endpoint: str, module_path: str, function_name: str, is_daily: bool
     ):

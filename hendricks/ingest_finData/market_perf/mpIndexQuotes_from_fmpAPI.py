@@ -14,7 +14,7 @@ import hashlib
 import pandas as pd
 from dotenv import load_dotenv
 import requests
-from pymongo import UpdateOne
+from pymongo import InsertOne
 from pymongo.errors import BulkWriteError
 
 # from gridfs import GridFS
@@ -32,19 +32,21 @@ logger = logging.getLogger("pymongo")
 logger.setLevel(logging.WARNING)  # Suppress pymongo debug messages
 
 
-def ciGrade_from_fmpAPI(
+def mpIndexQuotes_from_fmpAPI(
     tickers=None,
     collection_name=None,
     creds_file_path=None,
     from_date=None,
     to_date=None,
     ep=None,
+    freq="1min",
+    freq_range=5,
 ):
     """
     Load historical quote data from Alpaca API into a MongoDB collection.
     """
 
-    ep_timestamp_field = "date"
+    ep_timestamp_field = "timestamp"
     cred_key = "fmp_api_findata"
 
     if creds_file_path is None:
@@ -88,6 +90,10 @@ def ciGrade_from_fmpAPI(
             ticker=ticker,
             api_key=API_KEY,
             source="fmp",
+            from_date=from_date,
+            to_date=to_date,
+            freq=freq,
+            freq_range=freq_range,
         )
 
         print(f"URL: {url}")
@@ -111,7 +117,8 @@ def ciGrade_from_fmpAPI(
             logger.info(f"DataFrame columns: {res_df.columns.tolist()}")
 
             # Sort results by timestamp in descending order
-            res_df.sort_values(by=ep_timestamp_field, ascending=False, inplace=True)
+            if ep_timestamp_field != "today":
+                res_df.sort_values(by=ep_timestamp_field, ascending=False, inplace=True)
 
             # Process news items in bulk
             bulk_operations = []
@@ -151,32 +158,49 @@ def ciGrade_from_fmpAPI(
                                 ZoneInfo("America/New_York")
                             )
 
+                created_at = datetime.now(ZoneInfo("America/Chicago"))
+
                 # Create a hash of the actual estimate values to detect changes
                 feature_values = {
-                    "previousGrade": row["previousGrade"],
-                    "newGrade": row["newGrade"],
+                    "price": row["price"],
+                    "changesPercentage": row["changesPercentage"],
+                    "change": row["change"],
+                    "dayLow": row["dayLow"],
+                    "dayHigh": row["dayHigh"],
+                    "yearHigh": row["yearHigh"],
+                    "yearLow": row["yearLow"],
+                    "marketCap": row["marketCap"],
+                    "priceAvg50": row["priceAvg50"],
+                    "priceAvg200": row["priceAvg200"],
+                    "exchange": row["exchange"],
+                    "volume": row["volume"],
+                    "avgVolume": row["avgVolume"],
+                    "open": row["open"],
+                    "previousClose": row["previousClose"],
+                    "eps": row["eps"],
+                    "pe": row["pe"],
+                    "earningsAnnouncement": row["earningsAnnouncement"],
+                    "sharesOutstanding": row["sharesOutstanding"],
                 }
                 feature_hash = hashlib.sha256(str(feature_values).encode()).hexdigest()
-
-                created_at = datetime.now(ZoneInfo("America/Chicago"))
 
                 # Create unique_id when there isn't a good option in response
                 f1 = ticker
                 f2 = timestamp
-                f3 = row["gradingCompany"]
-                f4 = created_at
+                f3 = created_at
 
-                # Create hash of f1, f2, f3
-                unique_id = hashlib.sha256(f"{f1}{f2}{f3}{f4}".encode()).hexdigest()
+                # Create hash of f1, f2, f3, f4
+                unique_id = hashlib.sha256(f"{f1}{f2}{f3}".encode()).hexdigest()
 
                 # Streamlined main document
                 document = {
                     "unique_id": unique_id,
                     "timestamp": timestamp,
-                    "ticker": row["symbol"],
+                    "ticker": ticker,
                     ##########################################
                     ##########################################
-                    "gradingCompany": row["gradingCompany"],
+                    "name": row["name"],
+                    # Unpack the feature_hash
                     **feature_values,
                     "feature_hash": feature_hash,
                     ##########################################
@@ -185,20 +209,22 @@ def ciGrade_from_fmpAPI(
                     "created_at": created_at,
                 }
 
-                bulk_operations.append(
-                    UpdateOne(
-                        # Check records by date (and other record identifiers) and if feature_hash is different
-                        {
-                            "date": row["date"],
-                            "gradingCompany": row["gradingCompany"],
-                            "feature_hash": {"$ne": feature_hash},
-                        },
-                        # If identifiers exists exists and feature_hash is different, update record
-                        {"$set": document},
-                        # If identifiers don't exist, insert new record
-                        upsert=True,
-                    )
+                # Find the most recent record for this ticker
+                last_new_record = collection.find_one(
+                    {
+                        "ticker": row["symbol"],
+                    },
+                    sort=[
+                        ("created_at", -1)
+                    ],  # Sort by created_at in descending order (most recent first)
                 )
+
+                # Compare feature hashes to see if there's been a change
+                if last_new_record and last_new_record["feature_hash"] == feature_hash:
+                    continue
+                else:
+                    # Create update operation
+                    bulk_operations.append(InsertOne(document))
 
             # Execute bulk operations if any exist
             if bulk_operations:

@@ -221,6 +221,7 @@ def request_url_constructor(
             "earnings-surprises",
             "historical/earning_calendar",
             "earnings-calls",
+            "quotes/index",
         ]:
             if ticker is None:
                 raise ValueError("ticker is required")
@@ -316,6 +317,24 @@ def request_url_constructor(
 
             if freq_range is not None:
                 compiled_url += f"&period={freq_range}"
+
+            if api_key is None:
+                raise ValueError("api_key is required")
+            else:
+                compiled_url += f"&apikey={api_key}"
+
+        elif endpoint in ["sector_price_earning_ratio"]:
+            if from_date is None:
+                raise ValueError("date is required")
+            else:
+                # convert from_date timestamp to YYYY-MM-DD
+                from_date = from_date.strftime("%Y-%m-%d")
+                compiled_url += f"{endpoint}?date={from_date}"
+
+            if ticker is None:
+                raise ValueError("exchange is required")
+            else:
+                compiled_url += f"&exchange={ticker}"
 
             if api_key is None:
                 raise ValueError("api_key is required")

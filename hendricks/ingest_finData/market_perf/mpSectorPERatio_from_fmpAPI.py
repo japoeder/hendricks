@@ -3,8 +3,10 @@ Load historical quote data from Alpaca API into a MongoDB collection.
 """
 
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 # from datetime import timezone
+
 import logging
 
 # import pytz
@@ -12,7 +14,7 @@ import hashlib
 import pandas as pd
 from dotenv import load_dotenv
 import requests
-from pymongo import InsertOne
+from pymongo import UpdateOne, InsertOne
 from pymongo.errors import BulkWriteError
 
 # from gridfs import GridFS
@@ -30,21 +32,22 @@ logger = logging.getLogger("pymongo")
 logger.setLevel(logging.WARNING)  # Suppress pymongo debug messages
 
 
-def analystEst_from_fmpAPI(
+def mpSectorPERatio_from_fmpAPI(
     tickers=None,
     collection_name=None,
     creds_file_path=None,
-    from_date=None,
+    from_date=None,  # Use from date for single date pulls
     to_date=None,
     ep=None,
+    freq="1min",
+    freq_range=5,
 ):
     """
     Load historical quote data from Alpaca API into a MongoDB collection.
     """
 
-    ep_ticker_alias = "symbol"
-    ep_timestamp_field = "created_at"
-    cred_key = "fmp_api_findata"
+    ep_timestamp_field = "date"
+    cred_key = "fmp_api_findata_v4"
 
     if creds_file_path is None:
         creds_file_path = get_path("creds")
@@ -75,7 +78,7 @@ def analystEst_from_fmpAPI(
 
     # Uniqueness constraint
     collection.create_index(
-        [("unique_id", 1), ("ticker", 1)],
+        [("unique_id", 1), ("sector", 1)],
         unique=True,
         background=True,  # Allow other operations while building index
     )
@@ -89,6 +92,8 @@ def analystEst_from_fmpAPI(
             source="fmp",
             from_date=from_date,
             to_date=to_date,
+            freq=freq,
+            freq_range=freq_range,
         )
 
         print(f"URL: {url}")
@@ -111,9 +116,6 @@ def analystEst_from_fmpAPI(
             logger.info(f"DataFrame shape: {res_df.shape}")
             logger.info(f"DataFrame columns: {res_df.columns.tolist()}")
 
-            # Rename 'symbol' to 'ticker'
-            res_df.rename(columns={ep_ticker_alias: "ticker"}, inplace=True)
-
             # Sort results by timestamp in descending order
             if ep_timestamp_field != "today":
                 res_df.sort_values(by=ep_timestamp_field, ascending=False, inplace=True)
@@ -121,67 +123,73 @@ def analystEst_from_fmpAPI(
             # Process news items in bulk
             bulk_operations = []
             for _, row in res_df.iterrows():
-                # Create timestamp col in res_df from acceptanceDate to UTC
                 if ep_timestamp_field == "today":
-                    # timestamp = datetime.now(timezone.utc)
-                    timestamp = datetime.now()
+                    timestamp = datetime.now(ZoneInfo("America/Chicago"))
                 elif ep_timestamp_field == "year":
                     # Jan 1st of the year
-                    # timestamp = datetime(int(row["year"]), 1, 1, tzinfo=timezone.utc)
-                    timestamp = datetime(int(row["year"]), 1, 1)
-                else:
-                    # Handle any other timestamp field
-                    timestamp = (
-                        pd.to_datetime(row[ep_timestamp_field])
-                        # .tz_localize("America/New_York")
-                        # .tz_convert("UTC")
+                    timestamp = datetime(
+                        int(row["year"]), 1, 1, tzinfo=ZoneInfo("America/New_York")
                     )
+                elif ep_timestamp_field == "timestamp":
+                    timestamp = datetime.fromtimestamp(
+                        row["timestamp"], tz=ZoneInfo("America/New_York")
+                    )
+                else:
+                    raw_date = row[ep_timestamp_field]
+                    if (
+                        isinstance(raw_date, str) and len(raw_date.split()) == 1
+                    ):  # Just a date
+                        # Parse the date and explicitly set to midnight EST
+                        date_obj = datetime.strptime(raw_date, "%Y-%m-%d").date()
+                        timestamp = datetime.combine(
+                            date_obj,
+                            datetime.min.time(),
+                            tzinfo=ZoneInfo("America/New_York"),  # Explicitly EST
+                        )
+                    else:  # Has time component
+                        # Parse with pandas and ensure EST
+                        timestamp = pd.to_datetime(raw_date)
+                        if timestamp.tzinfo is None:
+                            # If no timezone provided, add EST to the datetime object
+                            timestamp = timestamp.tz_localize("America/New_York")
+                        else:
+                            # If it has a timezone, convert to EST
+                            timestamp = timestamp.astimezone(
+                                ZoneInfo("America/New_York")
+                            )
 
-                # created_at = datetime.now(timezone.utc)
-                created_at = datetime.now()
+                # Doesn't matter what timezone the data is in, MongoDB will store it in UTC and display it in local time.
+                created_at = datetime.now(ZoneInfo("America/Chicago"))
 
                 # Create a hash of the actual estimate values to detect changes
-                feature_values = {
-                    "estimatedRevenueLow": row["estimatedRevenueLow"],
-                    "estimatedRevenueHigh": row["estimatedRevenueHigh"],
-                    "estimatedRevenueAvg": row["estimatedRevenueAvg"],
-                    "estimatedEbitdaLow": row["estimatedEbitdaLow"],
-                    "estimatedEbitdaHigh": row["estimatedEbitdaHigh"],
-                    "estimatedEbitdaAvg": row["estimatedEbitdaAvg"],
-                    "estimatedEbitLow": row["estimatedEbitLow"],
-                    "estimatedEbitHigh": row["estimatedEbitHigh"],
-                    "estimatedEbitAvg": row["estimatedEbitAvg"],
-                    "estimatedNetIncomeLow": row["estimatedNetIncomeLow"],
-                    "estimatedNetIncomeHigh": row["estimatedNetIncomeHigh"],
-                    "estimatedNetIncomeAvg": row["estimatedNetIncomeAvg"],
-                    "estimatedSgaExpenseLow": row["estimatedSgaExpenseLow"],
-                    "estimatedSgaExpenseHigh": row["estimatedSgaExpenseHigh"],
-                    "estimatedSgaExpenseAvg": row["estimatedSgaExpenseAvg"],
-                    "estimatedEpsAvg": row["estimatedEpsAvg"],
-                    "estimatedEpsHigh": row["estimatedEpsHigh"],
-                    "estimatedEpsLow": row["estimatedEpsLow"],
-                    "numberAnalystEstimatedRevenue": row[
-                        "numberAnalystEstimatedRevenue"
-                    ],
-                    "numberAnalystsEstimatedEps": row["numberAnalystsEstimatedEps"],
-                }
+                feature_values = {"pe": row["pe"]}
                 feature_hash = hashlib.sha256(str(feature_values).encode()).hexdigest()
 
+                # TODO: use this as an example for corrections.
+                """
+                tz stuff above ensures the data stays in EST when stored.
+                Remove upsert and use explicit logic.
+                Check date at top and correctness of existing record check.
+                    This check is to ensure dates as strings aren't compared to timestamps.
+                """
                 # Create unique_id when there isn't a good option in response
                 f1 = ticker
-                f2 = row["date"]
-                f3 = created_at
+                f2 = timestamp
+                f3 = row["sector"]
+                f4 = created_at
 
                 # Create hash of f1, f2, f3, f4
-                unique_id = hashlib.sha256(f"{f1}{f2}{f3}".encode()).hexdigest()
+                unique_id = hashlib.sha256(f"{f1}{f2}{f3}{f4}".encode()).hexdigest()
 
                 # Streamlined main document
                 document = {
                     "unique_id": unique_id,
                     "timestamp": timestamp,
-                    "ticker": row["ticker"],
+                    "exchange": ticker,
                     ##########################################
                     ##########################################
+                    "date": row["date"],
+                    "sector": row["sector"],
                     # Unpack the feature_hash
                     **feature_values,
                     "feature_hash": feature_hash,
@@ -191,17 +199,24 @@ def analystEst_from_fmpAPI(
                     "created_at": created_at,
                 }
 
-                # Check if record exists with same feature_hash
+                # Check if record exists for this timestamp/sector combination
                 existing_record = collection.find_one(
                     {
-                        "date": row["date"],
-                        "feature_hash": feature_hash,  # Note: looking for matching hash
+                        "timestamp": timestamp,
+                        "sector": row["sector"],
                     }
                 )
 
-                # If no matching record found (either doesn't exist or has different hash)
+                # Handle the three cases
                 if not existing_record:
+                    # Case 1: No record exists - insert new one
                     bulk_operations.append(InsertOne(document))
+                elif existing_record["feature_hash"] != feature_hash:
+                    # Case 2: Record exists but hash is different - update it
+                    bulk_operations.append(
+                        UpdateOne({"_id": existing_record["_id"]}, {"$set": document})
+                    )
+                # Case 3: Record exists with same hash - do nothing
 
             # Execute bulk operations if any exist
             if bulk_operations:

@@ -7,6 +7,8 @@ from datetime import datetime
 # from datetime import timezone
 import logging
 
+from zoneinfo import ZoneInfo
+
 # import pytz
 import hashlib
 import pandas as pd
@@ -42,7 +44,7 @@ def ciAnalystRec_from_fmpAPI(
     Load historical quote data from Alpaca API into a MongoDB collection.
     """
 
-    ep_timestamp_field = "today"
+    ep_timestamp_field = "date"
     cred_key = "fmp_api_findata"
 
     if creds_file_path is None:
@@ -118,19 +120,39 @@ def ciAnalystRec_from_fmpAPI(
             bulk_operations = []
             for _, row in res_df.iterrows():
                 if ep_timestamp_field == "today":
-                    # timestamp = datetime.now(timezone.utc)
-                    timestamp = datetime.now()
+                    timestamp = datetime.now(ZoneInfo("America/Chicago"))
                 elif ep_timestamp_field == "year":
                     # Jan 1st of the year
-                    # timestamp = datetime(int(row["year"]), 1, 1, tzinfo=timezone.utc)
-                    timestamp = datetime(int(row["year"]), 1, 1)
-                else:
-                    # Handle any other timestamp field
-                    timestamp = (
-                        pd.to_datetime(row[ep_timestamp_field])
-                        # .tz_localize("America/New_York")
-                        # .tz_convert("UTC")
+                    timestamp = datetime(
+                        int(row["year"]), 1, 1, tzinfo=ZoneInfo("America/New_York")
                     )
+                elif ep_timestamp_field == "timestamp":
+                    timestamp = datetime.fromtimestamp(
+                        row["timestamp"], tz=ZoneInfo("America/New_York")
+                    )
+                else:
+                    raw_date = row[ep_timestamp_field]
+                    if (
+                        isinstance(raw_date, str) and len(raw_date.split()) == 1
+                    ):  # Just a date
+                        # Parse the date and explicitly set to midnight EST
+                        date_obj = datetime.strptime(raw_date, "%Y-%m-%d").date()
+                        timestamp = datetime.combine(
+                            date_obj,
+                            datetime.min.time(),
+                            tzinfo=ZoneInfo("America/New_York"),  # Explicitly EST
+                        )
+                    else:  # Has time component
+                        # Parse with pandas and ensure EST
+                        timestamp = pd.to_datetime(raw_date)
+                        if timestamp.tzinfo is None:
+                            # If no timezone provided, add EST to the datetime object
+                            timestamp = timestamp.tz_localize("America/New_York")
+                        else:
+                            # If it has a timezone, convert to EST
+                            timestamp = timestamp.astimezone(
+                                ZoneInfo("America/New_York")
+                            )
 
                 # Create a hash of the actual estimate values to detect changes
                 feature_values = {
@@ -142,8 +164,7 @@ def ciAnalystRec_from_fmpAPI(
                 }
                 feature_hash = hashlib.sha256(str(feature_values).encode()).hexdigest()
 
-                # created_at = datetime.now(timezone.utc)
-                created_at = datetime.now()
+                created_at = datetime.now(ZoneInfo("America/Chicago"))
 
                 # Create unique_id when there isn't a good option in response
                 f1 = ticker
@@ -172,7 +193,7 @@ def ciAnalystRec_from_fmpAPI(
                 bulk_operations.append(
                     UpdateOne(
                         # Check records by date (and other record identifiers) and if feature_hash is different
-                        {"date": row["date"], "feature_hash": {"$ne": feature_hash}},
+                        {"timestamp": timestamp, "feature_hash": {"$ne": feature_hash}},
                         # If identifiers exists exists and feature_hash is different, update record
                         {"$set": document},
                         # If identifiers don't exist, insert new record
