@@ -32,21 +32,19 @@ logger = logging.getLogger("pymongo")
 logger.setLevel(logging.WARNING)  # Suppress pymongo debug messages
 
 
-def govHouseDisc_from_fmpAPI(
+def econTreasuryRates_from_fmpAPI(
     tickers=None,
     collection_name=None,
     creds_file_path=None,
     from_date=None,
     to_date=None,
     ep=None,
-    freq="1min",
-    freq_range=5,
 ):
     """
     Load historical quote data from Alpaca API into a MongoDB collection.
     """
 
-    ep_timestamp_field = "disclosureDate"
+    ep_timestamp_field = "date"
     cred_key = "fmp_api_findata_v4"
 
     if creds_file_path is None:
@@ -87,13 +85,10 @@ def govHouseDisc_from_fmpAPI(
         url = request_url_constructor(
             endpoint=ep,
             base_url=BASE_URL,
-            ticker=ticker,
             api_key=API_KEY,
             source="fmp",
             from_date=from_date,
             to_date=to_date,
-            freq=freq,
-            freq_range=freq_range,
         )
 
         print(f"URL: {url}")
@@ -162,22 +157,27 @@ def govHouseDisc_from_fmpAPI(
 
                 # Create a hash of the actual estimate values to detect changes
                 feature_values = {
-                    "amount": row["amount"],
+                    "month1": row["month1"],
+                    "month2": row["month2"],
+                    "month3": row["month3"],
+                    "month6": row["month6"],
+                    "year1": row["year1"],
+                    "year2": row["year2"],
+                    "year3": row["year3"],
+                    "year5": row["year5"],
+                    "year7": row["year7"],
+                    "year10": row["year10"],
+                    "year20": row["year20"],
+                    "year30": row["year30"],
                 }
                 feature_hash = hashlib.sha256(str(feature_values).encode()).hexdigest()
 
                 # Create unique_id when there isn't a good option in response
                 f1 = ticker
                 f2 = timestamp
-                f3 = row["representative"]
-                f4 = row["link"]
-                f5 = row["disclosureDate"]
-                f6 = row["transactionDate"]
 
-                # Create hash of f1, f2, f3, f4
-                unique_id = hashlib.sha256(
-                    f"{f1}{f2}{f3}{f4}{f5}{f6}".encode()
-                ).hexdigest()
+                # Create hash of f1, f2
+                unique_id = hashlib.sha256(f"{f1}{f2}".encode()).hexdigest()
 
                 # Streamlined main document
                 document = {
@@ -186,16 +186,7 @@ def govHouseDisc_from_fmpAPI(
                     "ticker": ticker,
                     ##########################################
                     ##########################################
-                    "disclosureYear": row["disclosureYear"],
-                    "disclosureDate": row["disclosureDate"],
-                    "transactionDate": row["transactionDate"],
-                    "owner": row["owner"],
-                    "assetDescription": row["assetDescription"],
-                    "type": row["type"],
-                    "representative": row["representative"],
-                    "district": row["district"],
-                    "link": row["link"],
-                    "capitalGainsOver200USD": row["capitalGainsOver200USD"],
+                    "date": row["date"],
                     # Unpack the feature_hash
                     **feature_values,
                     "feature_hash": feature_hash,
@@ -209,10 +200,7 @@ def govHouseDisc_from_fmpAPI(
                 bulk_operations.append(
                     UpdateOne(
                         {
-                            "ticker": ticker,
-                            "representative": document["representative"],
-                            "type": document["type"],
-                            "transactionDate": document["transactionDate"],
+                            "date": document["date"],
                             # Only update if hash is different or document doesn't exist
                             "$or": [
                                 {"feature_hash": {"$ne": feature_hash}},
@@ -224,7 +212,6 @@ def govHouseDisc_from_fmpAPI(
                     )
                 )
 
-            # Execute bulk operations if any exist
             if bulk_operations:
                 try:
                     result = collection.bulk_write(bulk_operations, ordered=False)

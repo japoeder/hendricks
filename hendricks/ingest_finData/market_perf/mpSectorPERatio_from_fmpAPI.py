@@ -14,7 +14,7 @@ import hashlib
 import pandas as pd
 from dotenv import load_dotenv
 import requests
-from pymongo import UpdateOne, InsertOne
+from pymongo import UpdateOne
 from pymongo.errors import BulkWriteError
 
 # from gridfs import GridFS
@@ -167,19 +167,18 @@ def mpSectorPERatio_from_fmpAPI(
 
                 # TODO: use this as an example for corrections.
                 """
-                tz stuff above ensures the data stays in EST when stored.
                 Remove upsert and use explicit logic.
                 Check date at top and correctness of existing record check.
-                    This check is to ensure dates as strings aren't compared to timestamps.
+                This check is to ensure dates as strings aren't compared to timestamps.
+                Make sure EPs that should be daily are run daily.
                 """
                 # Create unique_id when there isn't a good option in response
                 f1 = ticker
                 f2 = timestamp
                 f3 = row["sector"]
-                f4 = created_at
 
                 # Create hash of f1, f2, f3, f4
-                unique_id = hashlib.sha256(f"{f1}{f2}{f3}{f4}".encode()).hexdigest()
+                unique_id = hashlib.sha256(f"{f1}{f2}{f3}".encode()).hexdigest()
 
                 # Streamlined main document
                 document = {
@@ -199,24 +198,22 @@ def mpSectorPERatio_from_fmpAPI(
                     "created_at": created_at,
                 }
 
-                # Check if record exists for this timestamp/sector combination
-                existing_record = collection.find_one(
-                    {
-                        "timestamp": timestamp,
-                        "sector": row["sector"],
-                    }
-                )
-
-                # Handle the three cases
-                if not existing_record:
-                    # Case 1: No record exists - insert new one
-                    bulk_operations.append(InsertOne(document))
-                elif existing_record["feature_hash"] != feature_hash:
-                    # Case 2: Record exists but hash is different - update it
-                    bulk_operations.append(
-                        UpdateOne({"_id": existing_record["_id"]}, {"$set": document})
+                # Replace the find_one and separate insert/update with a single upsert
+                bulk_operations.append(
+                    UpdateOne(
+                        {
+                            "date": document["date"],
+                            "sector": document["sector"],
+                            # Only update if hash is different or document doesn't exist
+                            "$or": [
+                                {"feature_hash": {"$ne": feature_hash}},
+                                {"feature_hash": {"$exists": False}},
+                            ],
+                        },
+                        {"$set": document},
+                        upsert=True,
                     )
-                # Case 3: Record exists with same hash - do nothing
+                )
 
             # Execute bulk operations if any exist
             if bulk_operations:
@@ -229,6 +226,17 @@ def mpSectorPERatio_from_fmpAPI(
                         f"Inserted: {result.upserted_count}, Modified: {result.modified_count}"
                     )
                 except BulkWriteError as bwe:
-                    logger.warning(f"Some writes failed for {ticker}: {bwe.details}")
+                    # Filter out duplicate key errors (code 11000)
+                    non_duplicate_errors = [
+                        error
+                        for error in bwe.details["writeErrors"]
+                        if error["code"] != 11000
+                    ]
+
+                    # Only log if there are non-duplicate errors
+                    if non_duplicate_errors:
+                        logger.warning(
+                            f"Some writes failed for {ticker}: {non_duplicate_errors}"
+                        )
 
             logger.info("Data imported successfully!")

@@ -74,6 +74,8 @@ def ciExecComp_from_fmpAPI(
         [("unique_id", 1), ("timestamp", -1)]
     )  # For source + time sorting
 
+    collection.create_index([("year", -1), ("nameAndPosition", 1)])  # For date sorting
+
     # Uniqueness constraint
     collection.create_index(
         [("unique_id", 1), ("ticker", 1)],
@@ -174,16 +176,15 @@ def ciExecComp_from_fmpAPI(
                 f2 = timestamp
                 f3 = row["nameAndPosition"]
                 f4 = row["year"]
-                f5 = created_at
 
                 # Create hash of f1, f2, f3, f4
-                unique_id = hashlib.sha256(f"{f1}{f2}{f3}{f4}{f5}".encode()).hexdigest()
+                unique_id = hashlib.sha256(f"{f1}{f2}{f3}{f4}".encode()).hexdigest()
 
                 # Streamlined main document
                 document = {
                     "unique_id": unique_id,
                     "timestamp": timestamp,
-                    "ticker": row["symbol"],
+                    "ticker": ticker,
                     ##########################################
                     ##########################################
                     "cik": row["cik"],
@@ -194,7 +195,7 @@ def ciExecComp_from_fmpAPI(
                     "nameAndPosition": row["nameAndPosition"],
                     "year": row["year"],
                     **feature_values,
-                    feature_hash: feature_hash,
+                    "feature_hash": feature_hash,
                     "url": row["url"],
                     ##########################################
                     ##########################################
@@ -202,17 +203,19 @@ def ciExecComp_from_fmpAPI(
                     "created_at": created_at,
                 }
 
+                # Replace the find_one and separate insert/update with a single upsert
                 bulk_operations.append(
                     UpdateOne(
-                        # Check records by date (and other record identifiers) and if feature_hash is different
                         {
-                            "nameAndPosition": row["nameAndPosition"],
-                            "year": row["year"],
-                            "feature_hash": {"$ne": feature_hash},
+                            "nameAndPosition": document["nameAndPosition"],
+                            "year": document["year"],
+                            # Only update if hash is different or document doesn't exist
+                            "$or": [
+                                {"feature_hash": {"$ne": feature_hash}},
+                                {"feature_hash": {"$exists": False}},
+                            ],
                         },
-                        # If identifiers exists exists and feature_hash is different, update record
                         {"$set": document},
-                        # If identifiers don't exist, insert new record
                         upsert=True,
                     )
                 )
@@ -228,6 +231,17 @@ def ciExecComp_from_fmpAPI(
                         f"Inserted: {result.upserted_count}, Modified: {result.modified_count}"
                     )
                 except BulkWriteError as bwe:
-                    logger.warning(f"Some writes failed for {ticker}: {bwe.details}")
+                    # Filter out duplicate key errors (code 11000)
+                    non_duplicate_errors = [
+                        error
+                        for error in bwe.details["writeErrors"]
+                        if error["code"] != 11000
+                    ]
+
+                    # Only log if there are non-duplicate errors
+                    if non_duplicate_errors:
+                        logger.warning(
+                            f"Some writes failed for {ticker}: {non_duplicate_errors}"
+                        )
 
             logger.info("Data imported successfully!")

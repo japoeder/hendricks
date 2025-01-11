@@ -132,27 +132,28 @@ def ptHistPrTargets_from_fmpAPI(
                     )
                 else:
                     raw_date = row[ep_timestamp_field]
-                    if (
-                        isinstance(raw_date, str) and len(raw_date.split()) == 1
-                    ):  # Just a date
-                        # Parse the date and explicitly set to midnight EST
-                        date_obj = datetime.strptime(raw_date, "%Y-%m-%d").date()
-                        timestamp = datetime.combine(
-                            date_obj,
-                            datetime.min.time(),
-                            tzinfo=ZoneInfo("America/New_York"),  # Explicitly EST
-                        )
-                    else:  # Has time component
-                        # Parse with pandas and ensure EST
-                        timestamp = pd.to_datetime(raw_date)
-                        if timestamp.tzinfo is None:
-                            # If no timezone provided, add EST to the datetime object
-                            timestamp = timestamp.tz_localize("America/New_York")
+                    try:
+                        if isinstance(raw_date, str):
+                            if raw_date.endswith("Z"):
+                                # If it ends with Z, parse and keep as UTC
+                                clean_date = raw_date.replace("T", " ").replace(
+                                    ".000Z", ""
+                                )
+                                timestamp = datetime.strptime(
+                                    clean_date, "%Y-%m-%d %H:%M:%S"
+                                )
+                                timestamp = timestamp.replace(tzinfo=ZoneInfo("UTC"))
+                            else:
+                                # Non-UTC dates can be handled as NY time
+                                timestamp = pd.to_datetime(raw_date)
+                                timestamp = timestamp.tz_localize("America/New_York")
                         else:
-                            # If it has a timezone, convert to EST
-                            timestamp = timestamp.astimezone(
-                                ZoneInfo("America/New_York")
-                            )
+                            timestamp = pd.to_datetime(raw_date)
+                            if timestamp.tzinfo is None:
+                                timestamp = timestamp.tz_localize("America/New_York")
+                    except Exception as e:
+                        logger.warning(f"Error parsing date {raw_date}: {e}")
+                        timestamp = datetime.now(ZoneInfo("UTC"))
 
                 created_at = datetime.now(ZoneInfo("America/Chicago"))
 
@@ -197,17 +198,19 @@ def ptHistPrTargets_from_fmpAPI(
                     "created_at": created_at,
                 }
 
+                # Replace the find_one and separate insert/update with a single upsert
                 bulk_operations.append(
                     UpdateOne(
-                        # Check records by date (and other record identifiers) and if feature_hash is different
                         {
-                            "analystName": row["analystName"],
-                            "publishedDate": row["publishedDate"],
-                            "feature_hash": {"$ne": feature_hash},
+                            "analystName": document["analystName"],
+                            "publishedDate": document["publishedDate"],
+                            # Only update if hash is different or document doesn't exist
+                            "$or": [
+                                {"feature_hash": {"$ne": feature_hash}},
+                                {"feature_hash": {"$exists": False}},
+                            ],
                         },
-                        # If identifiers exists exists and feature_hash is different, update record
                         {"$set": document},
-                        # If identifiers don't exist, insert new record
                         upsert=True,
                     )
                 )
@@ -223,6 +226,17 @@ def ptHistPrTargets_from_fmpAPI(
                         f"Inserted: {result.upserted_count}, Modified: {result.modified_count}"
                     )
                 except BulkWriteError as bwe:
-                    logger.warning(f"Some writes failed for {ticker}: {bwe.details}")
+                    # Filter out duplicate key errors (code 11000)
+                    non_duplicate_errors = [
+                        error
+                        for error in bwe.details["writeErrors"]
+                        if error["code"] != 11000
+                    ]
+
+                    # Only log if there are non-duplicate errors
+                    if non_duplicate_errors:
+                        logger.warning(
+                            f"Some writes failed for {ticker}: {non_duplicate_errors}"
+                        )
 
             logger.info("Data imported successfully!")

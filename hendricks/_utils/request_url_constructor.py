@@ -303,12 +303,12 @@ def request_url_constructor(
             if freq is None:
                 raise ValueError("api_key is required")
             else:
-                compiled_url += "/{freq}"
+                compiled_url += f"/{freq}"
 
             if ticker is None:
                 raise ValueError("ticker is required")
             else:
-                compiled_url += "/{ticker}"
+                compiled_url += f"/{ticker}"
 
             if endpoint is None:
                 raise ValueError("endpoint is required")
@@ -335,6 +335,28 @@ def request_url_constructor(
                 raise ValueError("exchange is required")
             else:
                 compiled_url += f"&exchange={ticker}"
+
+            if api_key is None:
+                raise ValueError("api_key is required")
+            else:
+                compiled_url += f"&apikey={api_key}"
+
+        elif endpoint in ["treasury"]:
+            compiled_url += f"/{endpoint}"
+
+            if from_date is None:
+                raise ValueError("date is required")
+            else:
+                # convert from_date timestamp to YYYY-MM-DD
+                from_date = from_date.strftime("%Y-%m-%d")
+                compiled_url += f"?from={from_date}"
+
+            if to_date is None:
+                raise ValueError("date is required")
+            else:
+                # convert from_date timestamp to YYYY-MM-DD
+                to_date = to_date.strftime("%Y-%m-%d")
+                compiled_url += f"&to={to_date}"
 
             if api_key is None:
                 raise ValueError("api_key is required")

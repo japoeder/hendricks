@@ -132,27 +132,28 @@ def udConsensus_from_fmpAPI(
                     )
                 else:
                     raw_date = row[ep_timestamp_field]
-                    if (
-                        isinstance(raw_date, str) and len(raw_date.split()) == 1
-                    ):  # Just a date
-                        # Parse the date and explicitly set to midnight EST
-                        date_obj = datetime.strptime(raw_date, "%Y-%m-%d").date()
-                        timestamp = datetime.combine(
-                            date_obj,
-                            datetime.min.time(),
-                            tzinfo=ZoneInfo("America/New_York"),  # Explicitly EST
-                        )
-                    else:  # Has time component
-                        # Parse with pandas and ensure EST
-                        timestamp = pd.to_datetime(raw_date)
-                        if timestamp.tzinfo is None:
-                            # If no timezone provided, add EST to the datetime object
-                            timestamp = timestamp.tz_localize("America/New_York")
+                    try:
+                        if isinstance(raw_date, str):
+                            if raw_date.endswith("Z"):
+                                # If it ends with Z, parse and keep as UTC
+                                clean_date = raw_date.replace("T", " ").replace(
+                                    ".000Z", ""
+                                )
+                                timestamp = datetime.strptime(
+                                    clean_date, "%Y-%m-%d %H:%M:%S"
+                                )
+                                timestamp = timestamp.replace(tzinfo=ZoneInfo("UTC"))
+                            else:
+                                # Non-UTC dates can be handled as NY time
+                                timestamp = pd.to_datetime(raw_date)
+                                timestamp = timestamp.tz_localize("America/New_York")
                         else:
-                            # If it has a timezone, convert to EST
-                            timestamp = timestamp.astimezone(
-                                ZoneInfo("America/New_York")
-                            )
+                            timestamp = pd.to_datetime(raw_date)
+                            if timestamp.tzinfo is None:
+                                timestamp = timestamp.tz_localize("America/New_York")
+                    except Exception as e:
+                        logger.warning(f"Error parsing date {raw_date}: {e}")
+                        timestamp = datetime.now(ZoneInfo("UTC"))
 
                 created_at = datetime.now(ZoneInfo("America/Chicago"))
 

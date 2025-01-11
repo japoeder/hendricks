@@ -285,6 +285,13 @@ class FMPEndpoint(Enum):
         False,
     )
 
+    FMP_TREASURY = (
+        "treasury",
+        "economics.econTreasuryRates_from_fmpAPI",
+        "econTreasuryRates_from_fmpAPI",
+        False,
+    )
+
     def __init__(
         self, endpoint: str, module_path: str, function_name: str, is_daily: bool
     ):

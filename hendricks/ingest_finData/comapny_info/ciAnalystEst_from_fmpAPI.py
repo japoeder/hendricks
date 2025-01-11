@@ -14,7 +14,7 @@ import hashlib
 import pandas as pd
 from dotenv import load_dotenv
 import requests
-from pymongo import InsertOne
+from pymongo import UpdateOne
 from pymongo.errors import BulkWriteError
 
 
@@ -74,6 +74,9 @@ def ciAnalystEst_from_fmpAPI(
     collection.create_index(
         [("unique_id", 1), ("timestamp", -1)]
     )  # For source + time sorting
+
+    # Create indexes for common query patterns
+    collection.create_index([("date", -1)])  # For date range queries
 
     # Uniqueness constraint
     collection.create_index(
@@ -187,10 +190,9 @@ def ciAnalystEst_from_fmpAPI(
                 # Create unique_id when there isn't a good option in response
                 f1 = ticker
                 f2 = row["date"]
-                f3 = created_at
 
                 # Create hash of f1, f2, f3, f4
-                unique_id = hashlib.sha256(f"{f1}{f2}{f3}".encode()).hexdigest()
+                unique_id = hashlib.sha256(f"{f1}{f2}".encode()).hexdigest()
 
                 # Streamlined main document
                 document = {
@@ -209,17 +211,21 @@ def ciAnalystEst_from_fmpAPI(
                     "created_at": created_at,
                 }
 
-                # Check if record exists with same feature_hash
-                existing_record = collection.find_one(
-                    {
-                        "timestamp": timestamp,
-                        "feature_hash": feature_hash,  # Note: looking for matching hash
-                    }
+                # Replace the find_one and separate insert/update with a single upsert
+                bulk_operations.append(
+                    UpdateOne(
+                        {
+                            "date": document["date"],
+                            # Only update if hash is different or document doesn't exist
+                            "$or": [
+                                {"feature_hash": {"$ne": feature_hash}},
+                                {"feature_hash": {"$exists": False}},
+                            ],
+                        },
+                        {"$set": document},
+                        upsert=True,
+                    )
                 )
-
-                # If no matching record found (either doesn't exist or has different hash)
-                if not existing_record:
-                    bulk_operations.append(InsertOne(document))
 
             # Execute bulk operations if any exist
             if bulk_operations:
@@ -232,6 +238,17 @@ def ciAnalystEst_from_fmpAPI(
                         f"Inserted: {result.upserted_count}, Modified: {result.modified_count}"
                     )
                 except BulkWriteError as bwe:
-                    logger.warning(f"Some writes failed for {ticker}: {bwe.details}")
+                    # Filter out duplicate key errors (code 11000)
+                    non_duplicate_errors = [
+                        error
+                        for error in bwe.details["writeErrors"]
+                        if error["code"] != 11000
+                    ]
+
+                    # Only log if there are non-duplicate errors
+                    if non_duplicate_errors:
+                        logger.warning(
+                            f"Some writes failed for {ticker}: {non_duplicate_errors}"
+                        )
 
             logger.info("Data imported successfully!")

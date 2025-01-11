@@ -168,10 +168,9 @@ def saOwnEarn_from_fmpAPI(
                 # Create unique_id when there isn't a good option in response
                 f1 = ticker
                 f2 = timestamp
-                f3 = created_at
 
                 # Create hash of f1, f2, f3, f4
-                unique_id = hashlib.sha256(f"{f1}{f2}{f3}".encode()).hexdigest()
+                unique_id = hashlib.sha256(f"{f1}{f2}".encode()).hexdigest()
 
                 # Streamlined main document
                 document = {
@@ -189,16 +188,22 @@ def saOwnEarn_from_fmpAPI(
                     "created_at": created_at,
                 }
 
-                # Create update operation
+                # Replace the find_one and separate insert/update with a single upsert
                 bulk_operations.append(
                     UpdateOne(
-                        {"date": row["date"], "feature_hash": {"$ne": feature_hash}},
+                        {
+                            "date": document["date"],
+                            # Only update if hash is different or document doesn't exist
+                            "$or": [
+                                {"feature_hash": {"$ne": feature_hash}},
+                                {"feature_hash": {"$exists": False}},
+                            ],
+                        },
                         {"$set": document},
                         upsert=True,
                     )
                 )
 
-            # Execute bulk operations if any exist
             if bulk_operations:
                 try:
                     result = collection.bulk_write(bulk_operations, ordered=False)
@@ -209,6 +214,17 @@ def saOwnEarn_from_fmpAPI(
                         f"Inserted: {result.upserted_count}, Modified: {result.modified_count}"
                     )
                 except BulkWriteError as bwe:
-                    logger.warning(f"Some writes failed for {ticker}: {bwe.details}")
+                    # Filter out duplicate key errors (code 11000)
+                    non_duplicate_errors = [
+                        error
+                        for error in bwe.details["writeErrors"]
+                        if error["code"] != 11000
+                    ]
+
+                    # Only log if there are non-duplicate errors
+                    if non_duplicate_errors:
+                        logger.warning(
+                            f"Some writes failed for {ticker}: {non_duplicate_errors}"
+                        )
 
             logger.info("Data imported successfully!")

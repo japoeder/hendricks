@@ -74,6 +74,8 @@ def ciGrade_from_fmpAPI(
         [("unique_id", 1), ("timestamp", -1)]
     )  # For source + time sorting
 
+    collection.create_index([("date", -1), ("gradingCompany", 1)])  # For date sorting
+
     # Uniqueness constraint
     collection.create_index(
         [("unique_id", 1), ("ticker", 1)],
@@ -164,18 +166,18 @@ def ciGrade_from_fmpAPI(
                 f1 = ticker
                 f2 = timestamp
                 f3 = row["gradingCompany"]
-                f4 = created_at
 
                 # Create hash of f1, f2, f3
-                unique_id = hashlib.sha256(f"{f1}{f2}{f3}{f4}".encode()).hexdigest()
+                unique_id = hashlib.sha256(f"{f1}{f2}{f3}".encode()).hexdigest()
 
                 # Streamlined main document
                 document = {
                     "unique_id": unique_id,
                     "timestamp": timestamp,
-                    "ticker": row["symbol"],
+                    "ticker": ticker,
                     ##########################################
                     ##########################################
+                    "date": row["date"],
                     "gradingCompany": row["gradingCompany"],
                     **feature_values,
                     "feature_hash": feature_hash,
@@ -185,17 +187,19 @@ def ciGrade_from_fmpAPI(
                     "created_at": created_at,
                 }
 
+                # Replace the find_one and separate insert/update with a single upsert
                 bulk_operations.append(
                     UpdateOne(
-                        # Check records by date (and other record identifiers) and if feature_hash is different
                         {
-                            "date": row["date"],
-                            "gradingCompany": row["gradingCompany"],
-                            "feature_hash": {"$ne": feature_hash},
+                            "date": document["date"],
+                            "gradingCompany": document["gradingCompany"],
+                            # Only update if hash is different or document doesn't exist
+                            "$or": [
+                                {"feature_hash": {"$ne": feature_hash}},
+                                {"feature_hash": {"$exists": False}},
+                            ],
                         },
-                        # If identifiers exists exists and feature_hash is different, update record
                         {"$set": document},
-                        # If identifiers don't exist, insert new record
                         upsert=True,
                     )
                 )
@@ -211,6 +215,17 @@ def ciGrade_from_fmpAPI(
                         f"Inserted: {result.upserted_count}, Modified: {result.modified_count}"
                     )
                 except BulkWriteError as bwe:
-                    logger.warning(f"Some writes failed for {ticker}: {bwe.details}")
+                    # Filter out duplicate key errors (code 11000)
+                    non_duplicate_errors = [
+                        error
+                        for error in bwe.details["writeErrors"]
+                        if error["code"] != 11000
+                    ]
+
+                    # Only log if there are non-duplicate errors
+                    if non_duplicate_errors:
+                        logger.warning(
+                            f"Some writes failed for {ticker}: {non_duplicate_errors}"
+                        )
 
             logger.info("Data imported successfully!")

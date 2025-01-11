@@ -14,7 +14,7 @@ import hashlib
 import pandas as pd
 from dotenv import load_dotenv
 import requests
-from pymongo import InsertOne
+from pymongo import UpdateOne
 from pymongo.errors import BulkWriteError
 
 # from gridfs import GridFS
@@ -210,10 +210,9 @@ def valAdvDiscCF_from_fmpAPI(
                 # Create unique_id when there isn't a good option in response
                 f1 = ticker
                 f2 = timestamp
-                f3 = created_at
 
-                # Create hash of f1, f2, f3, f4
-                unique_id = hashlib.sha256(f"{f1}{f2}{f3}".encode()).hexdigest()
+                # Create hash of f1, f2
+                unique_id = hashlib.sha256(f"{f1}{f2}".encode()).hexdigest()
 
                 # Streamlined main document
                 document = {
@@ -231,19 +230,22 @@ def valAdvDiscCF_from_fmpAPI(
                     "created_at": created_at,
                 }
 
-                # Check if record exists with same feature_hash
-                existing_record = collection.find_one(
-                    {
-                        "year": row["year"],
-                        "feature_hash": feature_hash,  # Note: looking for matching hash
-                    }
+                # Replace the find_one and separate insert/update with a single upsert
+                bulk_operations.append(
+                    UpdateOne(
+                        {
+                            "year": document["year"],
+                            # Only update if hash is different or document doesn't exist
+                            "$or": [
+                                {"feature_hash": {"$ne": feature_hash}},
+                                {"feature_hash": {"$exists": False}},
+                            ],
+                        },
+                        {"$set": document},
+                        upsert=True,
+                    )
                 )
 
-                # If no matching record found (either doesn't exist or has different hash)
-                if not existing_record:
-                    bulk_operations.append(InsertOne(document))
-
-            # Execute bulk operations if any exist
             if bulk_operations:
                 try:
                     result = collection.bulk_write(bulk_operations, ordered=False)
@@ -254,6 +256,17 @@ def valAdvDiscCF_from_fmpAPI(
                         f"Inserted: {result.upserted_count}, Modified: {result.modified_count}"
                     )
                 except BulkWriteError as bwe:
-                    logger.warning(f"Some writes failed for {ticker}: {bwe.details}")
+                    # Filter out duplicate key errors (code 11000)
+                    non_duplicate_errors = [
+                        error
+                        for error in bwe.details["writeErrors"]
+                        if error["code"] != 11000
+                    ]
+
+                    # Only log if there are non-duplicate errors
+                    if non_duplicate_errors:
+                        logger.warning(
+                            f"Some writes failed for {ticker}: {non_duplicate_errors}"
+                        )
 
             logger.info("Data imported successfully!")

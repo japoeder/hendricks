@@ -212,21 +212,22 @@ def valHistRate_from_fmpAPI(
                     "created_at": created_at,
                 }
 
+                # Replace the find_one and separate insert/update with a single upsert
                 bulk_operations.append(
                     UpdateOne(
-                        # Check records by date (and other record identifiers) and if feature_hash is different
                         {
-                            "timestamp": timestamp,
-                            "feature_hash": {"$ne": feature_hash},
+                            "date": document["date"],
+                            # Only update if hash is different or document doesn't exist
+                            "$or": [
+                                {"feature_hash": {"$ne": feature_hash}},
+                                {"feature_hash": {"$exists": False}},
+                            ],
                         },
-                        # If identifiers exists exists and feature_hash is different, update record
                         {"$set": document},
-                        # If identifiers don't exist, insert new record
                         upsert=True,
                     )
                 )
 
-            # Execute bulk operations if any exist
             if bulk_operations:
                 try:
                     result = collection.bulk_write(bulk_operations, ordered=False)
@@ -237,6 +238,17 @@ def valHistRate_from_fmpAPI(
                         f"Inserted: {result.upserted_count}, Modified: {result.modified_count}"
                     )
                 except BulkWriteError as bwe:
-                    logger.warning(f"Some writes failed for {ticker}: {bwe.details}")
+                    # Filter out duplicate key errors (code 11000)
+                    non_duplicate_errors = [
+                        error
+                        for error in bwe.details["writeErrors"]
+                        if error["code"] != 11000
+                    ]
+
+                    # Only log if there are non-duplicate errors
+                    if non_duplicate_errors:
+                        logger.warning(
+                            f"Some writes failed for {ticker}: {non_duplicate_errors}"
+                        )
 
             logger.info("Data imported successfully!")

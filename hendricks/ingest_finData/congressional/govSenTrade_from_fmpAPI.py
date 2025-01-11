@@ -173,11 +173,10 @@ def govSenTrade_from_fmpAPI(
                 f4 = row["link"]
                 f5 = row["dateRecieved"]
                 f6 = row["transactionDate"]
-                f7 = created_at
 
                 # Create hash of f1, f2, f3, f4
                 unique_id = hashlib.sha256(
-                    f"{f1}{f2}{f3}{f4}{f5}{f6}{f7}".encode()
+                    f"{f1}{f2}{f3}{f4}{f5}{f6}".encode()
                 ).hexdigest()
 
                 # Streamlined main document
@@ -195,31 +194,35 @@ def govSenTrade_from_fmpAPI(
                     "transactionDate": row["transactionDate"],
                     "owner": row["owner"],
                     "assetDescription": row["assetDescription"],
-                    "comment": row["comment"],
-                    "symbol": row["symbol"],
+                    "assetType": row["assetType"],
+                    "type": row["type"],
                     # Unpack the feature_hash
                     **feature_values,
                     "feature_hash": feature_hash,
+                    "comment": row["comment"],
+                    "symbol": row["symbol"],
                     ##########################################
                     ##########################################
                     "source": "fmp",
                     "created_at": created_at,
                 }
 
+                # Replace the find_one and separate insert/update with a single upsert
                 bulk_operations.append(
                     UpdateOne(
-                        # Check records by date (and other record identifiers) and if feature_hash is different
                         {
                             "ticker": ticker,
-                            "office": row["office"],
-                            "assetType": row["assetType"],
-                            "type": row["type"],
-                            "transactionDate": row["transactionDate"],
-                            "feature_hash": {"$ne": feature_hash},
+                            "office": document["office"],
+                            "transactionDate": document["transactionDate"],
+                            "type": document["type"],
+                            "assetType": document["assetType"],
+                            # Only update if hash is different or document doesn't exist
+                            "$or": [
+                                {"feature_hash": {"$ne": feature_hash}},
+                                {"feature_hash": {"$exists": False}},
+                            ],
                         },
-                        # If identifiers exists exists and feature_hash is different, update record
                         {"$set": document},
-                        # If identifiers don't exist, insert new record
                         upsert=True,
                     )
                 )
@@ -235,6 +238,17 @@ def govSenTrade_from_fmpAPI(
                         f"Inserted: {result.upserted_count}, Modified: {result.modified_count}"
                     )
                 except BulkWriteError as bwe:
-                    logger.warning(f"Some writes failed for {ticker}: {bwe.details}")
+                    # Filter out duplicate key errors (code 11000)
+                    non_duplicate_errors = [
+                        error
+                        for error in bwe.details["writeErrors"]
+                        if error["code"] != 11000
+                    ]
+
+                    # Only log if there are non-duplicate errors
+                    if non_duplicate_errors:
+                        logger.warning(
+                            f"Some writes failed for {ticker}: {non_duplicate_errors}"
+                        )
 
             logger.info("Data imported successfully!")
