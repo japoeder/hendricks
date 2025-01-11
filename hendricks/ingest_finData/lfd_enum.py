@@ -390,6 +390,13 @@ class FMPEndpoint(Enum):
         False,
     )
 
+    SPLITS_HISTORICAL = (
+        "historical-price-full/stock_split",
+        "splits.splitsHistorical_from_fmpAPI",
+        "splitsHistorical_from_fmpAPI",
+        False,
+    )
+
     def __init__(
         self, endpoint: str, module_path: str, function_name: str, is_daily: bool
     ):
