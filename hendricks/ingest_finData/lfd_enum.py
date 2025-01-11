@@ -376,6 +376,20 @@ class FMPEndpoint(Enum):
         False,
     )
 
+    REV_X_SEG_PROD = (
+        "revenue-product-segmentation",
+        "rev_x_seg.revsegProd_from_fmpAPI",
+        "revsegProd_from_fmpAPI",
+        False,
+    )
+
+    REV_X_SEG_GEO = (
+        "revenue-geographic-segmentation",
+        "rev_x_seg.revsegGeo_from_fmpAPI",
+        "revsegGeo_from_fmpAPI",
+        False,
+    )
+
     def __init__(
         self, endpoint: str, module_path: str, function_name: str, is_daily: bool
     ):

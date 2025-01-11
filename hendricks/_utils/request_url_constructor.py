@@ -131,6 +131,7 @@ def request_url_constructor(
     freq: str = "1min",
     freq_range: int = None,
     indicator: str = None,
+    structure: bool = None,
 ):
     """
     Construct the URL for the FMP API.
@@ -294,11 +295,19 @@ def request_url_constructor(
             "upgrades-downgrades-consensus",
             "senate-trading",
             "senate-disclosure",
+            "revenue-product-segmentation",
+            "revenue-geographic-segmentation",
         ]:
             if ticker is None:
                 raise ValueError("ticker is required")
             else:
                 compiled_url += f"{endpoint}?symbol={ticker}"
+
+            if period is not None:
+                compiled_url += f"&period={period}"
+
+            if structure is not None:
+                compiled_url += f"&structure={structure}"
 
             if api_key is None:
                 raise ValueError("api_key is required")
