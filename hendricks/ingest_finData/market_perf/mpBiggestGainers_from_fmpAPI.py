@@ -164,7 +164,6 @@ def mpBiggestGainers_from_fmpAPI(
                 }
                 feature_hash = hashlib.sha256(str(feature_values).encode()).hexdigest()
 
-                # convert to datetime objects
                 # create string 'date' comparable to fmps
                 date = datetime.now(tz=ZoneInfo("America/New_York")).strftime(
                     "%Y-%m-%d"

@@ -169,13 +169,6 @@ def mpIndustryPERatio_from_fmpAPI(
                 feature_values = {"pe": row["pe"]}
                 feature_hash = hashlib.sha256(str(feature_values).encode()).hexdigest()
 
-                # TODO: use this as an example for corrections.
-                """
-                Remove upsert and use explicit logic.
-                Check date at top and correctness of existing record check.
-                This check is to ensure dates as strings aren't compared to timestamps.
-                Make sure EPs that should be daily are run daily.
-                """
                 # Create unique_id when there isn't a good option in response
                 f1 = ticker
                 f2 = timestamp

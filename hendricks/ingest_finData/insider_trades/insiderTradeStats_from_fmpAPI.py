@@ -32,7 +32,7 @@ logger = logging.getLogger("pymongo")
 logger.setLevel(logging.WARNING)  # Suppress pymongo debug messages
 
 
-def mpIndexQuotes_from_fmpAPI(
+def insiderTradeStats_from_fmpAPI(
     tickers=None,
     collection_name=None,
     creds_file_path=None,
@@ -46,8 +46,8 @@ def mpIndexQuotes_from_fmpAPI(
     Load historical quote data from Alpaca API into a MongoDB collection.
     """
 
-    ep_timestamp_field = "timestamp"
-    cred_key = "fmp_api_findata"
+    ep_timestamp_field = "today"
+    cred_key = "fmp_api_findata_v4"
 
     if creds_file_path is None:
         creds_file_path = get_path("creds")
@@ -162,25 +162,15 @@ def mpIndexQuotes_from_fmpAPI(
 
                 # Create a hash of the actual estimate values to detect changes
                 feature_values = {
-                    "price": row["price"],
-                    "changesPercentage": row["changesPercentage"],
-                    "change": row["change"],
-                    "dayLow": row["dayLow"],
-                    "dayHigh": row["dayHigh"],
-                    "yearHigh": row["yearHigh"],
-                    "yearLow": row["yearLow"],
-                    "marketCap": row["marketCap"],
-                    "priceAvg50": row["priceAvg50"],
-                    "priceAvg200": row["priceAvg200"],
-                    "exchange": row["exchange"],
-                    "volume": row["volume"],
-                    "avgVolume": row["avgVolume"],
-                    "open": row["open"],
-                    "previousClose": row["previousClose"],
-                    "eps": row["eps"],
-                    "pe": row["pe"],
-                    "earningsAnnouncement": row["earningsAnnouncement"],
-                    "sharesOutstanding": row["sharesOutstanding"],
+                    "purchases": row["purchases"],
+                    "sales": row["sales"],
+                    "buySellRatio": row["buySellRatio"],
+                    "totalBought": row["totalBought"],
+                    "totalSold": row["totalSold"],
+                    "averageBought": row["averageBought"],
+                    "averageSold": row["averageSold"],
+                    "pPurchases": row["pPurchases"],
+                    "sSales": row["sSales"],
                 }
                 feature_hash = hashlib.sha256(str(feature_values).encode()).hexdigest()
 
@@ -192,9 +182,11 @@ def mpIndexQuotes_from_fmpAPI(
                 # Create unique_id when there isn't a good option in response
                 f1 = ticker
                 f2 = date
+                f3 = row["year"]
+                f4 = row["quarter"]
 
                 # Create hash of f1, f2, f3, f4
-                unique_id = hashlib.sha256(f"{f1}{f2}".encode()).hexdigest()
+                unique_id = hashlib.sha256(f"{f1}{f2}{f3}{f4}".encode()).hexdigest()
 
                 # Streamlined main document
                 document = {
@@ -204,7 +196,9 @@ def mpIndexQuotes_from_fmpAPI(
                     ##########################################
                     ##########################################
                     "date": date,
-                    "name": row["name"],
+                    "cik": row["cik"],
+                    "year": row["year"],
+                    "quarter": row["quarter"],
                     # Unpack the feature_hash
                     **feature_values,
                     "feature_hash": feature_hash,
@@ -220,6 +214,8 @@ def mpIndexQuotes_from_fmpAPI(
                         {
                             "date": document["date"],
                             "ticker": document["ticker"],
+                            "year": document["year"],
+                            "quarter": document["quarter"],
                             # Only update if hash is different or document doesn't exist
                             "$or": [
                                 {"feature_hash": {"$ne": feature_hash}},

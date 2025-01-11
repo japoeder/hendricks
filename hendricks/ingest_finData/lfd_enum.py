@@ -341,6 +341,41 @@ class FMPEndpoint(Enum):
         False,
     )
 
+    FMP_INSIDER_TRADES = (
+        "insider-trading",
+        "insider_trades.insiderTrades_from_fmpAPI",
+        "insiderTrades_from_fmpAPI",
+        False,
+    )
+
+    FMP_INSIDER_TRADE_STATS = (
+        "insider-roaster-statistic",
+        "insider_trades.insiderTradeStats_from_fmpAPI",
+        "insiderTradeStats_from_fmpAPI",
+        False,
+    )
+
+    FMP_EXCHANGES = (
+        "exchanges-list",
+        "comapny_info.ciAllExchanges_from_fmpAPI",
+        "ciAllExchanges_from_fmpAPI",
+        False,
+    )
+
+    FMP_INDUSTRIES = (
+        "industries-list",
+        "comapny_info.ciAllIndustries_from_fmpAPI",
+        "ciAllIndustries_from_fmpAPI",
+        False,
+    )
+
+    FMP_SECTORS = (
+        "sectors-list",
+        "comapny_info.ciAllSectors_from_fmpAPI",
+        "ciAllSectors_from_fmpAPI",
+        False,
+    )
+
     def __init__(
         self, endpoint: str, module_path: str, function_name: str, is_daily: bool
     ):

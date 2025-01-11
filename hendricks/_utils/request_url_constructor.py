@@ -192,6 +192,7 @@ def request_url_constructor(
         elif endpoint in [
             "governance/executive_compensation",
             "historical/employee_count",
+            "insider-roaster-statistic",
         ]:
             if ticker is None:
                 raise ValueError("ticker is required")
@@ -239,6 +240,9 @@ def request_url_constructor(
             "stock_market/gainers",
             "stock_market/losers",
             "stock_market/actives",
+            "exchanges-list",
+            "industries-list",
+            "sectors-list",
         ]:
             compiled_url += f"{endpoint}"
 
@@ -387,6 +391,22 @@ def request_url_constructor(
                 compiled_url += f"?from={from_date}"
                 if to_date is not None:
                     compiled_url += f"&to={to_date}"
+
+            if api_key is None:
+                raise ValueError("api_key is required")
+            else:
+                compiled_url += f"&apikey={api_key}"
+
+        # Logic for https://financialmodelingprep.com/api/v4/insider-trading?symbol=AAPL&page=0&apikey=CqLRLCLPYpPTODlRzjm929S9O1MP308u
+        # be sure to include paging
+        elif endpoint in ["insider-trading"]:
+            if ticker is None:
+                raise ValueError("ticker is required")
+            else:
+                compiled_url += f"/{endpoint}?symbol={ticker}"
+
+            if page is not None:
+                compiled_url += f"&page={page}"
 
             if api_key is None:
                 raise ValueError("api_key is required")
