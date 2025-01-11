@@ -285,10 +285,59 @@ class FMPEndpoint(Enum):
         False,
     )
 
+    FMP_INDUSTRY_PE_RATIO = (
+        "industry_price_earning_ratio",
+        "market_perf.mpIndustryPERatio_from_fmpAPI",
+        "mpIndustryPERatio_from_fmpAPI",
+        False,
+    )
+
+    FMP_SECTOR_PERF = (
+        "sectors-performance",
+        "market_perf.mpSectorPerf_from_fmpAPI",
+        "mpSectorPerf_from_fmpAPI",
+        False,
+    )
+
+    FMP_SECTOR_PERF_HIST = (
+        "historical-sectors-performance",
+        "market_perf.mpSectorPerfHist_from_fmpAPI",
+        "mpSectorPerfHist_from_fmpAPI",
+        False,
+    )
+
+    FMP_BIGGEST_GAINERS = (
+        "stock_market/gainers",
+        "market_perf.mpBiggestGainers_from_fmpAPI",
+        "mpBiggestGainers_from_fmpAPI",
+        False,
+    )
+
+    FMP_BIGGEST_LOSERS = (
+        "stock_market/losers",
+        "market_perf.mpBiggestLosers_from_fmpAPI",
+        "mpBiggestLosers_from_fmpAPI",
+        False,
+    )
+
+    FMP_MOST_ACTIVE_STOCKS = (
+        "stock_market/actives",
+        "market_perf.mpMostActive_from_fmpAPI",
+        "mpMostActive_from_fmpAPI",
+        False,
+    )
+
     FMP_TREASURY = (
         "treasury",
         "economics.econTreasuryRates_from_fmpAPI",
         "econTreasuryRates_from_fmpAPI",
+        False,
+    )
+
+    FMP_ECONOMIC = (
+        "economic",
+        "economics.econMacroInd_from_fmpAPI",
+        "econMacroInd_from_fmpAPI",
         False,
     )
 

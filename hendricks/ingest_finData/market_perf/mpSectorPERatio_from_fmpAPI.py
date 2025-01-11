@@ -83,6 +83,10 @@ def mpSectorPERatio_from_fmpAPI(
         background=True,  # Allow other operations while building index
     )
 
+    # convert to datetime objects
+    from_date = datetime.strptime(from_date.strftime("%Y-%m-%d"), "%Y-%m-%d")
+    to_date = datetime.strptime(to_date.strftime("%Y-%m-%d"), "%Y-%m-%d")
+
     for ticker in tickers:
         url = request_url_constructor(
             endpoint=ep,

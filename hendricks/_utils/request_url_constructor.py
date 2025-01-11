@@ -130,6 +130,7 @@ def request_url_constructor(
     target_qtr: int = None,
     freq: str = "1min",
     freq_range: int = None,
+    indicator: str = None,
 ):
     """
     Construct the URL for the FMP API.
@@ -234,6 +235,19 @@ def request_url_constructor(
                 compiled_url += f"?apikey={api_key}"
 
         elif endpoint in [
+            "sectors-performance",
+            "stock_market/gainers",
+            "stock_market/losers",
+            "stock_market/actives",
+        ]:
+            compiled_url += f"{endpoint}"
+
+            if api_key is None:
+                raise ValueError("api_key is required")
+            else:
+                compiled_url += f"?apikey={api_key}"
+
+        elif endpoint in [
             "income-statement",
             "balance-sheet-statement",
             "cash-flow-statement",
@@ -323,7 +337,10 @@ def request_url_constructor(
             else:
                 compiled_url += f"&apikey={api_key}"
 
-        elif endpoint in ["sector_price_earning_ratio"]:
+        elif endpoint in [
+            "sector_price_earning_ratio",
+            "industry_price_earning_ratio",
+        ]:
             if from_date is None:
                 raise ValueError("date is required")
             else:
@@ -341,22 +358,35 @@ def request_url_constructor(
             else:
                 compiled_url += f"&apikey={api_key}"
 
-        elif endpoint in ["treasury"]:
+        elif endpoint in [
+            "treasury",
+            "economic",
+        ]:
             compiled_url += f"/{endpoint}"
 
-            if from_date is None:
-                raise ValueError("date is required")
+            if indicator is None:
+                raise ValueError("indicator is required")
             else:
-                # convert from_date timestamp to YYYY-MM-DD
-                from_date = from_date.strftime("%Y-%m-%d")
-                compiled_url += f"?from={from_date}"
+                compiled_url += f"?name={indicator}"
 
-            if to_date is None:
-                raise ValueError("date is required")
+            if api_key is None:
+                raise ValueError("api_key is required")
             else:
-                # convert from_date timestamp to YYYY-MM-DD
-                to_date = to_date.strftime("%Y-%m-%d")
-                compiled_url += f"&to={to_date}"
+                compiled_url += f"&apikey={api_key}"
+
+        elif endpoint in [
+            "historical-sectors-performance",
+        ]:
+            if ticker is None:
+                raise ValueError("ticker is required")
+            else:
+                compiled_url += f"/{endpoint}"
+
+            # Add optional parameters
+            if from_date is not None:
+                compiled_url += f"?from={from_date}"
+                if to_date is not None:
+                    compiled_url += f"&to={to_date}"
 
             if api_key is None:
                 raise ValueError("api_key is required")

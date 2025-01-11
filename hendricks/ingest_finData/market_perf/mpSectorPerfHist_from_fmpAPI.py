@@ -14,7 +14,7 @@ import hashlib
 import pandas as pd
 from dotenv import load_dotenv
 import requests
-from pymongo import InsertOne
+from pymongo import UpdateOne
 from pymongo.errors import BulkWriteError
 
 # from gridfs import GridFS
@@ -32,7 +32,7 @@ logger = logging.getLogger("pymongo")
 logger.setLevel(logging.WARNING)  # Suppress pymongo debug messages
 
 
-def mpIndexQuotes_from_fmpAPI(
+def mpSectorPerfHist_from_fmpAPI(
     tickers=None,
     collection_name=None,
     creds_file_path=None,
@@ -43,10 +43,10 @@ def mpIndexQuotes_from_fmpAPI(
     freq_range=5,
 ):
     """
-    Load historical quote data from Alpaca API into a MongoDB collection.
+    Load historical sector performance data from FMP API into a MongoDB collection.
     """
 
-    ep_timestamp_field = "timestamp"
+    ep_timestamp_field = "date"
     cred_key = "fmp_api_findata"
 
     if creds_file_path is None:
@@ -82,6 +82,9 @@ def mpIndexQuotes_from_fmpAPI(
         unique=True,
         background=True,  # Allow other operations while building index
     )
+
+    from_date = from_date.strftime("%Y-%m-%d")
+    to_date = to_date.strftime("%Y-%m-%d")
 
     for ticker in tickers:
         url = request_url_constructor(
@@ -162,25 +165,27 @@ def mpIndexQuotes_from_fmpAPI(
 
                 # Create a hash of the actual estimate values to detect changes
                 feature_values = {
-                    "price": row["price"],
-                    "changesPercentage": row["changesPercentage"],
-                    "change": row["change"],
-                    "dayLow": row["dayLow"],
-                    "dayHigh": row["dayHigh"],
-                    "yearHigh": row["yearHigh"],
-                    "yearLow": row["yearLow"],
-                    "marketCap": row["marketCap"],
-                    "priceAvg50": row["priceAvg50"],
-                    "priceAvg200": row["priceAvg200"],
-                    "exchange": row["exchange"],
-                    "volume": row["volume"],
-                    "avgVolume": row["avgVolume"],
-                    "open": row["open"],
-                    "previousClose": row["previousClose"],
-                    "eps": row["eps"],
-                    "pe": row["pe"],
-                    "earningsAnnouncement": row["earningsAnnouncement"],
-                    "sharesOutstanding": row["sharesOutstanding"],
+                    "basicMaterialsChangesPercentage": row[
+                        "basicMaterialsChangesPercentage"
+                    ],
+                    "communicationServicesChangesPercentage": row[
+                        "communicationServicesChangesPercentage"
+                    ],
+                    "consumerCyclicalChangesPercentage": row[
+                        "consumerCyclicalChangesPercentage"
+                    ],
+                    "consumerDefensiveChangesPercentage": row[
+                        "consumerDefensiveChangesPercentage"
+                    ],
+                    "energyChangesPercentage": row["energyChangesPercentage"],
+                    "financialServicesChangesPercentage": row[
+                        "financialServicesChangesPercentage"
+                    ],
+                    "healthcareChangesPercentage": row["healthcareChangesPercentage"],
+                    "industrialsChangesPercentage": row["industrialsChangesPercentage"],
+                    "realEstateChangesPercentage": row["realEstateChangesPercentage"],
+                    "technologyChangesPercentage": row["technologyChangesPercentage"],
+                    "utilitiesChangesPercentage": row["utilitiesChangesPercentage"],
                 }
                 feature_hash = hashlib.sha256(str(feature_values).encode()).hexdigest()
 
@@ -198,7 +203,7 @@ def mpIndexQuotes_from_fmpAPI(
                     "ticker": ticker,
                     ##########################################
                     ##########################################
-                    "name": row["name"],
+                    "date": row["date"],
                     # Unpack the feature_hash
                     **feature_values,
                     "feature_hash": feature_hash,
@@ -208,22 +213,21 @@ def mpIndexQuotes_from_fmpAPI(
                     "created_at": created_at,
                 }
 
-                # Find the most recent record for this ticker
-                last_new_record = collection.find_one(
-                    {
-                        "ticker": row["symbol"],
-                    },
-                    sort=[
-                        ("created_at", -1)
-                    ],  # Sort by created_at in descending order (most recent first)
+                # Replace the find_one and separate insert/update with a single upsert
+                bulk_operations.append(
+                    UpdateOne(
+                        {
+                            "date": document["date"],
+                            # Only update if hash is different or document doesn't exist
+                            "$or": [
+                                {"feature_hash": {"$ne": feature_hash}},
+                                {"feature_hash": {"$exists": False}},
+                            ],
+                        },
+                        {"$set": document},
+                        upsert=True,
+                    )
                 )
-
-                # Compare feature hashes to see if there's been a change
-                if last_new_record and last_new_record["feature_hash"] == feature_hash:
-                    continue
-                else:
-                    # Create update operation
-                    bulk_operations.append(InsertOne(document))
 
             # Execute bulk operations if any exist
             if bulk_operations:

@@ -3,18 +3,18 @@ Load historical quote data from Alpaca API into a MongoDB collection.
 """
 
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 # from datetime import timezone
-import logging
 
-from zoneinfo import ZoneInfo
+import logging
 
 # import pytz
 import hashlib
 import pandas as pd
 from dotenv import load_dotenv
 import requests
-from pymongo import InsertOne
+from pymongo import UpdateOne
 from pymongo.errors import BulkWriteError
 
 # from gridfs import GridFS
@@ -32,11 +32,11 @@ logger = logging.getLogger("pymongo")
 logger.setLevel(logging.WARNING)  # Suppress pymongo debug messages
 
 
-def mpIndexQuotes_from_fmpAPI(
+def mpIndustryPERatio_from_fmpAPI(
     tickers=None,
     collection_name=None,
     creds_file_path=None,
-    from_date=None,
+    from_date=None,  # Use from date for single date pulls
     to_date=None,
     ep=None,
     freq="1min",
@@ -46,8 +46,8 @@ def mpIndexQuotes_from_fmpAPI(
     Load historical quote data from Alpaca API into a MongoDB collection.
     """
 
-    ep_timestamp_field = "timestamp"
-    cred_key = "fmp_api_findata"
+    ep_timestamp_field = "date"
+    cred_key = "fmp_api_findata_v4"
 
     if creds_file_path is None:
         creds_file_path = get_path("creds")
@@ -78,10 +78,14 @@ def mpIndexQuotes_from_fmpAPI(
 
     # Uniqueness constraint
     collection.create_index(
-        [("unique_id", 1), ("ticker", 1)],
+        [("unique_id", 1), ("industry", 1)],
         unique=True,
         background=True,  # Allow other operations while building index
     )
+
+    # convert to datetime objects
+    from_date = datetime.strptime(from_date.strftime("%Y-%m-%d"), "%Y-%m-%d")
+    to_date = datetime.strptime(to_date.strftime("%Y-%m-%d"), "%Y-%m-%d")
 
     for ticker in tickers:
         url = request_url_constructor(
@@ -158,47 +162,37 @@ def mpIndexQuotes_from_fmpAPI(
                                 ZoneInfo("America/New_York")
                             )
 
+                # Doesn't matter what timezone the data is in, MongoDB will store it in UTC and display it in local time.
                 created_at = datetime.now(ZoneInfo("America/Chicago"))
 
                 # Create a hash of the actual estimate values to detect changes
-                feature_values = {
-                    "price": row["price"],
-                    "changesPercentage": row["changesPercentage"],
-                    "change": row["change"],
-                    "dayLow": row["dayLow"],
-                    "dayHigh": row["dayHigh"],
-                    "yearHigh": row["yearHigh"],
-                    "yearLow": row["yearLow"],
-                    "marketCap": row["marketCap"],
-                    "priceAvg50": row["priceAvg50"],
-                    "priceAvg200": row["priceAvg200"],
-                    "exchange": row["exchange"],
-                    "volume": row["volume"],
-                    "avgVolume": row["avgVolume"],
-                    "open": row["open"],
-                    "previousClose": row["previousClose"],
-                    "eps": row["eps"],
-                    "pe": row["pe"],
-                    "earningsAnnouncement": row["earningsAnnouncement"],
-                    "sharesOutstanding": row["sharesOutstanding"],
-                }
+                feature_values = {"pe": row["pe"]}
                 feature_hash = hashlib.sha256(str(feature_values).encode()).hexdigest()
 
+                # TODO: use this as an example for corrections.
+                """
+                Remove upsert and use explicit logic.
+                Check date at top and correctness of existing record check.
+                This check is to ensure dates as strings aren't compared to timestamps.
+                Make sure EPs that should be daily are run daily.
+                """
                 # Create unique_id when there isn't a good option in response
                 f1 = ticker
                 f2 = timestamp
+                f3 = row["industry"]
 
                 # Create hash of f1, f2, f3, f4
-                unique_id = hashlib.sha256(f"{f1}{f2}".encode()).hexdigest()
+                unique_id = hashlib.sha256(f"{f1}{f2}{f3}".encode()).hexdigest()
 
                 # Streamlined main document
                 document = {
                     "unique_id": unique_id,
                     "timestamp": timestamp,
-                    "ticker": ticker,
+                    "exchange": ticker,
                     ##########################################
                     ##########################################
-                    "name": row["name"],
+                    "date": row["date"],
+                    "industry": row["industry"],
                     # Unpack the feature_hash
                     **feature_values,
                     "feature_hash": feature_hash,
@@ -208,22 +202,22 @@ def mpIndexQuotes_from_fmpAPI(
                     "created_at": created_at,
                 }
 
-                # Find the most recent record for this ticker
-                last_new_record = collection.find_one(
-                    {
-                        "ticker": row["symbol"],
-                    },
-                    sort=[
-                        ("created_at", -1)
-                    ],  # Sort by created_at in descending order (most recent first)
+                # Replace the find_one and separate insert/update with a single upsert
+                bulk_operations.append(
+                    UpdateOne(
+                        {
+                            "date": document["date"],
+                            "industry": document["industry"],
+                            # Only update if hash is different or document doesn't exist
+                            "$or": [
+                                {"feature_hash": {"$ne": feature_hash}},
+                                {"feature_hash": {"$exists": False}},
+                            ],
+                        },
+                        {"$set": document},
+                        upsert=True,
+                    )
                 )
-
-                # Compare feature hashes to see if there's been a change
-                if last_new_record and last_new_record["feature_hash"] == feature_hash:
-                    continue
-                else:
-                    # Create update operation
-                    bulk_operations.append(InsertOne(document))
 
             # Execute bulk operations if any exist
             if bulk_operations:

@@ -14,7 +14,7 @@ import hashlib
 import pandas as pd
 from dotenv import load_dotenv
 import requests
-from pymongo import InsertOne
+from pymongo import UpdateOne
 from pymongo.errors import BulkWriteError
 
 # from gridfs import GridFS
@@ -32,21 +32,19 @@ logger = logging.getLogger("pymongo")
 logger.setLevel(logging.WARNING)  # Suppress pymongo debug messages
 
 
-def mpIndexQuotes_from_fmpAPI(
+def mpBiggestLosers_from_fmpAPI(
     tickers=None,
     collection_name=None,
     creds_file_path=None,
     from_date=None,
     to_date=None,
     ep=None,
-    freq="1min",
-    freq_range=5,
 ):
     """
     Load historical quote data from Alpaca API into a MongoDB collection.
     """
 
-    ep_timestamp_field = "timestamp"
+    ep_timestamp_field = "today"
     cred_key = "fmp_api_findata"
 
     if creds_file_path is None:
@@ -75,6 +73,7 @@ def mpIndexQuotes_from_fmpAPI(
     collection.create_index(
         [("unique_id", 1), ("timestamp", -1)]
     )  # For source + time sorting
+    collection.create_index([("created_at", -1)])  # For ticker + time sorting
 
     # Uniqueness constraint
     collection.create_index(
@@ -87,13 +86,10 @@ def mpIndexQuotes_from_fmpAPI(
         url = request_url_constructor(
             endpoint=ep,
             base_url=BASE_URL,
-            ticker=ticker,
             api_key=API_KEY,
             source="fmp",
             from_date=from_date,
             to_date=to_date,
-            freq=freq,
-            freq_range=freq_range,
         )
 
         print(f"URL: {url}")
@@ -116,8 +112,8 @@ def mpIndexQuotes_from_fmpAPI(
             logger.info(f"DataFrame shape: {res_df.shape}")
             logger.info(f"DataFrame columns: {res_df.columns.tolist()}")
 
-            # Sort results by timestamp in descending order
             if ep_timestamp_field != "today":
+                # Sort results by timestamp in descending order
                 res_df.sort_values(by=ep_timestamp_field, ascending=False, inplace=True)
 
             # Process news items in bulk
@@ -162,31 +158,21 @@ def mpIndexQuotes_from_fmpAPI(
 
                 # Create a hash of the actual estimate values to detect changes
                 feature_values = {
+                    "change": row["change"],
                     "price": row["price"],
                     "changesPercentage": row["changesPercentage"],
-                    "change": row["change"],
-                    "dayLow": row["dayLow"],
-                    "dayHigh": row["dayHigh"],
-                    "yearHigh": row["yearHigh"],
-                    "yearLow": row["yearLow"],
-                    "marketCap": row["marketCap"],
-                    "priceAvg50": row["priceAvg50"],
-                    "priceAvg200": row["priceAvg200"],
-                    "exchange": row["exchange"],
-                    "volume": row["volume"],
-                    "avgVolume": row["avgVolume"],
-                    "open": row["open"],
-                    "previousClose": row["previousClose"],
-                    "eps": row["eps"],
-                    "pe": row["pe"],
-                    "earningsAnnouncement": row["earningsAnnouncement"],
-                    "sharesOutstanding": row["sharesOutstanding"],
                 }
                 feature_hash = hashlib.sha256(str(feature_values).encode()).hexdigest()
 
+                # convert to datetime objects
+                # create string 'date' comparable to fmps
+                date = datetime.now(tz=ZoneInfo("America/New_York")).strftime(
+                    "%Y-%m-%d"
+                )
+
                 # Create unique_id when there isn't a good option in response
                 f1 = ticker
-                f2 = timestamp
+                f2 = date
 
                 # Create hash of f1, f2, f3, f4
                 unique_id = hashlib.sha256(f"{f1}{f2}".encode()).hexdigest()
@@ -195,11 +181,10 @@ def mpIndexQuotes_from_fmpAPI(
                 document = {
                     "unique_id": unique_id,
                     "timestamp": timestamp,
-                    "ticker": ticker,
+                    "ticker": row["symbol"],
+                    "date": date,
                     ##########################################
                     ##########################################
-                    "name": row["name"],
-                    # Unpack the feature_hash
                     **feature_values,
                     "feature_hash": feature_hash,
                     ##########################################
@@ -208,22 +193,22 @@ def mpIndexQuotes_from_fmpAPI(
                     "created_at": created_at,
                 }
 
-                # Find the most recent record for this ticker
-                last_new_record = collection.find_one(
-                    {
-                        "ticker": row["symbol"],
-                    },
-                    sort=[
-                        ("created_at", -1)
-                    ],  # Sort by created_at in descending order (most recent first)
+                # Replace the find_one and separate insert/update with a single upsert
+                bulk_operations.append(
+                    UpdateOne(
+                        {
+                            "date": document["date"],
+                            "ticker": document["ticker"],
+                            # Only update if hash is different or document doesn't exist
+                            "$or": [
+                                {"feature_hash": {"$ne": feature_hash}},
+                                {"feature_hash": {"$exists": False}},
+                            ],
+                        },
+                        {"$set": document},
+                        upsert=True,
+                    )
                 )
-
-                # Compare feature hashes to see if there's been a change
-                if last_new_record and last_new_record["feature_hash"] == feature_hash:
-                    continue
-                else:
-                    # Create update operation
-                    bulk_operations.append(InsertOne(document))
 
             # Execute bulk operations if any exist
             if bulk_operations:
