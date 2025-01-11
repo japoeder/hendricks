@@ -225,7 +225,7 @@ def econMacroInd_from_fmpAPI(
         if bulk_operations:
             try:
                 result = collection.bulk_write(bulk_operations, ordered=False)
-                logger.info(f"Processed {len(bulk_operations)} news items for {ticker}")
+                logger.info(f"Processed {len(bulk_operations)} new items for {ticker}")
                 logger.info(
                     f"Inserted: {result.upserted_count}, Modified: {result.modified_count}"
                 )
