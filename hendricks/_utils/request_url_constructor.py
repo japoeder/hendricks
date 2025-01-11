@@ -407,7 +407,6 @@ def request_url_constructor(
             else:
                 compiled_url += f"&apikey={api_key}"
 
-        # Logic for https://financialmodelingprep.com/api/v4/insider-trading?symbol=AAPL&page=0&apikey=CqLRLCLPYpPTODlRzjm929S9O1MP308u
         # be sure to include paging
         elif endpoint in ["insider-trading"]:
             if ticker is None:
