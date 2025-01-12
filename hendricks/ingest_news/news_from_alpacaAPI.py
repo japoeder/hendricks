@@ -2,7 +2,9 @@
 Load historical quote data from Alpaca API into a MongoDB collection.
 """
 
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
+import hashlib
 import logging
 import pytz
 import pandas as pd
@@ -43,12 +45,14 @@ def news_from_alpacaAPI(
 
     print(f"Now executing news_from_alpacaAPI for {tickers}")
 
+    ep_timestamp_field = "created_at"
+    cred_key = "alpaca_news"
+
     if creds_file_path is None:
         creds_file_path = get_path("creds")
 
     # Load Alpaca API credentials from JSON file
-    print("getting credentials")
-    API_KEY, API_SECRET = load_credentials(creds_file_path, "alpaca_news")
+    API_KEY, API_SECRET = load_credentials(creds_file_path, cred_key)
 
     # Initialize the NewsClient (no keys required for news data)
     client = NewsClient(api_key=API_KEY, secret_key=API_SECRET)
@@ -162,13 +166,57 @@ def news_from_alpacaAPI(
             print("grabbing html")
             html_content = grab_html(row["url"])
 
-            print("creating timestamp")
-            timestamp = (
-                row["created_at"]
-                .floor("min")
-                .astimezone(pytz.utc)
-                .strftime("%Y-%m-%d %H:%M:%S")
-            )
+            if ep_timestamp_field == "today":
+                timestamp = datetime.now(ZoneInfo("America/Chicago"))
+            elif ep_timestamp_field == "year":
+                # Jan 1st of the year
+                timestamp = datetime(
+                    int(row["year"]), 1, 1, tzinfo=ZoneInfo("America/New_York")
+                )
+            elif ep_timestamp_field == "timestamp":
+                timestamp = datetime.fromtimestamp(
+                    row["timestamp"], tz=ZoneInfo("America/New_York")
+                )
+            else:
+                raw_date = row[ep_timestamp_field]
+                if (
+                    isinstance(raw_date, str) and len(raw_date.split()) == 1
+                ):  # Just a date
+                    # Parse the date and explicitly set to midnight EST
+                    date_obj = datetime.strptime(raw_date, "%Y-%m-%d").date()
+                    timestamp = datetime.combine(
+                        date_obj,
+                        datetime.min.time(),
+                        tzinfo=ZoneInfo("America/New_York"),  # Explicitly EST
+                    )
+                else:  # Has time component
+                    # Parse with pandas and ensure EST
+                    timestamp = pd.to_datetime(raw_date)
+                    if timestamp.tzinfo is None:
+                        # If no timezone provided, add EST to the datetime object
+                        timestamp = timestamp.tz_localize("America/New_York")
+                    else:
+                        # If it has a timezone, convert to EST
+                        timestamp = timestamp.astimezone(ZoneInfo("America/New_York"))
+
+            created_at = datetime.now(ZoneInfo("America/Chicago"))
+
+            # Create a hash of the actual estimate values to detect changes
+            feature_values = {
+                "headline": row["headline"],
+                "link": row["url"],
+            }
+            feature_hash = hashlib.sha256(str(feature_values).encode()).hexdigest()
+
+            # Create unique_id when there isn't a good option in response
+            f1 = ticker
+            f2 = row["created_at"]
+            f3 = row["headline"]
+            f4 = row["summary"]
+            f5 = row["url"]
+
+            # Create hash of f1, f2, f3, f4
+            unique_id = hashlib.sha256(f"{f1}{f2}{f3}{f4}{f5}".encode()).hexdigest()
 
             # HTML should be the row['content'] if it exists, otherwise it should be the row['summary'  ]
             if row["content"]:
@@ -198,15 +246,18 @@ def news_from_alpacaAPI(
 
             # Streamlined main document
             document = {
-                "unique_id": row["url"],
-                # ensure timestamp is a datetime object
-                "timestamp": pd.Timestamp(timestamp),
+                "unique_id": unique_id,
+                "timestamp": timestamp,
                 "ticker": ticker,
-                # grab www.address.com and nothing after .com from url for article_source
-                "article_source": row["url"].split("www.")[-1].split(".com")[0],
-                "headline": row["headline"],
+                ##########################################
+                ##########################################
+                "article_source": row["source"],
+                **feature_values,
+                "feature_hash": feature_hash,
+                ##########################################
+                ##########################################
                 "source": "alpaca",
-                "created_at": datetime.now(timezone.utc),
+                "created_at": created_at,
                 "content_id": content_id,  # Reference to GridFS content
             }
 
@@ -214,8 +265,8 @@ def news_from_alpacaAPI(
             bulk_operations.append(
                 UpdateOne(
                     {
-                        "unique_id": document["unique_id"],
-                        "ticker": document["ticker"],
+                        "timestamp": document["timestamp"],
+                        "link": document["link"],
                         # Only update if headline changes
                         "$or": [
                             {"headline": {"$ne": document["headline"]}},
@@ -227,13 +278,28 @@ def news_from_alpacaAPI(
                 )
             )
 
-        # Execute bulk operations if any exist
-        if bulk_operations:
-            try:
-                collection.bulk_write(bulk_operations, ordered=False)
-                logger.info(f"Processed {len(bulk_operations)} documents for {ticker}")
-            except BulkWriteError as bwe:
-                # Log write errors but continue processing
-                logger.warning(f"Some writes failed for {ticker}: {bwe.details}")
+            # Execute bulk operations if any exist
+            if bulk_operations:
+                try:
+                    result = collection.bulk_write(bulk_operations, ordered=False)
+                    logger.info(
+                        f"Processed {len(bulk_operations)} new items for {ticker}"
+                    )
+                    logger.info(
+                        f"Inserted: {result.upserted_count}, Modified: {result.modified_count}"
+                    )
+                except BulkWriteError as bwe:
+                    # Filter out duplicate key errors (code 11000)
+                    non_duplicate_errors = [
+                        error
+                        for error in bwe.details["writeErrors"]
+                        if error["code"] != 11000
+                    ]
+
+                    # Only log if there are non-duplicate errors
+                    if non_duplicate_errors:
+                        logger.warning(
+                            f"Some writes failed for {ticker}: {non_duplicate_errors}"
+                        )
 
     logger.info("Articles imported successfully!")
