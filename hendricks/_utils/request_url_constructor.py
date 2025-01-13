@@ -392,10 +392,7 @@ def request_url_constructor(
             "historical-sectors-performance",
             "treasury",
         ]:
-            if ticker is None:
-                raise ValueError("ticker is required")
-            else:
-                compiled_url += f"/{endpoint}"
+            compiled_url += f"/{endpoint}"
 
             # Add optional parameters
             if from_date is not None:
