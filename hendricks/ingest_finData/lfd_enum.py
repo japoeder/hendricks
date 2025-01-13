@@ -275,70 +275,70 @@ class FMPEndpoint(Enum):
         "quotes/index",
         "market_perf.mpIndexQuotes_from_fmpAPI",
         "mpIndexQuotes_from_fmpAPI",
-        False,
+        True,
     )
 
     FMP_SECTOR_PE_RATIO = (
         "sector_price_earning_ratio",
         "market_perf.mpSectorPERatio_from_fmpAPI",
         "mpSectorPERatio_from_fmpAPI",
-        False,
+        True,
     )
 
     FMP_INDUSTRY_PE_RATIO = (
         "industry_price_earning_ratio",
         "market_perf.mpIndustryPERatio_from_fmpAPI",
         "mpIndustryPERatio_from_fmpAPI",
-        False,
+        True,
     )
 
     FMP_SECTOR_PERF = (
         "sectors-performance",
         "market_perf.mpSectorPerf_from_fmpAPI",
         "mpSectorPerf_from_fmpAPI",
-        False,
+        True,
     )
 
     FMP_SECTOR_PERF_HIST = (
         "historical-sectors-performance",
         "market_perf.mpSectorPerfHist_from_fmpAPI",
         "mpSectorPerfHist_from_fmpAPI",
-        False,
+        True,
     )
 
     FMP_BIGGEST_GAINERS = (
         "stock_market/gainers",
         "market_perf.mpBiggestGainers_from_fmpAPI",
         "mpBiggestGainers_from_fmpAPI",
-        False,
+        True,
     )
 
     FMP_BIGGEST_LOSERS = (
         "stock_market/losers",
         "market_perf.mpBiggestLosers_from_fmpAPI",
         "mpBiggestLosers_from_fmpAPI",
-        False,
+        True,
     )
 
     FMP_MOST_ACTIVE_STOCKS = (
         "stock_market/actives",
         "market_perf.mpMostActive_from_fmpAPI",
         "mpMostActive_from_fmpAPI",
-        False,
+        True,
     )
 
     FMP_TREASURY = (
         "treasury",
         "economics.econTreasuryRates_from_fmpAPI",
         "econTreasuryRates_from_fmpAPI",
-        False,
+        True,
     )
 
     FMP_ECONOMIC = (
         "economic",
         "economics.econMacroInd_from_fmpAPI",
         "econMacroInd_from_fmpAPI",
-        False,
+        True,
     )
 
     FMP_INSIDER_TRADES = (
@@ -359,21 +359,21 @@ class FMPEndpoint(Enum):
         "exchanges-list",
         "comapny_info.ciAllExchanges_from_fmpAPI",
         "ciAllExchanges_from_fmpAPI",
-        False,
+        True,
     )
 
     FMP_INDUSTRIES = (
         "industries-list",
         "comapny_info.ciAllIndustries_from_fmpAPI",
         "ciAllIndustries_from_fmpAPI",
-        False,
+        True,
     )
 
     FMP_SECTORS = (
         "sectors-list",
         "comapny_info.ciAllSectors_from_fmpAPI",
         "ciAllSectors_from_fmpAPI",
-        False,
+        True,
     )
 
     REV_X_SEG_PROD = (
