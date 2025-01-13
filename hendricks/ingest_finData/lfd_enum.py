@@ -397,6 +397,27 @@ class FMPEndpoint(Enum):
         False,
     )
 
+    SENTIMENT_HIST = (
+        "historical/social-sentiment",
+        "sentiment.sentimentHist_from_fmpAPI",
+        "sentimentHist_from_fmpAPI",
+        False,
+    )
+
+    SENTIMENT_TRENDING = (
+        "social-sentiments/trending",
+        "sentiment.sentimentTrend_from_fmpAPI",
+        "sentimentTrend_from_fmpAPI",
+        False,
+    )
+
+    SENTIMENT_CHANGE = (
+        "social-sentiments/change",
+        "sentiment.sentimentChange_from_fmpAPI",
+        "sentimentChange_from_fmpAPI",
+        False,
+    )
+
     def __init__(
         self, endpoint: str, module_path: str, function_name: str, is_daily: bool
     ):

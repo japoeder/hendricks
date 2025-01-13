@@ -132,6 +132,7 @@ def request_url_constructor(
     freq_range: int = None,
     indicator: str = None,
     structure: bool = None,
+    condition: str = None,
 ):
     """
     Construct the URL for the FMP API.
@@ -408,14 +409,35 @@ def request_url_constructor(
                 compiled_url += f"&apikey={api_key}"
 
         # be sure to include paging
-        elif endpoint in ["insider-trading"]:
+        elif endpoint in [
+            "insider-trading",
+            "historical/social-sentiment",
+        ]:
             if ticker is None:
                 raise ValueError("ticker is required")
             else:
-                compiled_url += f"/{endpoint}?symbol={ticker}"
+                compiled_url += f"{endpoint}?symbol={ticker}"
 
             if page is not None:
                 compiled_url += f"&page={page}"
+
+            if api_key is None:
+                raise ValueError("api_key is required")
+            else:
+                compiled_url += f"&apikey={api_key}"
+
+        elif endpoint in [
+            "social-sentiments/trending",
+            "social-sentiments/change",
+        ]:
+            compiled_url += f"{endpoint}"
+
+            if condition is None:
+                raise ValueError("condition is required")
+            else:
+                compiled_url += f"?type={condition}"
+
+            compiled_url += "&source=stocktwits"
 
             if api_key is None:
                 raise ValueError("api_key is required")
