@@ -90,7 +90,6 @@ def mpSectorPerf_from_fmpAPI(
             source="fmp",
             from_date=from_date,
             to_date=to_date,
-            ticker=ticker,
         )
 
         print(f"URL: {url}")
@@ -112,10 +111,6 @@ def mpSectorPerf_from_fmpAPI(
             res_df = pd.DataFrame(res)
             logger.info(f"DataFrame shape: {res_df.shape}")
             logger.info(f"DataFrame columns: {res_df.columns.tolist()}")
-
-            if ep_timestamp_field != "today":
-                # Sort results by timestamp in descending order
-                res_df.sort_values(by=ep_timestamp_field, ascending=False, inplace=True)
 
             # Process news items in bulk
             bulk_operations = []
@@ -170,7 +165,7 @@ def mpSectorPerf_from_fmpAPI(
                 )
 
                 # Create unique_id when there isn't a good option in response
-                f1 = ticker
+                f1 = row["sector"]
                 f2 = date
 
                 # Create hash of f1, f2, f3, f4
@@ -179,11 +174,11 @@ def mpSectorPerf_from_fmpAPI(
                 # Streamlined main document
                 document = {
                     "unique_id": unique_id,
+                    "sector": row["sector"],
                     "timestamp": timestamp,
                     "date": date,
                     ##########################################
                     ##########################################
-                    "sector": row["sector"],
                     **feature_values,
                     "feature_hash": feature_hash,
                     ##########################################
@@ -197,7 +192,7 @@ def mpSectorPerf_from_fmpAPI(
                     UpdateOne(
                         {
                             "date": document["date"],
-                            "ticker": document["ticker"],
+                            "sector": document["sector"],
                             # Only update if hash is different or document doesn't exist
                             "$or": [
                                 {"feature_hash": {"$ne": feature_hash}},
