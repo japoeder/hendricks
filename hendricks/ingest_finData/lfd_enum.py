@@ -47,6 +47,13 @@ class FMPEndpoint(Enum):
         True,
     )
 
+    COMPANY_PROFILE = (
+        "profile",
+        "comapny_info.ciCoProfile_from_fmpAPI",
+        "ciCoProfile_from_fmpAPI",
+        True,
+    )
+
     # Financial Statements (Aggregate)
     INCOME_STMT = (
         "income-statement",

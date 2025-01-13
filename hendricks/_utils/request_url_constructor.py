@@ -227,6 +227,7 @@ def request_url_constructor(
             "earnings-calls",
             "quotes/index",
             "historical-price-full/stock_split",
+            "profile",
         ]:
             if ticker is None:
                 raise ValueError("ticker is required")
