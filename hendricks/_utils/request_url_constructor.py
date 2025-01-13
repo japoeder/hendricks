@@ -374,7 +374,6 @@ def request_url_constructor(
                 compiled_url += f"&apikey={api_key}"
 
         elif endpoint in [
-            "treasury",
             "economic",
         ]:
             compiled_url += f"/{endpoint}"
@@ -391,6 +390,7 @@ def request_url_constructor(
 
         elif endpoint in [
             "historical-sectors-performance",
+            "treasury",
         ]:
             if ticker is None:
                 raise ValueError("ticker is required")
