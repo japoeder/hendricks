@@ -83,8 +83,8 @@ def mpSectorPerfHist_from_fmpAPI(
         background=True,  # Allow other operations while building index
     )
 
-    from_date = from_date.strftime("%Y-%m-%d")
-    to_date = to_date.strftime("%Y-%m-%d")
+    # from_date = from_date.strftime("%Y-%m-%d")
+    # to_date = to_date.strftime("%Y-%m-%d")
 
     for ticker in tickers:
         url = request_url_constructor(
