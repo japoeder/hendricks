@@ -90,6 +90,7 @@ def mpSectorPerf_from_fmpAPI(
             source="fmp",
             from_date=from_date,
             to_date=to_date,
+            ticker=ticker,
         )
 
         print(f"URL: {url}")
