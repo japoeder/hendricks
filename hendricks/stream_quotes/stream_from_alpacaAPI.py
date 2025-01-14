@@ -12,15 +12,16 @@ def stream_from_alpacaAPI(
     stream_data,
     collection_name,
     creds_file_path,
+    mongo_db: str = "stocksDB",
 ):
     """
     Load historical quote data from Alpaca API into a MongoDB collection.
     """
     # Get the database connection
-    db = mongo_conn()
+    db = mongo_conn(mongo_db=mongo_db)
 
     # Ensure the collection exists
-    confirm_mongo_collect_exists(collection_name)
+    confirm_mongo_collect_exists(collection_name, mongo_db)
 
     # Get the collection
     collection = db[collection_name]

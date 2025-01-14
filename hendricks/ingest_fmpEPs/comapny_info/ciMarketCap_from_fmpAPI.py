@@ -58,7 +58,7 @@ def ciMarketCap_from_fmpAPI(
     db = mongo_conn(mongo_db=mongo_db)
 
     # Ensure the collection exists
-    confirm_mongo_collect_exists(collection_name)
+    confirm_mongo_collect_exists(collection_name, mongo_db)
 
     # Get the collection
     collection = db[collection_name]

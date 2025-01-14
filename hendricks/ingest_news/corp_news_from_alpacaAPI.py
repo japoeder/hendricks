@@ -38,6 +38,7 @@ def news_from_alpacaAPI(
     articles_limit: int = 50,
     include_content: bool = True,
     gridfs_bucket: str = None,
+    mongo_db: str = "stocksDB",
 ):
     """
     Load historical quote data from Alpaca API into a MongoDB collection.
@@ -83,11 +84,11 @@ def news_from_alpacaAPI(
 
     print("getting database connection")
     # Get the database connection
-    db = mongo_conn()
+    db = mongo_conn(mongo_db=mongo_db)
 
     print("confirming collection exists")
     # Ensure the collection exists
-    confirm_mongo_collect_exists(collection_name)
+    confirm_mongo_collect_exists(collection_name, mongo_db)
 
     print("getting collection")
     # Get the collection
