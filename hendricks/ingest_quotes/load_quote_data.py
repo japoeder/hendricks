@@ -30,7 +30,7 @@ class DataLoader:
         batch_size: int = 7500,
         source: str = None,
         minute_adjustment: bool = True,
-        mongo_db: str = "StocksDB",
+        mongo_db: str = "stocksDB",
     ):
         self.tickers = tickers
         self.from_date = pd.to_datetime(from_date)

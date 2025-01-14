@@ -16,7 +16,7 @@ def mongo_conn(
     mongo_password: str = None,
     mongo_host: str = None,
     mongo_port: str = None,
-    mongo_db: str = "StocksDB",
+    mongo_db: str = "stocksDB",
 ):
     """
     Connect to MongoDB.

@@ -41,7 +41,7 @@ def insiderTradeStats_from_fmpAPI(
     ep=None,
     freq="1min",
     freq_range=5,
-    mongo_db="StocksDB",
+    mongo_db="stocksDB",
 ):
     """
     Load historical quote data from Alpaca API into a MongoDB collection.

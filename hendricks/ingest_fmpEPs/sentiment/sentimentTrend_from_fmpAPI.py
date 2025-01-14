@@ -40,7 +40,7 @@ def sentimentTrend_from_fmpAPI(
     from_date=None,
     to_date=None,
     ep=None,
-    mongo_db="StocksDB",
+    mongo_db="stocksDB",
 ):
     """
     Load historical quote data from Alpaca API into a MongoDB collection.

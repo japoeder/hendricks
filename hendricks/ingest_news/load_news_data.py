@@ -22,7 +22,7 @@ class NewsLoader:
         collection_name: str = None,
         source: str = None,
         gridfs_bucket: str = None,
-        mongo_db: str = "StocksDB",
+        mongo_db: str = "stocksDB",
     ):
         self.tickers = tickers
         self.from_date = from_date
