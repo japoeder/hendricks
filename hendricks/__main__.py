@@ -102,6 +102,8 @@ def load_quotes():
     from_date = data.get("from_date")
     to_date = data.get("to_date")
     minute_adjustment = data.get("minute_adjustment")
+    mongo_db = data.get("mongo_db")
+
     if minute_adjustment is None:
         minute_adjustment = True
 
@@ -134,6 +136,7 @@ def load_quotes():
                 collection_name=collection_name,
                 source=source,
                 minute_adjustment=minute_adjustment,
+                mongo_db=mongo_db,
             )
             loader.load_quote_data()
             successful_tickers.append(ticker)
@@ -247,6 +250,8 @@ def load_news():
     from_date = data.get("from_date")
     to_date = data.get("to_date")
     collection_name = data.get("collection_name")
+    mongo_db = data.get("mongo_db")
+
     if collection_name is None:
         collection_name = "rawNewsColl"
     sources = data.get("sources")
@@ -269,6 +274,7 @@ def load_news():
                 collection_name=collection_name,
                 source=source,
                 gridfs_bucket=gridfs_bucket,
+                mongo_db=mongo_db,
             )
             loader.load_news_data()
             successful_sources.append(source)

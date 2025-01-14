@@ -29,6 +29,7 @@ def quote_from_alpacaAPI(
     from_date=None,
     to_date=None,
     minute_adjustment=True,
+    mongo_db="stocksDB",
 ):
     """
     Load historical quote data from Alpaca API into a MongoDB collection.
@@ -53,7 +54,7 @@ def quote_from_alpacaAPI(
     to_date = pd.Timestamp(to_date, tz=TZ).to_pydatetime()
 
     # Get the database connection
-    db = mongo_conn()
+    db = mongo_conn(mongo_db=mongo_db)
 
     # Ensure the collection exists
     confirm_mongo_collect_exists(collection_name)
