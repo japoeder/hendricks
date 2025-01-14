@@ -51,7 +51,7 @@ def quote_from_fmpAPI(
     to_date = pd.Timestamp(to_date, tz=TZ).to_pydatetime()
 
     # Get the database connection
-    db = mongo_conn()
+    db = mongo_conn(mongo_db=mongo_db)
 
     # Ensure the collection exists
     confirm_mongo_collect_exists(collection_name)
