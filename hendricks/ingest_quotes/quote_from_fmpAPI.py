@@ -31,6 +31,7 @@ def quote_from_fmpAPI(
     creds_file_path=None,
     from_date=None,
     to_date=None,
+    mongo_db="StocksDB",
 ):
     """
     Load historical quote data from Alpaca API into a MongoDB collection.
