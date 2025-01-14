@@ -8,6 +8,7 @@ import logging
 from zoneinfo import ZoneInfo
 
 # import pytz
+import time
 import pandas as pd
 from dotenv import load_dotenv
 import requests
@@ -95,7 +96,9 @@ def genNews_from_fmpAPI(
 
     for ticker in tickers:
         page = 0
-        while True:  # Replace a=True with clearer logic
+        has_more_data = True
+
+        while has_more_data:
             url = request_url_constructor(
                 endpoint="general_news",
                 base_url=BASE_URL,
@@ -114,14 +117,18 @@ def genNews_from_fmpAPI(
                 break
 
             res = response.json()
-            if not res:  # No more data
+
+            # Check if we got any data back
+            if not res or len(res) == 0:
                 logger.info(f"No more data for {ticker} after page {page}")
+                has_more_data = False
                 break
 
             # Process the page data
             res_df = pd.DataFrame(res)
-            logger.info(f"DataFrame shape: {res_df.shape}")
-            logger.info(f"DataFrame columns: {res_df.columns.tolist()}")
+            logger.info(
+                f"Processing page {page} with {len(res_df)} records for {ticker}"
+            )
 
             # Sort results by timestamp in descending order
             if ep_timestamp_field != "today":
@@ -221,5 +228,8 @@ def genNews_from_fmpAPI(
                     bulk_operations = []  # Clear bulk operations for next page
 
             page += 1
+
+            # Optional: Add a small delay to avoid hitting rate limits
+            time.sleep(0.5)
 
         logger.info(f"Completed processing for {ticker}")
