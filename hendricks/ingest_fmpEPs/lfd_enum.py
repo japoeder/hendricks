@@ -425,6 +425,13 @@ class FMPEndpoint(Enum):
         False,
     )
 
+    FMP_GENERAL_NEWS = (
+        "general_news",
+        "news.genNews_from_fmpAPI",
+        "genNews_from_fmpAPI",
+        False,
+    )
+
     def __init__(
         self, endpoint: str, module_path: str, function_name: str, is_daily: bool
     ):
@@ -438,7 +445,7 @@ class FMPEndpoint(Enum):
     def function(self) -> Callable:
         """Lazily import and cache the function"""
         if self._function is None:
-            module = import_module(f"hendricks.ingest_finData.{self.module_path}")
+            module = import_module(f"hendricks.ingest_fmpEPs.{self.module_path}")
             self._function = getattr(module, self.function_name)
         return self._function
 

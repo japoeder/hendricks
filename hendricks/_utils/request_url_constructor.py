@@ -191,6 +191,23 @@ def request_url_constructor(
                 if to_date is not None:
                     compiled_url += f"&to={to_date}"
 
+        elif endpoint == "general_news":
+            compiled_url += f"{endpoint}"
+
+            if page is not None:
+                compiled_url += f"?page={page}"
+
+            # Add optional parameters
+            if from_date is not None:
+                compiled_url += f"&from={from_date}"
+                if to_date is not None:
+                    compiled_url += f"&to={to_date}"
+
+            if api_key is None:
+                raise ValueError("api_key is required")
+            else:
+                compiled_url += f"&apikey={api_key}"
+
         elif endpoint in [
             "governance/executive_compensation",
             "historical/employee_count",

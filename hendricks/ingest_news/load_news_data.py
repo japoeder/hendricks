@@ -3,8 +3,8 @@ Load news data into MongoDB.
 """
 import dotenv
 import pandas as pd
-from hendricks.ingest_news.news_from_alpacaAPI import news_from_alpacaAPI
-from hendricks.ingest_news.news_from_fmpAPI import news_from_fmpAPI
+from hendricks.ingest_news.corp_news_from_alpacaAPI import news_from_alpacaAPI
+from hendricks.ingest_news.corp_news_from_fmpAPI import news_from_fmpAPI
 
 dotenv.load_dotenv()
 
