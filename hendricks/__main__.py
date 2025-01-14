@@ -167,6 +167,7 @@ def load_fin_data():
     from_date = data.get("from_date")
     to_date = data.get("to_date")
     sources = data.get("sources")
+    mongo_db = data.get("mongo_db")
 
     collection_name = data.get("collection_name")
     fmp_endpoint = data.get("fmp_endpoint")
@@ -206,6 +207,7 @@ def load_fin_data():
                     collection_name=collection_name,
                     source=source,
                     fmp_endpoint=fmp_endpoint,
+                    mongo_db=mongo_db,
                 )
                 # * USING FROM_DATE TO CONTROL DAILY LOADING
                 if daily_fmp_flag:

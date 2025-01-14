@@ -31,6 +31,7 @@ class FinLoader:
         source: str = None,
         minute_adjustment: bool = True,
         fmp_endpoint: dict = None,
+        mongo_db: str = "StocksDB",
     ):
         self.tickers = tickers
         self.from_date = pd.to_datetime(from_date)
@@ -42,7 +43,7 @@ class FinLoader:
         self.source = source
         self.minute_adjustment = minute_adjustment
         self.fmp_endpoint = fmp_endpoint
-
+        self.mongo_db = mongo_db
         # Create US business day calendar
         self.us_bd = CustomBusinessDay(calendar=USFederalHolidayCalendar())
 
@@ -69,6 +70,7 @@ class FinLoader:
             from_date=self.from_date,
             to_date=self.to_date,
             ep=self.fmp_endpoint,
+            mongo_db=self.mongo_db,
         )
 
         print(f"Completed processing for {self.tickers}")
@@ -109,6 +111,7 @@ class FinLoader:
                     to_date=loop_mon_end.strftime("%Y-%m-%d"),
                     collection_name=self.collection_name,
                     ep=self.fmp_endpoint,
+                    mongo_db=self.mongo_db,
                 )
 
                 loop_mon_beg = loop_mon_end
@@ -122,6 +125,7 @@ class FinLoader:
                         to_date=to_date.strftime("%Y-%m-%d"),
                         collection_name=self.collection_name,
                         ep=self.fmp_endpoint,
+                        mongo_db=self.mongo_db,
                     )
         else:
             # For periods less than 30 days, make a single API call
@@ -131,6 +135,7 @@ class FinLoader:
                 to_date=self.to_date,
                 collection_name=self.collection_name,
                 ep=self.fmp_endpoint,
+                mongo_db=self.mongo_db,
             )
 
         print(f"Completed processing for {self.tickers}")

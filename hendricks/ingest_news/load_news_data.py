@@ -22,6 +22,7 @@ class NewsLoader:
         collection_name: str = None,
         source: str = None,
         gridfs_bucket: str = None,
+        mongo_db: str = "StocksDB",
     ):
         self.tickers = tickers
         self.from_date = from_date
@@ -29,7 +30,9 @@ class NewsLoader:
         self.collection_name = collection_name
         self.source = source
         self.gridfs_bucket = gridfs_bucket
+        self.mongo_db = mongo_db
 
+    # TODO: Incorporate logic from lfd_enum.py and load_fmp_data.py for consistency
     def load_news_data(self):
         """Load news data into MongoDB."""
         if self.source == "alpaca":
@@ -65,6 +68,7 @@ class NewsLoader:
                         articles_limit=articles_limit,
                         collection_name=self.collection_name,
                         gridfs_bucket=self.gridfs_bucket,
+                        mongo_db=self.mongo_db,
                     )
 
                     # Move to first day of next month
@@ -85,6 +89,7 @@ class NewsLoader:
                     articles_limit=articles_limit,
                     collection_name=self.collection_name,
                     gridfs_bucket=self.gridfs_bucket,
+                    mongo_db=self.mongo_db,
                 )
         elif self.source == "fmp":
             print(f"Fetching data from FMP API for {self.tickers}")
@@ -120,6 +125,7 @@ class NewsLoader:
                         articles_limit=articles_limit,
                         collection_name=self.collection_name,
                         gridfs_bucket=self.gridfs_bucket,
+                        mongo_db=self.mongo_db,
                     )
 
                     # Move to first day of next month
@@ -140,6 +146,7 @@ class NewsLoader:
                     articles_limit=articles_limit,
                     collection_name=self.collection_name,
                     gridfs_bucket=self.gridfs_bucket,
+                    mongo_db=self.mongo_db,
                 )
         else:
             raise ValueError("Please provide a valid newssource")

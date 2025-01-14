@@ -30,6 +30,7 @@ class DataLoader:
         batch_size: int = 7500,
         source: str = None,
         minute_adjustment: bool = True,
+        mongo_db: str = "StocksDB",
     ):
         self.tickers = tickers
         self.from_date = pd.to_datetime(from_date)
@@ -39,7 +40,7 @@ class DataLoader:
         self.creds_file_path = get_path("creds")
         self.source = source
         self.minute_adjustment = minute_adjustment
-
+        self.mongo_db = mongo_db
         # Create US business day calendar
         self.us_bd = CustomBusinessDay(calendar=USFederalHolidayCalendar())
 
@@ -60,6 +61,7 @@ class DataLoader:
 
         return True
 
+    # TODO: Incorporate logic from lfd_enum.py and load_fmp_data.py for consistency
     def load_quote_data(self):
         """Load ticker data into MongoDB day by day."""
         current_date = self.from_date
@@ -87,6 +89,7 @@ class DataLoader:
                         to_date=next_date,
                         creds_file_path=self.creds_file_path,
                         minute_adjustment=self.minute_adjustment,
+                        mongo_db=self.mongo_db,
                     )
                 elif self.source == "fmp":
                     print(f"Fetching data from FMP API for {self.tickers}")
@@ -96,6 +99,7 @@ class DataLoader:
                         from_date=date_str,
                         to_date=next_date,
                         creds_file_path=self.creds_file_path,
+                        mongo_db=self.mongo_db,
                     )
                 else:
                     raise ValueError("Unsupported source")
@@ -117,5 +121,6 @@ class DataLoader:
             stream_data=stream_list,
             collection_name=self.collection_name,
             creds_file_path=self.creds_file_path,
+            mongo_db=self.mongo_db,
         )
         print("Data imported successfully!")

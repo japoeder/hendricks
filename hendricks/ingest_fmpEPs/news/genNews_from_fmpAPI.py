@@ -40,6 +40,7 @@ def genNews_from_fmpAPI(
     from_date=None,
     to_date=None,
     ep: str = None,
+    mongo_db="StocksDB",
 ):
     """
     Load historical quote data from Alpaca API into a MongoDB collection.
@@ -60,7 +61,7 @@ def genNews_from_fmpAPI(
     to_date = to_date.tz_convert("America/New_York")
 
     # Get the database connection
-    db = mongo_conn()
+    db = mongo_conn(mongo_db=mongo_db)
 
     # Ensure the collection exists
     confirm_mongo_collect_exists(collection_name)

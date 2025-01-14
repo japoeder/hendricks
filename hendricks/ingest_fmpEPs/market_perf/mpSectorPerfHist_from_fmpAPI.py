@@ -41,6 +41,7 @@ def mpSectorPerfHist_from_fmpAPI(
     ep=None,
     freq="1min",
     freq_range=5,
+    mongo_db="StocksDB",
 ):
     """
     Load historical sector performance data from FMP API into a MongoDB collection.
@@ -56,7 +57,7 @@ def mpSectorPerfHist_from_fmpAPI(
     API_KEY, BASE_URL = load_credentials(creds_file_path, cred_key)
 
     # Get the database connection
-    db = mongo_conn()
+    db = mongo_conn(mongo_db=mongo_db)
 
     # Ensure the collection exists
     confirm_mongo_collect_exists(collection_name)

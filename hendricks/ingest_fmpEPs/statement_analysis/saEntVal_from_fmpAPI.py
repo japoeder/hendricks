@@ -40,6 +40,7 @@ def saEntVal_from_fmpAPI(
     from_date=None,
     to_date=None,
     ep=None,
+    mongo_db="StocksDB",
 ):
     """
     Load historical quote data from Alpaca API into a MongoDB collection.
@@ -55,7 +56,7 @@ def saEntVal_from_fmpAPI(
     API_KEY, BASE_URL = load_credentials(creds_file_path, cred_key)
 
     # Get the database connection
-    db = mongo_conn()
+    db = mongo_conn(mongo_db=mongo_db)
 
     coll_grp = "sa"
     periods = ["annual", "quarter"]
