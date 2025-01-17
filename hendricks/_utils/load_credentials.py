@@ -111,5 +111,17 @@ def load_credentials(file_path, data_type):
             mongo_creds["MONGO_PORT"],
         )
 
+    if data_type == "reddit_api":
+        with open(file_path, "r", encoding="utf-8") as file:
+            creds = json.load(file)
+        reddit_creds = creds["reddit_api"]
+        return (
+            reddit_creds["CLIENT_ID"],
+            reddit_creds["CLIENT_SECRET"],
+            reddit_creds["USER_AGENT"],
+            reddit_creds["REDDIT_USER"],
+            reddit_creds["REDDIT_PWD"],
+        )
+
     else:
         raise ValueError(f"Invalid data type: {data_type}")
