@@ -245,6 +245,8 @@ def news_from_alpacaAPI(
                 source="alpaca",
             )
 
+            article_source = row["url"].split(".")[1].split("/")[-1] + ".com"
+
             # Streamlined main document
             document = {
                 "unique_id": unique_id,
@@ -252,7 +254,7 @@ def news_from_alpacaAPI(
                 "ticker": ticker,
                 ##########################################
                 ##########################################
-                "article_source": row["source"],
+                "article_source": article_source,
                 **feature_values,
                 "feature_hash": feature_hash,
                 ##########################################
