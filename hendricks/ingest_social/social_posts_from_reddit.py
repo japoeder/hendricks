@@ -51,7 +51,15 @@ def socialPosts_from_reddit(
         user_agent=USER_AGENT,
         username=USERNAME,
         password=PASSWORD,
+        ratelimit_seconds=1,  # Wait 1 second between requests
+        timeout=30,  # 30 second timeout for requests
+        check_for_async=False,  # Disable async check warning
     )
+
+    # Configure rate limits based on Pro account
+    reddit.config.api_request_delay = 1.0  # 1 second between requests
+    reddit.config.timeout = 30  # 30 second timeout
+    reddit.config.retries = 3  # Retry failed requests up to 3 times
 
     # Get MongoDB connection and setup collections
     db = mongo_conn(mongo_db=mongo_db)
@@ -369,7 +377,15 @@ def load_reddit_comments(
         user_agent=USER_AGENT,
         username=USERNAME,
         password=PASSWORD,
+        ratelimit_seconds=1,  # Wait 1 second between requests
+        timeout=30,  # 30 second timeout for requests
+        check_for_async=False,  # Disable async check warning
     )
+
+    # Configure rate limits
+    reddit.config.api_request_delay = 1.0
+    reddit.config.timeout = 30
+    reddit.config.retries = 3
 
     processed_count = 0
     bulk_ops = []
