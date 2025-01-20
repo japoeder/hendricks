@@ -88,7 +88,8 @@ disable=
     no-else-continue,
     too-many-return-statements,
     too-many-positional-arguments,
-    pointless-string-statement
+    pointless-string-statement,
+    unbalanced-tuple-unpacking
 #    len-as-condition,
 #    too-few-public-methods,
 #    anomalous-backslash-in-string,

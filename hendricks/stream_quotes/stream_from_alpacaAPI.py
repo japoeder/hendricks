@@ -4,8 +4,10 @@ Load stream quote data from Alpaca API into a MongoDB collection.
 
 from datetime import datetime, timezone
 
-from hendricks._utils.mongo_conn import mongo_conn
-from hendricks._utils.mongo_coll_verification import confirm_mongo_collect_exists
+from quantum_trade_utilities.data.mongo_conn import mongo_conn
+from quantum_trade_utilities.data.mongo_coll_verification import (
+    confirm_mongo_collect_exists,
+)
 
 
 def stream_from_alpacaAPI(

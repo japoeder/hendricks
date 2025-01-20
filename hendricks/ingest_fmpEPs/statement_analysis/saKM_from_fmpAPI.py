@@ -20,12 +20,14 @@ from pymongo.errors import BulkWriteError
 # from gridfs import GridFS
 
 load_dotenv()
-from hendricks._utils.load_credentials import load_credentials
-from hendricks._utils.mongo_conn import mongo_conn
-from hendricks._utils.mongo_coll_verification import confirm_mongo_collect_exists
-from hendricks._utils.get_path import get_path
-from hendricks._utils.request_url_constructor import request_url_constructor
-from hendricks._utils.propcase import propcase
+from quantum_trade_utilities.data.load_credentials import load_credentials
+from quantum_trade_utilities.data.mongo_conn import mongo_conn
+from quantum_trade_utilities.data.mongo_coll_verification import (
+    confirm_mongo_collect_exists,
+)
+from quantum_trade_utilities.core.get_path import get_path
+from quantum_trade_utilities.data.request_url_constructor import request_url_constructor
+from quantum_trade_utilities.core.propcase import propcase
 
 # Set up logging
 logging.basicConfig(level=logging.WARNING)  # Set to WARNING to suppress DEBUG messages
@@ -66,7 +68,7 @@ def saKM_from_fmpAPI(
             coll_name_pd = f"{collection_name.split('_')[0]}_{coll_grp}{propcase(period)}{collection_name.split('_')[1]}"
 
             # Ensure the collection exists
-            confirm_mongo_collect_exists(coll_name_pd)
+            confirm_mongo_collect_exists(coll_name_pd, mongo_db)
 
             # Get the collection
             collection = db[coll_name_pd]

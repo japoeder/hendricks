@@ -13,15 +13,17 @@ from flask import Flask, request, jsonify
 # Add the parent directory to sys.path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from quantum_trade_utilities.core.get_path import get_path  # pylint: disable=C0413
+from quantum_trade_utilities.io.logging_config import (
+    setup_logging,
+)  # pylint: disable=C0413
+
 from hendricks.ingest_quotes.load_quote_data import DataLoader  # pylint: disable=C0413
 from hendricks.ingest_fmpEPs.load_fmp_data import FinLoader  # pylint: disable=C0413
 from hendricks.ingest_news.load_news_data import NewsLoader  # pylint: disable=C0413
 from hendricks.ingest_social.load_social_data import (
     SocialLoader,
 )  # pylint: disable=C0413
-
-from hendricks._utils.get_path import get_path  # pylint: disable=C0413
-from hendricks._utils.logging_config import setup_logging  # pylint: disable=C0413
 
 dotenv.load_dotenv(get_path("env"))
 

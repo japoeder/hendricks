@@ -10,11 +10,13 @@ from dotenv import load_dotenv
 from alpaca_trade_api import REST
 
 load_dotenv()
-from hendricks._utils.load_credentials import load_credentials
-from hendricks._utils.mongo_conn import mongo_conn
-from hendricks._utils.mongo_coll_verification import confirm_mongo_collect_exists
-from hendricks._utils.get_path import get_path
-from hendricks._utils.exceptions import APIError
+from quantum_trade_utilities.data.load_credentials import load_credentials
+from quantum_trade_utilities.data.mongo_conn import mongo_conn
+from quantum_trade_utilities.data.mongo_coll_verification import (
+    confirm_mongo_collect_exists,
+)
+from quantum_trade_utilities.core.get_path import get_path
+from quantum_trade_utilities.core.exceptions import APIError
 
 # Set up logging
 logging.basicConfig(level=logging.WARNING)  # Set to WARNING to suppress DEBUG messages

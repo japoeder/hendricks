@@ -8,10 +8,11 @@ import pandas as pd
 from pandas.tseries.holiday import USFederalHolidayCalendar
 from pandas.tseries.offsets import CustomBusinessDay
 
+from quantum_trade_utilities.core.get_path import get_path
+
 from hendricks.ingest_quotes.quote_from_alpacaAPI import quote_from_alpacaAPI
 from hendricks.ingest_quotes.quote_from_fmpAPI import quote_from_fmpAPI
 from hendricks.stream_quotes.stream_from_alpacaAPI import stream_from_alpacaAPI
-from hendricks._utils.get_path import get_path
 
 dotenv.load_dotenv()
 

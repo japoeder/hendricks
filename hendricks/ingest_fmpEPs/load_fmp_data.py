@@ -9,7 +9,7 @@ import pandas as pd
 from pandas.tseries.holiday import USFederalHolidayCalendar
 from pandas.tseries.offsets import CustomBusinessDay
 
-from hendricks._utils.get_path import get_path
+from quantum_trade_utilities.core.get_path import get_path
 from hendricks.ingest_fmpEPs.lfd_enum import FMPEndpoint
 
 dotenv.load_dotenv()
