@@ -309,10 +309,12 @@ def load_social():
     mongo_db = data.get("mongo_db")
 
     # Social-specific parameters
-    sources = data.get("sources", ["reddit"])  # Default to reddit
-    subreddits = data.get("subreddits", ["wallstreetbets", "stocks", "investing"])
-    reddit_load = data.get("reddit_load", "recent")  # Default to recent mode
+    sources = data.get("sources")  # Default to reddit
+    subreddits = data.get("subreddits")
+    reddit_load = data.get("reddit_load")  # Default to recent mode
     comment_depth = data.get("comment_depth", 100)
+    keywords = data.get("keywords", {})  # New parameter for keyword mappings
+    target_endpoint = data.get("target_endpoint")
 
     # Set default collection name if none provided
     if collection_name is None:
@@ -323,11 +325,17 @@ def load_social():
     if not sources:
         return jsonify({"error": "Social source endpoint is required"}), 400
 
-    failed_sources = []
-    successful_sources = []
+    # Send immediate response that processing has started
+    response = {
+        "status": "processing",
+        "message": f"Started processing {len(tickers)} tickers for {sources}",
+        "collection": collection_name,
+        "reddit_load": reddit_load,
+    }
 
-    for source in sources:
-        try:
+    # Start processing in background
+    try:
+        for source in sources:
             loader = SocialLoader(
                 tickers=tickers,
                 collection_name=collection_name,
@@ -336,30 +344,20 @@ def load_social():
                 reddit_load=reddit_load,
                 mongo_db=mongo_db,
                 comment_depth=comment_depth,
+                keywords=keywords,
+                target_endpoint=target_endpoint,
             )
-
             loader.load_data()
-            successful_sources.append(source)
+            logging.info(f"Successfully processed source: {source}")
 
-        except Exception as e:
-            logging.error(f"Error loading source {source}: {e}")
-            failed_sources.append(
-                {"source": source, "error": str(e), "source_type": source}
-            )
-            continue
+    except Exception as e:
+        logging.error(f"Error in social data processing: {str(e)}")
+        # Processing continues even if there's an error
 
     return (
-        jsonify(
-            {
-                "status": "completed",
-                "successful_sources": successful_sources,
-                "failed_sources": failed_sources,
-                "collection": collection_name,
-                "reddit_load": reddit_load,
-            }
-        ),
+        jsonify(response),
         202,
-    )
+    )  # 202 Accepted indicates the request is being processed
 
 
 if __name__ == "__main__":

@@ -21,6 +21,8 @@ class SocialLoader:
         reddit_load: str = "recent",  # 'recent' or 'live'
         mongo_db: str = "stocksDB",
         comment_depth: int = 100,
+        keywords: dict = None,
+        target_endpoint: str = "reddit",
     ):
         self.tickers = tickers
         self.collection_name = collection_name
@@ -29,6 +31,8 @@ class SocialLoader:
         self.reddit_load = reddit_load
         self.mongo_db = mongo_db
         self.comment_depth = comment_depth
+        self.keywords = keywords
+        self.target_endpoint = target_endpoint
 
     def load_data(self):
         """Load social media data into MongoDB."""
@@ -51,6 +55,8 @@ class SocialLoader:
             reddit_load=self.reddit_load,
             verbose=False,
             comment_depth=self.comment_depth,
+            keywords=self.keywords,
+            target_endpoint=self.target_endpoint,
         )
 
         logging.info(f"Completed processing for {self.tickers}")

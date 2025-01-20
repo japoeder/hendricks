@@ -29,12 +29,14 @@ def socialPosts_from_reddit(
     collection_name=None,
     subreddits=None,
     mongo_db="socialDB",
-    reddit_load="year",  # 'year' or 'minute'
-    verbose=False,
+    reddit_load="year",
+    verbose=True,
     comment_depth=100,
+    keywords=None,  # New parameter for additional keywords
+    target_endpoint=None,
 ):
     """Load Reddit data using PRAW."""
-
+    verbose = True
     # Set up logging
     logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger(__name__)
@@ -106,44 +108,59 @@ def socialPosts_from_reddit(
     if verbose:
         logger.info(f"Running in {reddit_load} mode with comment depth {comment_depth}")
 
-    for sub in subreddits:
-        if verbose:
-            logger.info(f"Processing subreddit: {sub}")
+    bulk_operations = []  # Initialize bulk_operations list at the top level
+    submission_count = 0
+    comment_count = 0
 
-        for ticker in tickers:
+    for ticker in tickers:
+        if verbose:
+            logger.info(f"Processing ticker: {ticker}")
+
+        # Check if a subreddit exists for this ticker
+        try:
+            ticker_subreddit = reddit.subreddit(ticker)
+            # Test if subreddit exists by accessing a property
+            _ = ticker_subreddit.display_name
             if verbose:
-                logger.info(f"Searching for ticker: {ticker}")
+                logger.info(f"Found dedicated subreddit for {ticker}")
+
+            # Add ticker subreddit to the list for processing
+            if subreddits is None:
+                subreddits = [ticker]
+            else:
+                subreddits.append(ticker)
+
+        except Exception as e:
+            if verbose:
+                logger.info(f"No dedicated subreddit found for {ticker}: {str(e)}")
+
+        # Process all subreddits (including ticker subreddit if found)
+        for sub in subreddits:
+            if verbose:
+                logger.info(f"Processing subreddit: {sub}")
 
             try:
                 subreddit = reddit.subreddit(sub)
 
-                # Search both with and without the $ symbol
-                search_queries = [
-                    f'title:"{ticker}" OR selftext:"{ticker}"',
-                    f'title:"${ticker}" OR selftext:"${ticker}"',
-                ]
+                # If this is the ticker's dedicated subreddit, get all posts
+                if sub.upper() == ticker.upper():
+                    if verbose:
+                        logger.info(f"Getting all posts from {ticker}'s subreddit")
 
-                for query in search_queries:
-                    submissions = subreddit.search(
-                        query, time_filter=time_filter, sort="new", limit=None
-                    )
-
-                    bulk_operations = []
+                    submissions = subreddit.new(limit=None)
+                    # Process all submissions from ticker subreddit
+                    bulk_operations = []  # Move this outside the submission loop
                     for submission in submissions:
-                        # Create unique_id and feature hash
-                        unique_id_fields = f"{submission.created_utc}{submission.title}{submission.author}{submission.subreddit}"
+                        submission_count += 1
+                        if verbose and submission_count % 100 == 0:
+                            logger.info(
+                                f"Processed {submission_count} submissions for {ticker}"
+                            )
+
+                        # Create unique_id and process submission
+                        unique_id_fields = f"{submission.title}{submission.author}{submission.subreddit}"
                         unique_id = hashlib.sha256(
                             unique_id_fields.encode()
-                        ).hexdigest()
-
-                        feature_values = {
-                            "title": submission.title,
-                            "selftext": submission.selftext,
-                            "score": submission.score,
-                            "num_comments": submission.num_comments,
-                        }
-                        feature_hash = hashlib.sha256(
-                            str(feature_values).encode()
                         ).hexdigest()
 
                         document = {
@@ -153,8 +170,10 @@ def socialPosts_from_reddit(
                             "timestamp": datetime.fromtimestamp(
                                 submission.created_utc, tz=ZoneInfo("UTC")
                             ),
-                            **feature_values,
-                            "feature_hash": feature_hash,
+                            "title": submission.title,
+                            "selftext": submission.selftext,
+                            "score": submission.score,
+                            "num_comments": submission.num_comments,
                             "author": str(submission.author),
                             "subreddit": str(submission.subreddit),
                             "url": submission.url,
@@ -163,46 +182,170 @@ def socialPosts_from_reddit(
 
                         bulk_operations.append(
                             UpdateOne(
-                                {
-                                    "unique_id": document["unique_id"],
-                                    "ticker": document["ticker"],
-                                    # Only update if hash is different or document doesn't exist
-                                    "$or": [
-                                        {"feature_hash": {"$ne": feature_hash}},
-                                        {"feature_hash": {"$exists": False}},
-                                    ],
-                                },
+                                {"unique_id": unique_id},
                                 {"$set": document},
                                 upsert=True,
                             )
                         )
 
-                        if len(bulk_operations) >= 500:
+                        if len(bulk_operations) >= 5:
                             execute_bulk_operations(
                                 posts_collection, bulk_operations, verbose
                             )
                             bulk_operations = []
 
-                        # Process comments with depth based on load type
-                        load_reddit_comments(
+                        # Process comments
+                        comment_result = load_reddit_comments(
                             post=submission,
                             post_UID=unique_id,
                             collection=comments_collection,
                             ticker=ticker,
-                            comment_depth=comment_depth,  # Pass the comment depth
+                            comment_depth=comment_depth,
                             mongo_db=mongo_db,
                             verbose=verbose,
                         )
+                        comment_count += comment_result
 
-                    if bulk_operations:
-                        execute_bulk_operations(
-                            posts_collection, bulk_operations, verbose
-                        )
+                        if verbose and comment_count % 1000 == 0:
+                            logger.info(
+                                f"Processed {comment_count} comments for {ticker}"
+                            )
+                # For other subreddits, use search as before
+                else:
+                    search_terms = get_ticker_keywords(
+                        ticker, keywords.get(ticker) if keywords else None
+                    )
+                    if verbose:
+                        logger.info(f"Using search terms: {search_terms}")
+
+                    for term in search_terms:
+                        search_queries = [
+                            f'"{term}"',  # Search all fields
+                            f'title:"{term}"',  # Specific title search
+                            f'selftext:"{term}"',  # Specific selftext search
+                            f'flair:"{term}"',  # Search flairs
+                        ]
+
+                        for query in search_queries:
+                            try:
+                                if verbose:
+                                    logger.info(f"Executing search query: {query}")
+
+                                submissions = subreddit.search(
+                                    query,
+                                    time_filter=time_filter,
+                                    sort="new",
+                                    limit=None,
+                                    syntax="lucene",
+                                )
+
+                                # Track submissions being processed
+                                for submission in submissions:
+                                    submission_count += 1
+                                    if verbose and submission_count % 100 == 0:
+                                        logger.info(
+                                            f"Processed {submission_count} submissions for {ticker}"
+                                        )
+
+                                    # Create unique_id and feature hash
+                                    unique_id_fields = f"{submission.title}{submission.author}{submission.subreddit}"
+                                    unique_id = hashlib.sha256(
+                                        unique_id_fields.encode()
+                                    ).hexdigest()
+
+                                    feature_values = {
+                                        "score": submission.score,
+                                        "num_comments": submission.num_comments,
+                                    }
+                                    feature_hash = hashlib.sha256(
+                                        str(feature_values).encode()
+                                    ).hexdigest()
+
+                                    document = {
+                                        "unique_id": unique_id,
+                                        "ticker": ticker,
+                                        "submission_id": submission.id,
+                                        "timestamp": datetime.fromtimestamp(
+                                            submission.created_utc, tz=ZoneInfo("UTC")
+                                        ),
+                                        "title": submission.title,
+                                        "selftext": submission.selftext,
+                                        **feature_values,
+                                        "feature_hash": feature_hash,
+                                        "author": str(submission.author),
+                                        "subreddit": str(submission.subreddit),
+                                        "url": submission.url,
+                                        "created_at": datetime.now(ZoneInfo("UTC")),
+                                    }
+
+                                    bulk_operations.append(
+                                        UpdateOne(
+                                            {
+                                                "unique_id": document["unique_id"],
+                                                "ticker": document["ticker"],
+                                                # Only update if hash is different or document doesn't exist
+                                                "$or": [
+                                                    {
+                                                        "feature_hash": {
+                                                            "$ne": feature_hash
+                                                        }
+                                                    },
+                                                    {
+                                                        "feature_hash": {
+                                                            "$exists": False
+                                                        }
+                                                    },
+                                                ],
+                                            },
+                                            {"$set": document},
+                                            upsert=True,
+                                        )
+                                    )
+
+                                    if len(bulk_operations) >= 5:
+                                        execute_bulk_operations(
+                                            posts_collection, bulk_operations, verbose
+                                        )
+                                        bulk_operations = []
+
+                                    # Track comments
+                                    comment_result = load_reddit_comments(
+                                        post=submission,
+                                        post_UID=unique_id,
+                                        collection=comments_collection,
+                                        ticker=ticker,
+                                        comment_depth=comment_depth,
+                                        mongo_db=mongo_db,
+                                        verbose=verbose,
+                                    )
+                                    comment_count += comment_result
+
+                                    if verbose and comment_count % 1000 == 0:
+                                        logger.info(
+                                            f"Processed {comment_count} comments for {ticker}"
+                                        )
+
+                                # Execute any remaining bulk operations
+                                if bulk_operations:
+                                    execute_bulk_operations(
+                                        posts_collection, bulk_operations, verbose
+                                    )
+                                    bulk_operations = []
+
+                            except Exception as e:
+                                logger.error(
+                                    f"Error with query '{query}' in {sub}: {str(e)}"
+                                )
+                                continue
 
             except Exception as e:
                 logger.error(f"Error processing {ticker} in {sub}: {str(e)}")
                 continue
 
+    if verbose:
+        logger.info(
+            f"Final counts - Submissions: {submission_count}, Comments: {comment_count}"
+        )
     return
 
 
@@ -211,13 +354,11 @@ def load_reddit_comments(
     post_UID,
     collection,
     ticker,
-    comment_depth=None,
+    comment_depth=25,
     mongo_db="socialDB",
     verbose=False,
 ):
-    """
-    Load Reddit comments for a given post.
-    """
+    """Load Reddit comments for a given post."""
     # Initialize PRAW with all credentials
     CLIENT_ID, CLIENT_SECRET, USER_AGENT, USERNAME, PASSWORD = load_credentials(
         get_path("creds"), "reddit_api"
@@ -230,24 +371,24 @@ def load_reddit_comments(
         password=PASSWORD,
     )
 
+    processed_count = 0
     bulk_ops = []
 
-    submission_id = post.id
-
     if verbose:
-        print(f"Processing submission ID: {submission_id}")
+        logger.info(f"Processing comments for submission {post.id}")
 
     # Fetch fresh submission and comments
-    submission = reddit.submission(id=submission_id)
+    submission = reddit.submission(id=post.id)
     submission.comments.replace_more(limit=comment_depth)
 
-    for comment in submission.comments.list():
-        comment_text = comment.body.upper()
-        if not (ticker.upper() in comment_text or f"${ticker.upper()}" in comment_text):
-            continue
+    all_comments = submission.comments.list()
+    if verbose:
+        logger.info(f"Found {len(all_comments)} total comments")
 
+    for comment in all_comments:
+        processed_count += 1
         # Generate unique_id for comment
-        unique_id_fields = f"{comment.id}{comment.author}{comment.created_utc}"
+        unique_id_fields = f"{comment.id}{comment.author}"
         unique_id = hashlib.sha256(unique_id_fields.encode()).hexdigest()
 
         feature_values = {
@@ -255,12 +396,14 @@ def load_reddit_comments(
         }
         feature_hash = hashlib.sha256(str(feature_values).encode()).hexdigest()
 
-        # Create comment document with feature hash
+        # Create comment document with feature hash and parent info
         comment_doc = {
             "unique_id": unique_id,
-            "post_id": submission_id,
+            "post_id": post.id,
             "post_UID": post_UID,
             "comment_id": comment.id,
+            "parent_id": comment.parent_id,  # Will be 't3_postid' for top-level comments or 't1_commentid' for replies
+            "depth": comment.depth,  # Add comment depth in thread
             "author": str(comment.author),
             "body": comment.body,
             "timestamp": datetime.fromtimestamp(comment.created_utc),
@@ -309,7 +452,7 @@ def load_reddit_comments(
             # Return number of successful operations
             return bwe.details.get("nUpserted", 0)
 
-    return 0
+    return processed_count
 
 
 def execute_bulk_operations(collection, bulk_operations, verbose=False):
@@ -332,3 +475,27 @@ def execute_bulk_operations(collection, bulk_operations, verbose=False):
         if non_duplicate_errors and verbose:
             logger.warning(f"Some writes failed: {non_duplicate_errors}")
     return []  # Return empty list to reset bulk_operations
+
+
+"""Keyword mappings for social media searches."""
+
+
+def get_ticker_keywords(ticker: str, keywords: list = None) -> list:
+    """
+    Get search keywords for a ticker.
+    Args:
+        ticker: The stock ticker symbol
+        keywords: Optional list of additional keywords to include
+    Returns:
+        List of search terms including ticker and provided keywords
+    """
+    search_terms = [
+        ticker,  # Base ticker
+        f"${ticker}",  # Ticker with $ prefix
+    ]
+
+    # Add any provided keywords
+    if keywords:
+        search_terms.extend(keywords)
+
+    return search_terms
