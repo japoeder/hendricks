@@ -145,7 +145,7 @@ def news_from_alpacaAPI(
         news = client.get_news(request_params)
 
         # Check length before converting to DataFrame
-        if len(news) == 0:
+        if len(news.data["news"]) == 0:
             logger.info(f"No news found for {ticker}")
             continue
 
