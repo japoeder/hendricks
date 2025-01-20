@@ -249,7 +249,7 @@ def sentimentHist_from_fmpAPI(
                 page += 1  # Move to next page
 
             else:
-                logger.warning(f"Failed to fetch page {page} for {ticker}")
+                # logger.warning(f"Failed to fetch page {page} for {ticker}")
                 break
 
         logger.info("Data imported successfully!")

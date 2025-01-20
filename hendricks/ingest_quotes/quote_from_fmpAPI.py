@@ -152,9 +152,11 @@ def quote_from_fmpAPI(
                 logger.info(
                     f"Inserted: {result.upserted_count}, Modified: {result.modified_count}"
                 )
-            except BulkWriteError as bwe:
+            except BulkWriteError:
+                continue
                 # Only log the count of failed operations instead of full details
-                failed_count = len(bwe.details.get("writeErrors", []))
-                logger.warning(f"{failed_count} duplicate entries skipped for {ticker}")
+                # If uncommenting, add as bwe back to except clause above
+                # failed_count = len(bwe.details.get("writeErrors", []))
+                # logger.warning(f"{failed_count} duplicate entries skipped for {ticker}")
 
         print(f"Data import completed for {ticker}")

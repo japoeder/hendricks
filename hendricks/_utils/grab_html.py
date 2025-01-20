@@ -2,7 +2,7 @@
 This module contains a function to grab the HTML content of a given URL.
 """
 
-import logging
+# import logging
 import requests
 from urllib3.exceptions import InsecureRequestWarning
 
@@ -32,5 +32,5 @@ def grab_html(url):
         return response.text
 
     except Exception:
-        logging.error(f"Failed quick fetch for URL: {url}")
+        # logging.error(f"Failed quick fetch for URL: {url}")
         return None

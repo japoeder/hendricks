@@ -113,7 +113,7 @@ def genNews_from_fmpAPI(
             response = requests.get(url)
 
             if response.status_code != 200:
-                logger.warning(f"Failed to fetch page {page} for {ticker}")
+                # logger.warning(f"Failed to fetch page {page} for {ticker}")
                 break
 
             res = response.json()
