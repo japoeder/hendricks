@@ -1,8 +1,9 @@
-# This file may be used to create an environment using:
-# $ conda create --name <env> --file <this file>
-# platform: osx-arm64
-numpy
-pandas
+# Core data science packages with compatible versions
+numpy==1.24.3
+pandas==2.0.3
+pyarrow==12.0.1
+
+# Keep other packages as they are
 pre-commit
 pylint
 pybrowsers
@@ -33,3 +34,5 @@ tweepy
 requests
 zenrows
 proxies
+praw
+quantum_trade_utilities
