@@ -89,7 +89,7 @@ disable=
     too-many-return-statements,
     too-many-positional-arguments,
     pointless-string-statement,
-#    unbalanced-tuple-unpacking
+    unbalanced-tuple-unpacking
 #    len-as-condition,
 #    too-few-public-methods,
 #    anomalous-backslash-in-string,
